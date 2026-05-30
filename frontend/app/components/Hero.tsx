@@ -1,0 +1,284 @@
+'use client';
+
+import { useState, useEffect, useCallback, useRef } from 'react';
+import Image from 'next/image';
+
+/* Slides baseados nos banners reais do site IPESSP */
+const slides = [
+  {
+    id: 1,
+    image: '/images/banner-1.jpeg',
+    badge: 'Vestibular 2026',
+    title: 'Vestibular 2026 com Inscrições Abertas',
+    subtitle: 'Garanta sua vaga na faculdade de saúde mais completa de São Paulo. Processo seletivo simplificado e bolsas disponíveis.',
+    bullets: [
+      'Processo seletivo simplificado',
+      'Bolsas e condições especiais disponíveis',
+      'Início de turmas em breve',
+    ],
+    cta: { label: 'Inscreva-se Agora', href: '#pre-inscricao' },
+    ctaSecondary: { label: 'Ver Edital', href: '#processo-seletivo' },
+  },
+  {
+    id: 2,
+    image: '/images/banner-2.jpg',
+    badge: 'Parceria Exclusiva',
+    title: 'IPESSP + Faculdade de Medicina da USP',
+    subtitle: 'Juntos formando profissionais de excelência. Estágio prático em Farmácia Oncológica no ICESP – Instituto do Câncer do Estado de São Paulo.',
+    bullets: [
+      'Farmácia Oncológica Online ao Vivo',
+      'Estágio prático no ICESP/FMUSP',
+      'Certificado com respaldo da USP',
+    ],
+    cta: { label: 'Conheça o Curso', href: '#pre-inscricao' },
+    ctaSecondary: { label: 'Saiba Mais', href: '#categorias' },
+  },
+  {
+    id: 3,
+    image: '/images/banner-3.jpeg',
+    badge: 'Pós-Graduação · Estética',
+    title: 'Residência Clínica em Harmonização Facial e Corporal',
+    subtitle: 'Especialização de excelência em Harmonização Orofacial (HOF) com professores especialistas e laboratórios de última geração.',
+    bullets: [
+      'Harmonização Orofacial (HOF)',
+      'Aulas práticas em laboratório próprio',
+      'Clínica Escola aberta aos alunos',
+    ],
+    cta: { label: 'Inscrições Abertas', href: '#pre-inscricao' },
+    ctaSecondary: { label: 'Ver Currículo', href: '#' },
+  },
+  {
+    id: 4,
+    image: '/images/banner-4.jpg',
+    badge: 'Graduação',
+    title: 'Gestão Hospitalar: Lidere o Futuro da Saúde',
+    subtitle: 'Graduação em Gestão Hospitalar com grade curricular atualizada, professores mestres e doutores e parcerias com os maiores hospitais de SP.',
+    bullets: [
+      'Gestão Hospitalar · Biomedicina · Fisioterapia',
+      'Estética e Cosmética',
+      'Parcerias com HCor, Rede D\'Or e muito mais',
+    ],
+    cta: { label: 'Conheça a Graduação', href: '#categorias' },
+    ctaSecondary: { label: 'Matricule-se', href: '#pre-inscricao' },
+  },
+  {
+    id: 5,
+    image: '/images/banner-5.jpg',
+    badge: 'Pós-Graduação · Online',
+    title: 'Farmácia Oncológica Online ao Vivo',
+    subtitle: 'Formação completa para farmacêuticos que querem atuar na oncologia, com estágio prático supervisionado em hospital de referência.',
+    bullets: [
+      'Aulas Online ao Vivo',
+      'Estágio na FMUSP – ICESP',
+      'Reconhecido pelo MEC',
+    ],
+    cta: { label: 'Inscrições Abertas', href: '#pre-inscricao' },
+    ctaSecondary: { label: 'Mais Informações', href: '#' },
+  },
+  {
+    id: 6,
+    image: '/images/banner-6.jpg',
+    badge: '25 Anos de Excelência',
+    title: 'Mais de 5.000 Profissionais de Saúde Formados',
+    subtitle: 'Fundado em 2000, o IPESSP é referência em formação de profissionais de saúde em São Paulo, com 4.000 m² de infraestrutura e 54 cursos.',
+    bullets: [
+      '5.000+ especialistas formados',
+      '54 cursos de pós-graduação, graduação e livres',
+      '5 laboratórios equipados · 2 anfiteatros',
+    ],
+    cta: { label: 'Nossa História', href: '#' },
+    ctaSecondary: { label: 'Inscreva-se', href: '#pre-inscricao' },
+  },
+];
+
+export default function Hero() {
+  const [current, setCurrent] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const [prefersReduced, setPrefersReduced] = useState(false);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setPrefersReduced(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setPrefersReduced(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
+  const next = useCallback(() => setCurrent(c => (c + 1) % slides.length), []);
+  const prev = useCallback(() => setCurrent(c => (c - 1 + slides.length) % slides.length), []);
+
+  useEffect(() => {
+    if (paused || prefersReduced) {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      return;
+    }
+    intervalRef.current = setInterval(next, 5500);
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+  }, [paused, prefersReduced, next]);
+
+  const slide = slides[current];
+
+  return (
+    <section
+      className="relative overflow-hidden"
+      style={{ height: 'min(88vh, 720px)', minHeight: '480px' }}
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      aria-label="Destaques da Faculdade IPESSP"
+    >
+      {/* Slides */}
+      {slides.map((s, i) => (
+        <div
+          key={s.id}
+          className="absolute inset-0 transition-opacity duration-700"
+          style={{ opacity: i === current ? 1 : 0, zIndex: i === current ? 1 : 0 }}
+          aria-hidden={i !== current}
+        >
+          <Image
+            src={s.image}
+            alt={s.title}
+            fill
+            className="object-cover object-center"
+            priority={i === 0}
+            sizes="100vw"
+          />
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                'linear-gradient(100deg, rgba(61,11,11,0.93) 0%, rgba(93,18,18,0.65) 45%, rgba(0,0,0,0.18) 100%)',
+            }}
+          />
+        </div>
+      ))}
+
+      {/* Content */}
+      <div className="relative z-10 h-full flex items-center">
+        <div className="container-site">
+          <div className="max-w-2xl text-white">
+            {/* Badge */}
+            <div
+              className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-wider mb-5"
+              style={{ background: 'var(--accent-400)', color: 'var(--ink-900)' }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60" />
+              {slide.badge}
+            </div>
+
+            {/* Title */}
+            <h1
+              className="font-bold text-white mb-4 leading-tight"
+              style={{
+                fontFamily: 'var(--font-sora, var(--font-display))',
+                fontSize: 'var(--fs-display)',
+                lineHeight: '1.1',
+              }}
+            >
+              {slide.title}
+            </h1>
+
+            {/* Subtitle */}
+            <p className="text-white/85 mb-6 leading-relaxed" style={{ fontSize: 'var(--fs-h3)' }}>
+              {slide.subtitle}
+            </p>
+
+            {/* Bullets */}
+            <ul className="flex flex-col gap-2 mb-8">
+              {slide.bullets.map(b => (
+                <li key={b} className="flex items-center gap-2 text-white/90">
+                  <svg className="flex-shrink-0" width="18" height="18" fill="none"
+                    stroke="var(--accent-400)" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  <span className="text-sm">{b}</span>
+                </li>
+              ))}
+            </ul>
+
+            {/* CTAs */}
+            <div className="flex flex-wrap gap-3">
+              <a href={slide.cta.href} className="btn btn-white font-bold">
+                {slide.cta.label}
+              </a>
+              <a
+                href={slide.ctaSecondary.href}
+                className="btn"
+                style={{
+                  background: 'rgba(255,255,255,0.12)',
+                  color: '#fff',
+                  border: '2px solid rgba(255,255,255,0.4)',
+                  backdropFilter: 'blur(4px)',
+                }}
+              >
+                {slide.ctaSecondary.label}
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Arrows */}
+      <button
+        onClick={prev}
+        className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full flex items-center justify-center text-white transition-all duration-200 hover:scale-110"
+        style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)', border: '1px solid rgba(255,255,255,0.25)' }}
+        aria-label="Slide anterior"
+      >
+        <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+          <path d="m15 18-6-6 6-6"/>
+        </svg>
+      </button>
+      <button
+        onClick={next}
+        className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full flex items-center justify-center text-white transition-all duration-200 hover:scale-110"
+        style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)', border: '1px solid rgba(255,255,255,0.25)' }}
+        aria-label="Próximo slide"
+      >
+        <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+          <path d="m9 18 6-6-6-6"/>
+        </svg>
+      </button>
+
+      {/* Dots */}
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2" role="tablist">
+        {slides.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => setCurrent(i)}
+            role="tab"
+            aria-selected={i === current}
+            aria-label={`Slide ${i + 1}`}
+            style={{
+              width: i === current ? '28px' : '8px',
+              height: '8px',
+              borderRadius: '99px',
+              background: i === current ? '#fff' : 'rgba(255,255,255,0.4)',
+              border: 'none',
+              cursor: 'pointer',
+              transition: 'all 0.3s',
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Progress bar */}
+      {!prefersReduced && (
+        <div className="absolute bottom-0 left-0 right-0 z-20 h-0.5" style={{ background: 'rgba(255,255,255,0.1)' }}>
+          <div
+            key={current}
+            className="h-full"
+            style={{
+              background: 'var(--accent-400)',
+              animation: paused ? 'none' : 'heroProgress 5.5s linear forwards',
+            }}
+          />
+        </div>
+      )}
+
+      <style>{`
+        @keyframes heroProgress { from { width: 0% } to { width: 100% } }
+      `}</style>
+    </section>
+  );
+}
