@@ -4,18 +4,30 @@ import { useState } from 'react';
 import Link from 'next/link';
 import AuthLayout from '../components/auth/AuthLayout';
 import AuthInput from '../components/auth/AuthInput';
+import { apiFetch } from '../lib/api';
 
 export default function ForgotPasswordProfessorPage() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e: { preventDefault(): void }) => {
     e.preventDefault();
+    if (!email.trim()) { setError('Informe o e-mail.'); return; }
+    setError('');
     setLoading(true);
-    await new Promise(r => setTimeout(r, 1000));
-    setLoading(false);
-    setSent(true);
+    try {
+      await apiFetch('/v1/auth/forgot-password', {
+        method: 'POST',
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      setSent(true);
+    } catch {
+      setError('Erro de conexão. Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -25,7 +37,6 @@ export default function ForgotPasswordProfessorPage() {
       panelSubtitle="Mantemos seus dados institucionais protegidos. Redefina sua senha com segurança e volte a gerenciar suas turmas."
     >
       <div>
-        {/* Ícone */}
         <div
           className="w-14 h-14 rounded-2xl flex items-center justify-center mb-6"
           style={{ background: 'var(--brand-50)' }}
@@ -63,7 +74,7 @@ export default function ForgotPasswordProfessorPage() {
                   E-mail enviado para <strong>{email}</strong>
                 </p>
                 <p className="text-xs mt-1" style={{ color: 'var(--ink-500)' }}>
-                  Não chegou? Verifique spam ou entre em contato com a secretaria IPESSP.
+                  Não chegou? Verifique spam ou entre em contato com a secretaria: <strong>(11) 97692-2127</strong>.
                 </p>
               </div>
             </div>
@@ -86,6 +97,10 @@ export default function ForgotPasswordProfessorPage() {
               placeholder="professor@ipessp.edu.br"
               autoComplete="email"
             />
+
+            {error && (
+              <p className="text-xs" style={{ color: 'var(--brand-600)' }}>{error}</p>
+            )}
 
             <p className="text-xs rounded-xl px-4 py-3" style={{ background: 'var(--surface-alt)', color: 'var(--ink-500)', border: '1px solid var(--line)' }}>
               Caso não tenha acesso ao e-mail institucional, entre em contato com a secretaria: <strong>(11) 97692-2127</strong>.

@@ -4,12 +4,14 @@ import { useState } from 'react';
 import Link from 'next/link';
 import AuthLayout from '../components/auth/AuthLayout';
 import AuthInput from '../components/auth/AuthInput';
+import { apiFetch } from '../lib/api';
 
 export default function RegisterProfessorPage() {
   const [form, setForm] = useState({ name: '', email: '', matricula: '', password: '', confirm: '' });
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [serverError, setServerError] = useState('');
 
   const set = (field: string) => (e: { target: { value: string } }) =>
     setForm(f => ({ ...f, [field]: e.target.value }));
@@ -29,10 +31,29 @@ export default function RegisterProfessorPage() {
     const errs = validate();
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setErrors({});
+    setServerError('');
     setLoading(true);
-    await new Promise(r => setTimeout(r, 1000));
-    setLoading(false);
-    setDone(true);
+    try {
+      const res = await apiFetch('/v1/auth/register/professor', {
+        method: 'POST',
+        body: JSON.stringify({
+          nome: form.name.trim(),
+          email: form.email.trim(),
+          senha: form.password,
+          matricula: form.matricula.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setServerError(data.error ?? 'Erro ao criar conta. Tente novamente.');
+        return;
+      }
+      setDone(true);
+    } catch {
+      setServerError('Erro de conexão. Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -76,7 +97,6 @@ export default function RegisterProfessorPage() {
             Preencha seus dados institucionais. O acesso será validado pela equipe.
           </p>
 
-          {/* Seletor de papel */}
           <div
             className="flex rounded-xl p-1 mb-7"
             style={{ background: 'var(--surface-alt)', border: '1px solid var(--line)' }}
@@ -95,6 +115,19 @@ export default function RegisterProfessorPage() {
               Professor
             </span>
           </div>
+
+          {serverError && (
+            <div
+              className="flex items-center gap-2 rounded-xl px-4 py-3 text-sm mb-4"
+              style={{ background: 'var(--brand-50)', color: 'var(--brand-700)', border: '1px solid var(--brand-200)' }}
+            >
+              <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              {serverError}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
             <div>

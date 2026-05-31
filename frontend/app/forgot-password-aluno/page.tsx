@@ -4,18 +4,30 @@ import { useState } from 'react';
 import Link from 'next/link';
 import AuthLayout from '../components/auth/AuthLayout';
 import AuthInput from '../components/auth/AuthInput';
+import { apiFetch } from '../lib/api';
 
 export default function ForgotPasswordAlunoPage() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e: { preventDefault(): void }) => {
     e.preventDefault();
+    if (!email.trim()) { setError('Informe o e-mail.'); return; }
+    setError('');
     setLoading(true);
-    await new Promise(r => setTimeout(r, 1000));
-    setLoading(false);
-    setSent(true);
+    try {
+      await apiFetch('/v1/auth/forgot-password', {
+        method: 'POST',
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      setSent(true);
+    } catch {
+      setError('Erro de conexão. Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -25,7 +37,6 @@ export default function ForgotPasswordAlunoPage() {
       panelSubtitle="Processos de recuperação seguros para manter sua conta de aluno sempre protegida no IPESSP."
     >
       <div>
-        {/* Ícone de cadeado */}
         <div
           className="w-14 h-14 rounded-2xl flex items-center justify-center mb-6"
           style={{ background: 'var(--brand-50)' }}
@@ -49,7 +60,6 @@ export default function ForgotPasswordAlunoPage() {
         </p>
 
         {sent ? (
-          /* Estado de sucesso */
           <div>
             <div
               className="rounded-2xl p-6 flex flex-col items-center text-center gap-3 mb-6"
@@ -64,7 +74,7 @@ export default function ForgotPasswordAlunoPage() {
                   E-mail enviado para <strong>{email}</strong>
                 </p>
                 <p className="text-xs mt-1" style={{ color: 'var(--ink-500)' }}>
-                  Não chegou? Verifique a caixa de spam ou aguarde alguns minutos.
+                  Não chegou? Verifique spam ou entre em contato com a secretaria IPESSP.
                 </p>
               </div>
             </div>
@@ -76,10 +86,9 @@ export default function ForgotPasswordAlunoPage() {
             </button>
           </div>
         ) : (
-          /* Formulário */
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <AuthInput
-              label="E-mail institucional"
+              label="E-mail"
               id="email"
               type="email"
               required
@@ -88,6 +97,10 @@ export default function ForgotPasswordAlunoPage() {
               placeholder="aluno@ipessp.edu.br"
               autoComplete="email"
             />
+
+            {error && (
+              <p className="text-xs" style={{ color: 'var(--brand-600)' }}>{error}</p>
+            )}
 
             <button
               type="submit"

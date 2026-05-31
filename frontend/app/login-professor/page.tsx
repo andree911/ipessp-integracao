@@ -1,11 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import AuthLayout from '../components/auth/AuthLayout';
 import AuthInput from '../components/auth/AuthInput';
+import { apiFetch, setSession } from '../lib/api';
 
 export default function LoginProfessorPage() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -19,9 +22,27 @@ export default function LoginProfessorPage() {
       return;
     }
     setLoading(true);
-    await new Promise(r => setTimeout(r, 900));
-    setLoading(false);
-    setError('E-mail ou senha incorretos. Verifique seus dados.');
+    try {
+      const res = await apiFetch('/v1/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email: email.trim(), senha: password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? 'E-mail ou senha incorretos.');
+        return;
+      }
+      if (data.tipo !== 'professor') {
+        setError('Esta conta não é de professor. Use o login de aluno.');
+        return;
+      }
+      setSession(data.token, data.tipo, data.nome);
+      router.push('/portal-professor');
+    } catch {
+      setError('Erro de conexão. Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -45,7 +66,6 @@ export default function LoginProfessorPage() {
           Entre com suas credenciais de professor para continuar.
         </p>
 
-        {/* Seletor de papel */}
         <div
           className="flex rounded-xl p-1 mb-7"
           style={{ background: 'var(--surface-alt)', border: '1px solid var(--line)' }}
