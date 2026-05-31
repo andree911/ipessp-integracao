@@ -14,6 +14,10 @@ export default function LoginAlunoPage() {
   const handleSubmit = async (e: { preventDefault(): void }) => {
     e.preventDefault();
     setError('');
+    if (!email.trim() || !password) {
+      setError('Preencha e-mail e senha para continuar.');
+      return;
+    }
     setLoading(true);
     await new Promise(r => setTimeout(r, 900));
     setLoading(false);
@@ -61,7 +65,7 @@ export default function LoginAlunoPage() {
           </Link>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
           <AuthInput
             label="E-mail institucional"
             id="email"

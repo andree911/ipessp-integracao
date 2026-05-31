@@ -117,12 +117,10 @@ export default function Hero() {
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [paused, prefersReduced, next]);
 
-  const slide = slides[current];
-
   return (
     <section
       className="relative overflow-hidden"
-      style={{ height: 'min(88vh, 720px)', minHeight: '480px' }}
+      style={{ height: 'min(68vh, 580px)', minHeight: '400px' }}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       aria-label="Destaques da Faculdade IPESSP"
@@ -131,7 +129,7 @@ export default function Hero() {
       {slides.map((s, i) => (
         <div
           key={s.id}
-          className="absolute inset-0 transition-opacity duration-700"
+          className="absolute inset-0 transition-opacity duration-700 overflow-hidden"
           style={{ opacity: i === current ? 1 : 0, zIndex: i === current ? 1 : 0 }}
           aria-hidden={i !== current}
         >
@@ -139,84 +137,21 @@ export default function Hero() {
             src={s.image}
             alt={s.title}
             fill
-            className="object-cover object-center"
+            className="object-cover object-center transition-transform duration-700 ease-out"
+            style={{ transform: (i === current && paused) ? 'scale(1.05)' : 'scale(1)' }}
             priority={i === 0}
+            unoptimized
             sizes="100vw"
           />
+          {/* Gradient only at bottom for arrows/dots contrast */}
           <div
             className="absolute inset-0"
             style={{
-              background:
-                'linear-gradient(100deg, rgba(61,11,11,0.93) 0%, rgba(93,18,18,0.65) 45%, rgba(0,0,0,0.18) 100%)',
+              background: 'linear-gradient(to bottom, rgba(0,0,0,0) 55%, rgba(0,0,0,0.45) 100%)',
             }}
           />
         </div>
       ))}
-
-      {/* Content */}
-      <div className="relative z-10 h-full flex items-center">
-        <div className="container-site">
-          <div className="max-w-2xl text-white">
-            {/* Badge */}
-            <div
-              className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-wider mb-5"
-              style={{ background: 'var(--accent-400)', color: 'var(--ink-900)' }}
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60" />
-              {slide.badge}
-            </div>
-
-            {/* Title */}
-            <h1
-              className="font-bold text-white mb-4 leading-tight"
-              style={{
-                fontFamily: 'var(--font-sora, var(--font-display))',
-                fontSize: 'var(--fs-display)',
-                lineHeight: '1.1',
-              }}
-            >
-              {slide.title}
-            </h1>
-
-            {/* Subtitle */}
-            <p className="text-white/85 mb-6 leading-relaxed" style={{ fontSize: 'var(--fs-h3)' }}>
-              {slide.subtitle}
-            </p>
-
-            {/* Bullets */}
-            <ul className="flex flex-col gap-2 mb-8">
-              {slide.bullets.map(b => (
-                <li key={b} className="flex items-center gap-2 text-white/90">
-                  <svg className="flex-shrink-0" width="18" height="18" fill="none"
-                    stroke="var(--accent-400)" strokeWidth="2.5" viewBox="0 0 24 24">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
-                  <span className="text-sm">{b}</span>
-                </li>
-              ))}
-            </ul>
-
-            {/* CTAs */}
-            <div className="flex flex-wrap gap-3">
-              <a href={slide.cta.href} className="btn btn-white font-bold">
-                {slide.cta.label}
-              </a>
-              <a
-                href={slide.ctaSecondary.href}
-                className="btn"
-                style={{
-                  background: 'rgba(255,255,255,0.12)',
-                  color: '#fff',
-                  border: '2px solid rgba(255,255,255,0.4)',
-                  backdropFilter: 'blur(4px)',
-                }}
-              >
-                {slide.ctaSecondary.label}
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Arrows */}
       <button

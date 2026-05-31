@@ -14,13 +14,15 @@ export default function AuthInput({ label, id, showToggle, type, ...props }: Aut
 
   return (
     <div>
-      <label
-        htmlFor={id}
-        className="block text-sm font-medium mb-1.5"
-        style={{ color: 'var(--ink-700)' }}
-      >
-        {label}
-      </label>
+      {label && (
+        <label
+          htmlFor={id}
+          className="block text-sm font-medium mb-1.5"
+          style={{ color: 'var(--ink-700)' }}
+        >
+          {label}
+        </label>
+      )}
       <div className="relative">
         <input
           id={id}

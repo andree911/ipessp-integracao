@@ -5,10 +5,10 @@ import Link from 'next/link';
 import Image from 'next/image';
 
 const socials = [
-  { label: 'LinkedIn', href: '#', icon: (<svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>) },
-  { label: 'Facebook', href: '#', icon: (<svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>) },
-  { label: 'Instagram', href: '#', icon: (<svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>) },
-  { label: 'YouTube', href: '#', icon: (<svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>) },
+  { label: 'LinkedIn', href: 'https://www.linkedin.com/company/ipessp---educa-o', icon: (<svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>) },
+  { label: 'Facebook', href: 'https://www.facebook.com/pages/Ipessp/209464852483898', icon: (<svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>) },
+  { label: 'Instagram', href: 'https://www.instagram.com/ipessp/', icon: (<svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>) },
+  { label: 'YouTube', href: 'https://www.youtube.com/channel/UC7dgP6NBgM9L0m11UbhCyHg', icon: (<svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>) },
 ];
 
 /* ── Dados reais do site IPESSP ──────────────────────────────── */
@@ -107,27 +107,27 @@ const cursosLivresMenu = [
 ];
 
 const graduacaoItems = [
-  { label: 'Gestão Hospitalar', href: '#' },
-  { label: 'Biomedicina', href: '#' },
-  { label: 'Estética e Cosmética', href: '#' },
-  { label: 'Fisioterapia', href: '#' },
+  { label: 'Gestão Hospitalar', href: '/graduacao' },
+  { label: 'Biomedicina', href: '/graduacao' },
+  { label: 'Estética e Cosmética', href: '/graduacao' },
+  { label: 'Fisioterapia', href: '/graduacao' },
 ];
 
 const institucionalMenu = [
-  'Nossa História',
-  'Parceiros',
-  'Depoimentos',
-  'Trabalhe Conosco',
-  'Clínica Escola',
-  'Espaço para Eventos',
-  'Corpo Docente',
-  'Ouvidoria – IPESSP',
-  'NAP – Apoio Psicopedagógico',
-  'CPA – Comissão de Avaliação',
-  'Laboratórios',
-  'Documentos Institucionais',
-  'Biblioteca',
-  'Revista Científica',
+  { label: 'Nossa História', href: '/nossa-historia' },
+  { label: 'Parceiros', href: '/parceiros' },
+  { label: 'Depoimentos', href: '/depoimentos' },
+  { label: 'Trabalhe Conosco', href: '/trabalhe-conosco' },
+  { label: 'Clínica Escola', href: '/clinica-escola' },
+  { label: 'Espaço para Eventos', href: '/espaco-para-eventos' },
+  { label: 'Corpo Docente', href: '/corpo-docente' },
+  { label: 'Ouvidoria – IPESSP', href: '/ouvidoria' },
+  { label: 'NAP – Apoio Psicopedagógico', href: '/nap' },
+  { label: 'CPA – Comissão de Avaliação', href: '/cpa' },
+  { label: 'Laboratórios', href: '/laboratorios' },
+  { label: 'Documentos Institucionais', href: '/documentos-institucionais' },
+  { label: 'Biblioteca', href: '/biblioteca-virtual' },
+  { label: 'Revista Científica', href: '/revista-cientifica' },
 ];
 
 /* ─────────────────────────────────────────────────────────────── */
@@ -184,12 +184,10 @@ export default function Header() {
           </div>
           <div className="flex items-center gap-4 text-xs">
             {[
-              { label: 'Clínica Estética', href: '#' },
-              { label: 'Revista Científica', href: '#' },
-              { label: 'Plataforma Virtual', href: '#' },
-              { label: 'Portal do Aluno', href: '/login' },
-              { label: 'Portal do Professor', href: '#' },
-              { label: 'Biblioteca Virtual', href: '#' },
+              { label: 'Clínica Estética', href: '/clinica-escola' },
+              { label: 'Portal do Aluno', href: '/login-aluno' },
+              { label: 'Portal do Professor', href: '/login-professor' },
+              { label: 'Biblioteca Virtual', href: '/biblioteca-virtual' },
             ].map(item => (
               <a key={item.label} href={item.href}
                 className="opacity-80 hover:opacity-100 transition-opacity hover:underline">
@@ -208,9 +206,9 @@ export default function Header() {
       >
         <div className="container-site flex items-center justify-between py-3">
           {/* Logo */}
-          <Link href="/" className="flex-shrink-0">
+          <Link href="/" className="flex-shrink-0" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
             <Image
-              src="/logo-ipessp.png"
+              src="/images/logo.png"
               alt="Faculdade IPESSP"
               width={140}
               height={48}
@@ -224,7 +222,7 @@ export default function Header() {
           <div className="hidden lg:flex items-center gap-0.5">
 
             {/* Diplomas */}
-            <NavLink href="#">Diplomas</NavLink>
+            <NavLink href="/diplomas">Diplomas</NavLink>
 
             {/* Cursos Livres mega */}
             <MegaMenuTrigger
@@ -243,7 +241,7 @@ export default function Header() {
                     <ul className="space-y-1">
                       {group.items.map(item => (
                         <li key={item}>
-                          <a href="#" className="block text-sm py-0.5 transition-colors"
+                          <a href="/cursos-livres" className="block text-sm py-0.5 transition-colors"
                             style={{ color: 'var(--ink-700)' }}
                             onMouseEnter={e => { e.currentTarget.style.color = 'var(--brand-600)'; }}
                             onMouseLeave={e => { e.currentTarget.style.color = 'var(--ink-700)'; }}>
@@ -259,7 +257,7 @@ export default function Header() {
 
             {/* Graduação dropdown */}
             <div className="relative group">
-              <NavLink href="#">Graduação</NavLink>
+              <NavLink href="/graduacao">Graduação</NavLink>
               <div className="absolute top-full left-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                 <div className="bg-white rounded-2xl shadow-xl border border-[var(--line)] p-2 min-w-52">
                   {graduacaoItems.map(item => (
@@ -276,7 +274,7 @@ export default function Header() {
               onOpen={() => setMegaOpen('pos')}
               onClose={() => setMegaOpen(null)}
             >
-              <div className="p-6 w-[760px]">
+              <div className="p-6 w-[760px] max-h-[calc(100vh-130px)] overflow-y-auto">
                 <div className="grid grid-cols-3 gap-6">
                   {posGraduacaoMenu.map(group => (
                     <div key={group.area}>
@@ -287,7 +285,7 @@ export default function Header() {
                       <ul className="space-y-1">
                         {group.items.map(item => (
                           <li key={item}>
-                            <a href="#" className="block text-sm py-0.5 transition-colors leading-snug"
+                            <a href="/pos-graduacao" className="block text-sm py-0.5 transition-colors leading-snug"
                               style={{ color: 'var(--ink-700)' }}
                               onMouseEnter={e => { e.currentTarget.style.color = 'var(--brand-600)'; }}
                               onMouseLeave={e => { e.currentTarget.style.color = 'var(--ink-700)'; }}>
@@ -300,7 +298,7 @@ export default function Header() {
                   ))}
                 </div>
                 <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--line)' }}>
-                  <a href="#" className="text-sm font-semibold flex items-center gap-1"
+                  <a href="/pos-graduacao" className="text-sm font-semibold flex items-center gap-1"
                     style={{ color: 'var(--brand-600)' }}>
                     Ver todos os 54 cursos de Pós-Graduação
                     <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -313,23 +311,23 @@ export default function Header() {
 
             {/* Polos */}
             <div className="relative group">
-              <NavLink href="#">Polos</NavLink>
+              <NavLink href="/polo-sao-jose-dos-campos">Polos</NavLink>
               <div className="absolute top-full left-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                 <div className="bg-white rounded-2xl shadow-xl border border-[var(--line)] p-2 min-w-52">
-                  <DropdownItem href="#">Polo São José dos Campos</DropdownItem>
+                  <DropdownItem href="/polo-sao-jose-dos-campos">Polo São José dos Campos</DropdownItem>
                 </div>
               </div>
             </div>
 
-            <NavLink href="#">Blog</NavLink>
+            <NavLink href="/blog">Blog</NavLink>
 
             {/* Institucional dropdown */}
             <div className="relative group">
-              <NavLink href="#">Institucional</NavLink>
+              <NavLink href="/nossa-historia">Institucional</NavLink>
               <div className="absolute top-full right-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                 <div className="bg-white rounded-2xl shadow-xl border border-[var(--line)] p-2 w-64">
                   {institucionalMenu.map(item => (
-                    <DropdownItem key={item} href="#">{item}</DropdownItem>
+                    <DropdownItem key={item.label} href={item.href}>{item.label}</DropdownItem>
                   ))}
                 </div>
               </div>
@@ -373,7 +371,7 @@ export default function Header() {
           <div className="absolute inset-0 bg-black/50" onClick={() => setMobileOpen(false)} />
           <div className="relative ml-auto w-[88vw] max-w-sm bg-white h-full overflow-y-auto shadow-xl flex flex-col">
             <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: 'var(--line)' }}>
-              <Image src="/logo-ipessp.png" alt="IPESSP" width={100} height={36}
+              <Image src="/images/logo.png" alt="IPESSP" width={100} height={36}
                 className="object-contain" style={{ height: '34px', width: 'auto' }} />
               <button onClick={() => setMobileOpen(false)}
                 className="p-2 rounded-xl" aria-label="Fechar menu">
@@ -390,24 +388,24 @@ export default function Header() {
               </a>
 
               {[
-                { label: 'Diplomas', href: '#' },
+                { label: 'Diplomas', href: '/diplomas' },
                 {
-                  label: 'Cursos Livres', href: '#',
-                  children: cursosLivresMenu.flatMap(g => g.items),
+                  label: 'Cursos Livres', href: '/cursos-livres',
+                  children: cursosLivresMenu.flatMap(g => g.items).map(i => ({ label: i, href: '/cursos-livres' })),
                 },
                 {
-                  label: 'Graduação', href: '#',
-                  children: graduacaoItems.map(i => i.label),
+                  label: 'Graduação', href: '/graduacao',
+                  children: graduacaoItems.map(i => ({ label: i.label, href: i.href })),
                 },
                 {
-                  label: 'Pós-Graduação', href: '#',
-                  children: posGraduacaoMenu.flatMap(g => g.items),
+                  label: 'Pós-Graduação', href: '/pos-graduacao',
+                  children: posGraduacaoMenu.flatMap(g => g.items).map(i => ({ label: i, href: '/pos-graduacao' })),
                 },
-                { label: 'Polo São José dos Campos', href: '#' },
-                { label: 'Blog', href: '#' },
-                { label: 'Ouvidoria', href: '#' },
+                { label: 'Polo São José dos Campos', href: '/polo-sao-jose-dos-campos' },
+                { label: 'Blog', href: '/blog' },
+                { label: 'Ouvidoria', href: '/ouvidoria' },
                 {
-                  label: 'Institucional', href: '#',
+                  label: 'Institucional', href: '/nossa-historia',
                   children: institucionalMenu,
                 },
               ].map(item => (
@@ -428,11 +426,11 @@ export default function Header() {
                       {activeSubmenu === item.label && (
                         <div className="pl-4 mt-1 space-y-1 max-h-64 overflow-y-auto">
                           {item.children.map(child => (
-                            <a key={child} href="#"
+                            <a key={child.label} href={child.href}
                               className="block px-3 py-2 text-sm rounded-lg"
                               style={{ color: 'var(--ink-500)' }}
                               onClick={() => setMobileOpen(false)}>
-                              {child}
+                              {child.label}
                             </a>
                           ))}
                         </div>

@@ -96,7 +96,7 @@ export default function RegisterProfessorPage() {
             </span>
           </div>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
             <div>
               <AuthInput
                 label="Nome completo"

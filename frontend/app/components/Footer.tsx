@@ -12,31 +12,31 @@ const socials = [
 /* Links baseados nos dados reais do site */
 const footerLinks = {
   'Cursos': [
-    { label: 'Gestão Hospitalar', href: '#' },
-    { label: 'Biomedicina', href: '#' },
-    { label: 'Estética e Cosmética', href: '#' },
-    { label: 'Fisioterapia', href: '#' },
-    { label: 'Pós-Graduação', href: '#' },
-    { label: 'Cursos Livres EAD', href: '#' },
-    { label: 'Polo São José dos Campos', href: '#' },
+    { label: 'Gestão Hospitalar', href: '/graduacao' },
+    { label: 'Biomedicina', href: '/graduacao' },
+    { label: 'Estética e Cosmética', href: '/graduacao' },
+    { label: 'Fisioterapia', href: '/graduacao' },
+    { label: 'Pós-Graduação', href: '/pos-graduacao' },
+    { label: 'Cursos Livres EAD', href: '/cursos-livres' },
+    { label: 'Polo São José dos Campos', href: '/polo-sao-jose-dos-campos' },
   ],
   'Institucional': [
-    { label: 'Nossa História', href: '#' },
-    { label: 'Parceiros', href: '#' },
-    { label: 'Corpo Docente', href: '#' },
-    { label: 'Trabalhe Conosco', href: '#' },
-    { label: 'Clínica Escola', href: '#' },
-    { label: 'Laboratórios', href: '#' },
-    { label: 'Documentos Institucionais', href: '#' },
+    { label: 'Nossa História', href: '/nossa-historia' },
+    { label: 'Parceiros', href: '/parceiros' },
+    { label: 'Corpo Docente', href: '/corpo-docente' },
+    { label: 'Trabalhe Conosco', href: '/trabalhe-conosco' },
+    { label: 'Clínica Escola', href: '/clinica-escola' },
+    { label: 'Laboratórios', href: '/laboratorios' },
+    { label: 'Documentos Institucionais', href: '/documentos-institucionais' },
   ],
   'Estudantes': [
-    { label: 'Portal do Aluno', href: '/login' },
-    { label: 'Plataforma Virtual', href: '#' },
-    { label: 'Biblioteca Virtual', href: '#' },
-    { label: 'Revista Científica', href: '#' },
-    { label: 'Blog', href: '#' },
-    { label: 'NAP – Apoio Psicopedagógico', href: '#' },
-    { label: 'Ouvidoria – IPESSP', href: '#' },
+    { label: 'Portal do Aluno', href: '/login-aluno' },
+    { label: 'Biblioteca Virtual', href: '/biblioteca-virtual' },
+    { label: 'Revista Científica', href: '/revista-cientifica' },
+    { label: 'Blog', href: '/blog' },
+    { label: 'NAP – Apoio Psicopedagógico', href: '/nap' },
+    { label: 'Ouvidoria – IPESSP', href: '/ouvidoria' },
+    { label: 'Fale Conosco', href: '/fale-conosco' },
   ],
 };
 
@@ -48,20 +48,24 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
 
           {/* Col 1 – Brand */}
-          <div className="flex flex-col gap-5">
-            <Image
-              src="/logo-ipessp.png"
-              alt="Faculdade IPESSP"
-              width={130}
-              height={44}
-              className="object-contain brightness-0 invert"
-              style={{ height: '44px', width: 'auto' }}
-            />
-            <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.55)' }}>
-              Fundada em 2000, a Faculdade IPESSP já formou mais de 5.000 profissionais de saúde
-              em São Paulo. 25 anos de excelência no ensino da saúde na Consolação.
-            </p>
-            <div className="flex items-center gap-2 mt-1">
+          <div className="group flex flex-col gap-4">
+            <div style={{ background: 'white', borderRadius: '10px', padding: '8px 14px', display: 'inline-flex', flexDirection: 'column' }}>
+              <Image
+                src="/images/logo.png"
+                alt="Faculdade IPESSP"
+                width={200}
+                height={70}
+                className="object-contain"
+                style={{ height: 'auto', width: '140px' }}
+              />
+              <div className="overflow-hidden max-h-0 opacity-0 group-hover:max-h-40 group-hover:opacity-100 transition-all duration-500 ease-in-out">
+                <p className="text-sm leading-relaxed pt-3 mt-3" style={{ color: '#3f3636', borderTop: '1px solid #ece6e6' }}>
+                  Fundada em 2000, a Faculdade IPESSP já formou mais de 5.000 profissionais de saúde
+                  em São Paulo. 25 anos de excelência no ensino da saúde na Consolação.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
               {socials.map(s => (
                 <a
                   key={s.label}
@@ -197,16 +201,21 @@ export default function Footer() {
             © 2026 Faculdade IPESSP — Instituto de Pesquisa e Educação em Saúde de São Paulo.
           </p>
           <div className="flex items-center gap-4">
-            {['Institucional', 'Fale Conosco', 'Política de Privacidade', 'CPA'].map(item => (
+            {[
+              { label: 'Institucional', href: '/nossa-historia' },
+              { label: 'Fale Conosco', href: '/fale-conosco' },
+              { label: 'Política de Privacidade', href: '/politica-privacidade' },
+              { label: 'CPA', href: '/cpa' },
+            ].map(item => (
               <a
-                key={item}
-                href="#"
+                key={item.label}
+                href={item.href}
                 className="text-xs transition-colors"
                 style={{ color: 'rgba(255,255,255,0.35)' }}
                 onMouseEnter={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.7)'; }}
                 onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.35)'; }}
               >
-                {item}
+                {item.label}
               </a>
             ))}
           </div>

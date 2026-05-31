@@ -71,7 +71,7 @@ export default function AuthLayout({ role, panelTitle, panelSubtitle, children }
           <div className="flex items-center justify-between mb-8">
             <Link href="/" className="flex-shrink-0">
               <img
-                src="/logo-ipessp.png"
+                src="/images/logo.png"
                 alt="Faculdade IPESSP"
                 style={{ height: '44px', width: 'auto', objectFit: 'contain' }}
               />
@@ -195,7 +195,7 @@ export default function AuthLayout({ role, panelTitle, panelSubtitle, children }
                 className="flex items-center justify-center rounded-xl p-2 flex-shrink-0 transition-transform duration-300 group-hover:scale-110"
                 style={{ background: 'white', width: '56px', height: '56px' }}
               >
-                <img src="/logo-ipessp.png" alt="IPESSP" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                <img src="/images/logo.png" alt="IPESSP" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
               </div>
               <div className="text-white">
                 <p className="text-sm" style={{ color: 'rgba(255,255,255,0.6)' }}>Faculdade</p>
