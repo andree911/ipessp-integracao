@@ -1,8 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import WhatsAppFloat from '../components/WhatsAppFloat';
+import { apiFetch } from '../lib/api';
 
 const canaisContato = [
   {
@@ -38,7 +40,50 @@ const canaisContato = [
   },
 ];
 
+const inputStyle = {
+  width: '100%',
+  padding: '14px 16px',
+  border: '2px solid var(--line)',
+  borderRadius: 'var(--radius-sm)',
+  fontSize: 'var(--fs-sm)',
+  color: 'var(--ink-900)',
+  background: 'var(--surface)',
+  outline: 'none',
+  transition: 'border-color 0.15s',
+};
+
 export default function FaleConosco() {
+  const [form, setForm] = useState({ nome: '', email: '', telefone: '', assunto: '', mensagem: '' });
+  const [enviado, setEnviado] = useState(false);
+  const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState('');
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
+    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setEnviando(true);
+    setErro('');
+    try {
+      const res = await apiFetch('/v1/mensagens-contato', {
+        method: 'POST',
+        body: JSON.stringify(form),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setErro(data.error ?? 'Erro ao enviar. Tente novamente.');
+        return;
+      }
+      setEnviado(true);
+    } catch {
+      setErro('Erro de conexão. Tente novamente.');
+    } finally {
+      setEnviando(false);
+    }
+  }
+
   return (
     <>
       <Header />
@@ -75,25 +120,9 @@ export default function FaleConosco() {
                       href={canal.href}
                       target={canal.href.startsWith('http') ? '_blank' : undefined}
                       rel={canal.href.startsWith('http') ? 'noopener noreferrer' : undefined}
-                      style={{
-                        display: 'flex',
-                        gap: '16px',
-                        alignItems: 'center',
-                        padding: '20px 24px',
-                        background: 'var(--surface-alt)',
-                        borderRadius: 'var(--radius-md)',
-                        border: '1px solid var(--line)',
-                        textDecoration: 'none',
-                        transition: 'box-shadow 0.2s ease, border-color 0.2s ease',
-                      }}
-                      onMouseEnter={e => {
-                        (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-md)';
-                        (e.currentTarget as HTMLElement).style.borderColor = 'var(--brand-300)';
-                      }}
-                      onMouseLeave={e => {
-                        (e.currentTarget as HTMLElement).style.boxShadow = '';
-                        (e.currentTarget as HTMLElement).style.borderColor = 'var(--line)';
-                      }}
+                      style={{ display: 'flex', gap: '16px', alignItems: 'center', padding: '20px 24px', background: 'var(--surface-alt)', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)', textDecoration: 'none', transition: 'box-shadow 0.2s ease, border-color 0.2s ease' }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-md)'; (e.currentTarget as HTMLElement).style.borderColor = 'var(--brand-300)'; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = ''; (e.currentTarget as HTMLElement).style.borderColor = 'var(--line)'; }}
                     >
                       <div style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-md)', background: 'var(--brand-50)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--brand-600)', flexShrink: 0 }}>
                         {canal.icon}
@@ -149,84 +178,125 @@ export default function FaleConosco() {
                   Envie uma Mensagem
                 </h2>
 
-                <form style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                  <div>
-                    <label style={{ display: 'block', color: 'var(--ink-700)', fontSize: 'var(--fs-sm)', fontWeight: 600, marginBottom: '8px' }}>
-                      Nome completo *
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Seu nome completo"
-                      style={{ width: '100%', padding: '14px 16px', border: '2px solid var(--line)', borderRadius: 'var(--radius-sm)', fontSize: 'var(--fs-sm)', color: 'var(--ink-900)', background: 'var(--surface)', outline: 'none', transition: 'border-color 0.15s' }}
-                      onFocus={e => { e.currentTarget.style.borderColor = 'var(--brand-600)'; }}
-                      onBlur={e => { e.currentTarget.style.borderColor = 'var(--line)'; }}
-                    />
+                {enviado ? (
+                  <div style={{ background: 'var(--surface-alt)', borderRadius: 'var(--radius-lg)', border: '2px solid var(--brand-600)', padding: '3rem', textAlign: 'center' }}>
+                    <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--brand-50)', color: 'var(--brand-600)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
+                      <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path d="M20 6 9 17l-5-5"/>
+                      </svg>
+                    </div>
+                    <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 'var(--fs-h3)', color: 'var(--ink-900)', marginBottom: '0.5rem' }}>
+                      Mensagem enviada!
+                    </h3>
+                    <p style={{ color: 'var(--ink-500)' }}>
+                      Recebemos sua mensagem e entraremos em contato em breve.
+                    </p>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                ) : (
+                  <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                     <div>
                       <label style={{ display: 'block', color: 'var(--ink-700)', fontSize: 'var(--fs-sm)', fontWeight: 600, marginBottom: '8px' }}>
-                        E-mail *
+                        Nome completo *
                       </label>
                       <input
-                        type="email"
-                        placeholder="seu@email.com"
-                        style={{ width: '100%', padding: '14px 16px', border: '2px solid var(--line)', borderRadius: 'var(--radius-sm)', fontSize: 'var(--fs-sm)', color: 'var(--ink-900)', background: 'var(--surface)', outline: 'none', transition: 'border-color 0.15s' }}
+                        type="text"
+                        name="nome"
+                        required
+                        value={form.nome}
+                        onChange={handleChange}
+                        placeholder="Seu nome completo"
+                        style={inputStyle}
                         onFocus={e => { e.currentTarget.style.borderColor = 'var(--brand-600)'; }}
                         onBlur={e => { e.currentTarget.style.borderColor = 'var(--line)'; }}
                       />
                     </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                      <div>
+                        <label style={{ display: 'block', color: 'var(--ink-700)', fontSize: 'var(--fs-sm)', fontWeight: 600, marginBottom: '8px' }}>
+                          E-mail *
+                        </label>
+                        <input
+                          type="email"
+                          name="email"
+                          required
+                          value={form.email}
+                          onChange={handleChange}
+                          placeholder="seu@email.com"
+                          style={inputStyle}
+                          onFocus={e => { e.currentTarget.style.borderColor = 'var(--brand-600)'; }}
+                          onBlur={e => { e.currentTarget.style.borderColor = 'var(--line)'; }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', color: 'var(--ink-700)', fontSize: 'var(--fs-sm)', fontWeight: 600, marginBottom: '8px' }}>
+                          Telefone
+                        </label>
+                        <input
+                          type="tel"
+                          name="telefone"
+                          value={form.telefone}
+                          onChange={handleChange}
+                          placeholder="(11) 99999-9999"
+                          style={inputStyle}
+                          onFocus={e => { e.currentTarget.style.borderColor = 'var(--brand-600)'; }}
+                          onBlur={e => { e.currentTarget.style.borderColor = 'var(--line)'; }}
+                        />
+                      </div>
+                    </div>
                     <div>
                       <label style={{ display: 'block', color: 'var(--ink-700)', fontSize: 'var(--fs-sm)', fontWeight: 600, marginBottom: '8px' }}>
-                        Telefone *
+                        Assunto *
                       </label>
-                      <input
-                        type="tel"
-                        placeholder="(11) 99999-9999"
-                        style={{ width: '100%', padding: '14px 16px', border: '2px solid var(--line)', borderRadius: 'var(--radius-sm)', fontSize: 'var(--fs-sm)', color: 'var(--ink-900)', background: 'var(--surface)', outline: 'none', transition: 'border-color 0.15s' }}
+                      <select
+                        name="assunto"
+                        required
+                        value={form.assunto}
+                        onChange={handleChange}
+                        style={inputStyle}
+                        onFocus={e => { e.currentTarget.style.borderColor = 'var(--brand-600)'; }}
+                        onBlur={e => { e.currentTarget.style.borderColor = 'var(--line)'; }}
+                      >
+                        <option value="">Selecione o assunto</option>
+                        <option value="matriculas">Matrículas</option>
+                        <option value="pos-graduacao">Pós-Graduação</option>
+                        <option value="financeiro">Financeiro</option>
+                        <option value="outros">Outros</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', color: 'var(--ink-700)', fontSize: 'var(--fs-sm)', fontWeight: 600, marginBottom: '8px' }}>
+                        Mensagem *
+                      </label>
+                      <textarea
+                        name="mensagem"
+                        required
+                        value={form.mensagem}
+                        onChange={handleChange}
+                        placeholder="Escreva sua mensagem aqui..."
+                        rows={6}
+                        style={{ ...inputStyle, resize: 'vertical', fontFamily: 'var(--font-body)' }}
                         onFocus={e => { e.currentTarget.style.borderColor = 'var(--brand-600)'; }}
                         onBlur={e => { e.currentTarget.style.borderColor = 'var(--line)'; }}
                       />
                     </div>
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', color: 'var(--ink-700)', fontSize: 'var(--fs-sm)', fontWeight: 600, marginBottom: '8px' }}>
-                      Assunto *
-                    </label>
-                    <select
-                      style={{ width: '100%', padding: '14px 16px', border: '2px solid var(--line)', borderRadius: 'var(--radius-sm)', fontSize: 'var(--fs-sm)', color: 'var(--ink-900)', background: 'var(--surface)', outline: 'none', transition: 'border-color 0.15s' }}
-                      onFocus={e => { e.currentTarget.style.borderColor = 'var(--brand-600)'; }}
-                      onBlur={e => { e.currentTarget.style.borderColor = 'var(--line)'; }}
+                    {erro && (
+                      <p style={{ color: '#b81f1f', fontSize: '0.875rem', background: '#fdf2f2', border: '1px solid #fca5a5', borderRadius: 'var(--radius-sm)', padding: '10px 14px' }}>
+                        {erro}
+                      </p>
+                    )}
+                    <button
+                      type="submit"
+                      disabled={enviando}
+                      className="btn btn-primary"
+                      style={{ alignSelf: 'flex-start', opacity: enviando ? 0.7 : 1 }}
                     >
-                      <option value="">Selecione o assunto</option>
-                      <option value="matriculas">Matrículas</option>
-                      <option value="pos-graduacao">Pós-Graduação</option>
-                      <option value="financeiro">Financeiro</option>
-                      <option value="outros">Outros</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', color: 'var(--ink-700)', fontSize: 'var(--fs-sm)', fontWeight: 600, marginBottom: '8px' }}>
-                      Mensagem *
-                    </label>
-                    <textarea
-                      placeholder="Escreva sua mensagem aqui..."
-                      rows={6}
-                      style={{ width: '100%', padding: '14px 16px', border: '2px solid var(--line)', borderRadius: 'var(--radius-sm)', fontSize: 'var(--fs-sm)', color: 'var(--ink-900)', background: 'var(--surface)', outline: 'none', resize: 'vertical', transition: 'border-color 0.15s', fontFamily: 'var(--font-body)' }}
-                      onFocus={e => { e.currentTarget.style.borderColor = 'var(--brand-600)'; }}
-                      onBlur={e => { e.currentTarget.style.borderColor = 'var(--line)'; }}
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    className="btn btn-primary"
-                    style={{ alignSelf: 'flex-start' }}
-                  >
-                    Enviar mensagem
-                    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                      <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
-                    </svg>
-                  </button>
-                </form>
+                      {enviando ? 'Enviando...' : 'Enviar mensagem'}
+                      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                      </svg>
+                    </button>
+                  </form>
+                )}
               </div>
             </div>
           </div>

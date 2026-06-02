@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import WhatsAppFloat from '../components/WhatsAppFloat';
+import { apiFetch } from '../lib/api';
 
 const benefits = [
   {
@@ -116,6 +117,8 @@ export default function TrabalheConoscoPage() {
     arquivo: null as File | null,
   });
   const [enviado, setEnviado] = useState(false);
+  const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState('');
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -126,9 +129,34 @@ export default function TrabalheConoscoPage() {
     setForm(prev => ({ ...prev, arquivo: file }));
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setEnviado(true);
+    setEnviando(true);
+    setErro('');
+    try {
+      const body = new FormData();
+      body.append('nome', form.nome);
+      body.append('email', form.email);
+      body.append('area', form.area);
+      if (form.mensagem) body.append('mensagem', form.mensagem);
+      if (form.arquivo)  body.append('file', form.arquivo);
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'}/v1/candidaturas`, {
+        method: 'POST',
+        body,
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setErro(data.error ?? 'Erro ao enviar. Tente novamente.');
+        return;
+      }
+      setEnviado(true);
+    } catch {
+      setErro('Erro de conexão. Tente novamente.');
+    } finally {
+      setEnviando(false);
+    }
   }
 
   return (
@@ -421,8 +449,13 @@ export default function TrabalheConoscoPage() {
                       </p>
                     )}
                   </div>
-                  <button type="submit" className="btn btn-primary w-full justify-center">
-                    Enviar candidatura
+                  {erro && (
+                    <p style={{ color: '#b81f1f', fontSize: '0.875rem', background: '#fdf2f2', border: '1px solid #fca5a5', borderRadius: 'var(--radius-sm)', padding: '10px 14px' }}>
+                      {erro}
+                    </p>
+                  )}
+                  <button type="submit" disabled={enviando} className="btn btn-primary w-full justify-center" style={{ opacity: enviando ? 0.7 : 1 }}>
+                    {enviando ? 'Enviando...' : 'Enviar candidatura'}
                     <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                       <path d="M5 12h14M12 5l7 7-7 7" />
                     </svg>

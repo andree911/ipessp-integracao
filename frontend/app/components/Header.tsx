@@ -185,8 +185,8 @@ export default function Header() {
           <div className="flex items-center gap-4 text-xs">
             {[
               { label: 'Clínica Estética', href: '/clinica-escola' },
-              { label: 'Portal do Aluno', href: '/login-aluno' },
-              { label: 'Portal do Professor', href: '/login-professor' },
+              { label: 'Portal do Aluno', href: '/portal-aluno' },
+              { label: 'Portal do Professor', href: '/portal-professor' },
               { label: 'Biblioteca Virtual', href: '/biblioteca-virtual' },
             ].map(item => (
               <a key={item.label} href={item.href}
@@ -388,6 +388,8 @@ export default function Header() {
               </a>
 
               {[
+                { label: 'Portal do Aluno', href: '/portal-aluno' },
+                { label: 'Portal do Professor', href: '/portal-professor' },
                 { label: 'Diplomas', href: '/diplomas' },
                 {
                   label: 'Cursos Livres', href: '/cursos-livres',

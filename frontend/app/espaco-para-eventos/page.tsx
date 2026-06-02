@@ -1,6 +1,10 @@
+'use client';
+
+import { useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import WhatsAppFloat from '../components/WhatsAppFloat';
+import { apiFetch } from '../lib/api';
 
 const espacos = [
   {
@@ -99,6 +103,37 @@ const diferenciais = [
 ];
 
 export default function EspacoParaEventos() {
+  const [form, setForm] = useState({ nome: '', email: '', telefone: '', tipo_evento: '', mensagem: '' });
+  const [enviado, setEnviado] = useState(false);
+  const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState('');
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
+    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setEnviando(true);
+    setErro('');
+    try {
+      const res = await apiFetch('/v1/solicitacoes-eventos', {
+        method: 'POST',
+        body: JSON.stringify(form),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setErro(data.error ?? 'Erro ao enviar. Tente novamente.');
+        return;
+      }
+      setEnviado(true);
+    } catch {
+      setErro('Erro de conexão. Tente novamente.');
+    } finally {
+      setEnviando(false);
+    }
+  }
+
   return (
     <>
       <Header />
@@ -298,56 +333,91 @@ export default function EspacoParaEventos() {
                 <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--ink-900)', fontSize: 'var(--fs-h3)', marginBottom: '24px' }}>
                   Solicitar informações
                 </h3>
-                <form style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <label style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, color: 'var(--ink-700)' }}>Nome completo</label>
-                    <input
-                      type="text"
-                      placeholder="Seu nome"
-                      style={{ border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', padding: '12px 14px', fontSize: 'var(--fs-sm)', color: 'var(--ink-900)', background: 'var(--surface)', outline: 'none', width: '100%' }}
-                    />
+                {enviado ? (
+                  <div style={{ textAlign: 'center', padding: '2rem 0' }}>
+                    <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'var(--brand-50)', color: 'var(--brand-600)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
+                      <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path d="M20 6 9 17l-5-5"/>
+                      </svg>
+                    </div>
+                    <h4 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--ink-900)', marginBottom: '0.5rem' }}>Solicitação enviada!</h4>
+                    <p style={{ color: 'var(--ink-500)', fontSize: 'var(--fs-sm)' }}>Entraremos em contato em breve com mais informações.</p>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <label style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, color: 'var(--ink-700)' }}>E-mail</label>
-                    <input
-                      type="email"
-                      placeholder="seu@email.com"
-                      style={{ border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', padding: '12px 14px', fontSize: 'var(--fs-sm)', color: 'var(--ink-900)', background: 'var(--surface)', outline: 'none', width: '100%' }}
-                    />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <label style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, color: 'var(--ink-700)' }}>Telefone / WhatsApp</label>
-                    <input
-                      type="tel"
-                      placeholder="(11) 9xxxx-xxxx"
-                      style={{ border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', padding: '12px 14px', fontSize: 'var(--fs-sm)', color: 'var(--ink-900)', background: 'var(--surface)', outline: 'none', width: '100%' }}
-                    />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <label style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, color: 'var(--ink-700)' }}>Tipo de evento</label>
-                    <select
-                      style={{ border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', padding: '12px 14px', fontSize: 'var(--fs-sm)', color: 'var(--ink-900)', background: 'var(--surface)', outline: 'none', width: '100%', cursor: 'pointer' }}
-                    >
-                      <option value="">Selecione...</option>
-                      <option value="congresso">Congresso / Simpósio</option>
-                      <option value="workshop">Workshop / Curso</option>
-                      <option value="treinamento">Treinamento Corporativo</option>
-                      <option value="defesa">Defesa de Tese / Banca</option>
-                      <option value="outro">Outro</option>
-                    </select>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <label style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, color: 'var(--ink-700)' }}>Mensagem</label>
-                    <textarea
-                      rows={4}
-                      placeholder="Descreva seu evento: data prevista, número de participantes e necessidades específicas..."
-                      style={{ border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', padding: '12px 14px', fontSize: 'var(--fs-sm)', color: 'var(--ink-900)', background: 'var(--surface)', outline: 'none', width: '100%', resize: 'vertical', fontFamily: 'var(--font-body)' }}
-                    />
-                  </div>
-                  <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', marginTop: '4px' }}>
-                    Enviar solicitação
-                  </button>
-                </form>
+                ) : (
+                  <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, color: 'var(--ink-700)' }}>Nome completo *</label>
+                      <input
+                        type="text"
+                        name="nome"
+                        required
+                        value={form.nome}
+                        onChange={handleChange}
+                        placeholder="Seu nome"
+                        style={{ border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', padding: '12px 14px', fontSize: 'var(--fs-sm)', color: 'var(--ink-900)', background: 'var(--surface)', outline: 'none', width: '100%' }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, color: 'var(--ink-700)' }}>E-mail *</label>
+                      <input
+                        type="email"
+                        name="email"
+                        required
+                        value={form.email}
+                        onChange={handleChange}
+                        placeholder="seu@email.com"
+                        style={{ border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', padding: '12px 14px', fontSize: 'var(--fs-sm)', color: 'var(--ink-900)', background: 'var(--surface)', outline: 'none', width: '100%' }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, color: 'var(--ink-700)' }}>Telefone / WhatsApp</label>
+                      <input
+                        type="tel"
+                        name="telefone"
+                        value={form.telefone}
+                        onChange={handleChange}
+                        placeholder="(11) 9xxxx-xxxx"
+                        style={{ border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', padding: '12px 14px', fontSize: 'var(--fs-sm)', color: 'var(--ink-900)', background: 'var(--surface)', outline: 'none', width: '100%' }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, color: 'var(--ink-700)' }}>Tipo de evento *</label>
+                      <select
+                        name="tipo_evento"
+                        required
+                        value={form.tipo_evento}
+                        onChange={handleChange}
+                        style={{ border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', padding: '12px 14px', fontSize: 'var(--fs-sm)', color: 'var(--ink-900)', background: 'var(--surface)', outline: 'none', width: '100%', cursor: 'pointer' }}
+                      >
+                        <option value="">Selecione...</option>
+                        <option value="congresso">Congresso / Simpósio</option>
+                        <option value="workshop">Workshop / Curso</option>
+                        <option value="treinamento">Treinamento Corporativo</option>
+                        <option value="defesa">Defesa de Tese / Banca</option>
+                        <option value="outro">Outro</option>
+                      </select>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, color: 'var(--ink-700)' }}>Mensagem</label>
+                      <textarea
+                        name="mensagem"
+                        value={form.mensagem}
+                        onChange={handleChange}
+                        rows={4}
+                        placeholder="Descreva seu evento: data prevista, número de participantes e necessidades específicas..."
+                        style={{ border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', padding: '12px 14px', fontSize: 'var(--fs-sm)', color: 'var(--ink-900)', background: 'var(--surface)', outline: 'none', width: '100%', resize: 'vertical', fontFamily: 'var(--font-body)' }}
+                      />
+                    </div>
+                    {erro && (
+                      <p style={{ color: '#b81f1f', fontSize: '0.875rem', background: '#fdf2f2', border: '1px solid #fca5a5', borderRadius: 'var(--radius-sm)', padding: '10px 14px' }}>
+                        {erro}
+                      </p>
+                    )}
+                    <button type="submit" disabled={enviando} className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', marginTop: '4px', opacity: enviando ? 0.7 : 1 }}>
+                      {enviando ? 'Enviando...' : 'Enviar solicitação'}
+                    </button>
+                  </form>
+                )}
               </div>
             </div>
 

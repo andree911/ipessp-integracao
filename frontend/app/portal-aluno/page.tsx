@@ -71,6 +71,12 @@ export default function PortalAlunoPage() {
         apiFetch('/v1/me/financeiro'),
       ]);
 
+      if (resAc.status === 401 || resLanc.status === 401) {
+        clearSession();
+        router.replace('/login-aluno');
+        return;
+      }
+
       if (resAc.status === 404) {
         setSemVinculo(true);
         setLoading(false);
