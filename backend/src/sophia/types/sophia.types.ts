@@ -6,53 +6,55 @@ export interface AlunoApiModel {
   codigoExterno?: string;
 }
 
+// Campos reais retornados por GET /alunos/{id}/responsaveis
 export interface ResponsavelAlunoApiModel {
   codigo: number;
   nome: string;
   cpf?: string;
-  rg?: string;
   email?: string;
   telefone?: string;
   celular?: string;
-  cep?: string;
-  logradouro?: string;
-  numero?: string;
-  complemento?: string;
-  bairro?: string;
-  cidade?: string;
-  uf?: string;
-  tipoResponsavel?: string; // F=financeiro, P=pedagógico
+  responsavelFinanceiro: boolean;
+  responsavelPedagogico: boolean;
+  retiradaAutorizada?: boolean;
+  codigoFamilia?: string;
 }
 
+// Campos reais retornados pelo item interno de GET /alunos/{id}/Matriculas
 export interface MatriculaAlunoApiModel {
-  codigo: number;
-  codigoAluno: number;
-  codigoTurma: number;
-  codigoCurso: number;
-  codigoUnidade: number;
-  codigoPeriodoLetivo: number;
+  codigoMatricula: number;
+  turma?: number;
+  nomeTurma?: string;
+  codigoUnidade?: number;
+  nomeUnidade?: string;
+  nomeSerie?: string;
   situacao?: string;
   dataMatricula?: string;
 }
 
-export interface LancamentoAlunoApiModel {
-  codigo: number;
+// Wrapper externo retornado pelo endpoint (array de wrappers, cada um com lista interna)
+export interface MatriculasWrapperApiModel {
   codigoAluno: number;
-  codigoMatricula?: number;
-  descricao?: string;
-  valor: number;
-  dataVencimento: string;
-  dataPagamento?: string;
-  valorPago?: number;
-  situacao: string; // A=aberto, P=pago, C=cancelado
-  numeroDocumento?: string;
-  nossoNumero?: string;
-  codigoBarras?: string;
+  matriculas: MatriculaAlunoApiModel[];
 }
 
-export interface SophiaPaginatedResponse<T> {
-  data: T[];
-  totalRegistros?: number;
-  pagina?: number;
-  tamanhoPagina?: number;
+// Campos reais retornados por GET /alunos/{id}/Lancamentos
+export interface LancamentoAlunoApiModel {
+  codigo: number;
+  numeroLancamento?: number;
+  descricao?: string;
+  dataVencimento: string;        // ISO string
+  dataPagamento?: string;        // preenchido quando pago
+  recebido: number;              // 0 = em aberto, >0 = pago/recebido
+  valorPrevisto: number;         // valor a pagar
+  valorRecebido?: number;        // valor pago (quando recebido > 0)
+  linhaDigitavel?: string;       // linha digitável do boleto
+  codigoBoleto?: number;
+  numeroBoleto?: number;
+  boletoDisponivel?: boolean;
+  urlBoletoDigital?: string;
+  codigoPix?: string;
+  responsavelFinanceiro?: string;
+  titular?: string;
+  competencia?: string;
 }

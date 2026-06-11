@@ -7,6 +7,7 @@ import {
   AlunoApiModel,
   LancamentoAlunoApiModel,
   MatriculaAlunoApiModel,
+  MatriculasWrapperApiModel,
   ResponsavelAlunoApiModel,
 } from './types/sophia.types';
 
@@ -46,51 +47,39 @@ export class SophiaService {
     return data;
   }
 
+  // GET /alunos/{id}/responsaveis  (lowercase 'a' e 'r' conforme swagger)
   async getResponsaveisAluno(idAluno: number): Promise<ResponsavelAlunoApiModel[]> {
     const { data } = await firstValueFrom(
       this.http.get<ResponsavelAlunoApiModel[]>(
-        `${this.apiBase}/Alunos/${idAluno}/Responsaveis`,
+        `${this.apiBase}/alunos/${idAluno}/responsaveis`,
         { headers: this.headers() },
       ),
     );
     return data;
   }
 
+  // GET /alunos/{id}/Matriculas — retorna array de wrappers; achata para lista plana de matrículas
   async getMatriculasAluno(idAluno: number): Promise<MatriculaAlunoApiModel[]> {
     const { data } = await firstValueFrom(
-      this.http.get<MatriculaAlunoApiModel[]>(
-        `${this.apiBase}/Alunos/${idAluno}/Matriculas`,
+      this.http.get<MatriculasWrapperApiModel[]>(
+        `${this.apiBase}/alunos/${idAluno}/Matriculas`,
+        { headers: this.headers() },
+      ),
+    );
+    return data.flatMap((w) => w.matriculas ?? []);
+  }
+
+  // GET /alunos/{id}/Lancamentos — sem filtro de data (API não suporta)
+  async getLancamentosAluno(idAluno: number): Promise<LancamentoAlunoApiModel[]> {
+    const { data } = await firstValueFrom(
+      this.http.get<LancamentoAlunoApiModel[]>(
+        `${this.apiBase}/alunos/${idAluno}/Lancamentos`,
         { headers: this.headers() },
       ),
     );
     return data;
   }
 
-  async getLancamentosAluno(
-    idAluno: number,
-    dataInicial: Date,
-    dataFinal: Date,
-    pagina = 1,
-    tamanhoPagina = 100,
-  ): Promise<LancamentoAlunoApiModel[]> {
-    const { data } = await firstValueFrom(
-      this.http.get<LancamentoAlunoApiModel[]>(
-        `${this.apiBase}/Alunos/${idAluno}/Lancamentos`,
-        {
-          headers: this.headers(),
-          params: {
-            DataInicial: dataInicial.toISOString(),
-            DataFinal: dataFinal.toISOString(),
-            Pagina: pagina,
-            TamanhoPagina: tamanhoPagina,
-          },
-        },
-      ),
-    );
-    return data;
-  }
-
-  // Busca todos os alunos com paginação automática
   async getAllAlunos(): Promise<AlunoApiModel[]> {
     const results: AlunoApiModel[] = [];
     let pagina = 1;

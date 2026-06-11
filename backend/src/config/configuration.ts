@@ -22,4 +22,18 @@ export default () => ({
   webhook: {
     secret: process.env.WEBHOOK_SECRET ?? '',
   },
+  email: {
+    host: process.env.SMTP_HOST ?? '',
+    port: parseInt(process.env.SMTP_PORT ?? '587', 10),
+    secure: process.env.SMTP_SECURE === 'true',
+    user: process.env.SMTP_USER ?? '',
+    pass: process.env.SMTP_PASS ?? '',
+    from: process.env.SMTP_FROM ?? '',
+    nomeEscola: process.env.ESCOLA_NOME ?? 'Escola',
+    telefoneEscola: process.env.ESCOLA_TELEFONE ?? '',
+    diasAntes: parseInt(process.env.EMAIL_DIAS_ANTES ?? '3', 10),
+    diasAposVencimento: (process.env.EMAIL_DIAS_APOS ?? '1,3,7')
+      .split(',')
+      .map((d) => parseInt(d.trim(), 10)),
+  },
 });
