@@ -4,12 +4,9 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import configuration from './config/configuration';
 import { SophiaModule } from './sophia/sophia.module';
-import { RecivModule } from './receiv/receiv.module';
 import { SyncModule } from './sync/sync.module';
-import { WebhookModule } from './webhook/webhook.module';
 import { EmailModule } from './email/email.module';
 import { IaModule } from './ia/ia.module';
-import { SyncLog } from './sync/entities/sync-log.entity';
 import { EmailLog } from './email/entities/email-log.entity';
 import { ResponsavelCache } from './ia/entities/responsavel-cache.entity';
 
@@ -26,14 +23,12 @@ import { ResponsavelCache } from './ia/entities/responsavel-cache.entity';
       useFactory: (config: ConfigService) => ({
         type: 'better-sqlite3',
         database: config.get<string>('database.path') ?? './data/sync.db',
-        entities: [SyncLog, EmailLog, ResponsavelCache],
+        entities: [EmailLog, ResponsavelCache],
         synchronize: true,
       }),
     }),
     SophiaModule,
-    RecivModule,
     SyncModule,
-    WebhookModule,
     EmailModule,
     IaModule,
   ],
