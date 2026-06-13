@@ -11,6 +11,5 @@ async function bootstrap() {
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
   logger.log(`Serviço de integração rodando na porta ${port}`);
-  logger.log(`Webhook disponível em: POST http://localhost:${port}/webhook/receiv`);
 }
 bootstrap();
