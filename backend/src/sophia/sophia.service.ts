@@ -80,6 +80,30 @@ export class SophiaService {
     return data;
   }
 
+  async criarCliente(dados: {
+    nome: string;
+    cpf?: string;
+    email?: string;
+    telefone?: string;
+    interesse?: string;
+    observacao?: string;
+  }): Promise<unknown> {
+    const body: Record<string, unknown> = { nome: dados.nome };
+    if (dados.cpf) body.cpf = dados.cpf;
+    if (dados.interesse) body.interesse = dados.interesse;
+    if (dados.observacao) body.observacao = dados.observacao;
+    if (dados.email || dados.telefone) {
+      const contatos: Array<{ tipo: string; valor: string }> = [];
+      if (dados.email) contatos.push({ tipo: 'email', valor: dados.email });
+      if (dados.telefone) contatos.push({ tipo: 'celular', valor: dados.telefone });
+      body.contatos = contatos;
+    }
+    const { data } = await firstValueFrom(
+      this.http.post(`${this.apiBase}/clientes`, body, { headers: this.headers() }),
+    );
+    return data;
+  }
+
   async getAllAlunos(): Promise<AlunoApiModel[]> {
     const results: AlunoApiModel[] = [];
     let pagina = 1;

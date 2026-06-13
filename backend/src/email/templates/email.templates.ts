@@ -7,9 +7,12 @@ export interface EmailData {
   diasRestantes?: number;
   diasAtraso?: number;
   codigoBarras?: string;
+  urlBoleto?: string;
+  codigoPix?: string;
   nomeEscola: string;
   emailEscola: string;
   telefoneEscola?: string;
+  logoUrl?: string;
 }
 
 function base(titulo: string, corTopo: string, corpo: string, data: EmailData): string {
@@ -28,6 +31,7 @@ function base(titulo: string, corTopo: string, corpo: string, data: EmailData): 
         <!-- Topo colorido -->
         <tr>
           <td style="background:${corTopo};padding:28px 40px;">
+            ${data.logoUrl ? `<img src="${data.logoUrl}" alt="${data.nomeEscola}" style="height:48px;margin-bottom:12px;display:block;">` : ''}
             <p style="margin:0;color:#ffffff;font-size:22px;font-weight:bold;">${data.nomeEscola}</p>
             <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:14px;">${titulo}</p>
           </td>
@@ -93,8 +97,26 @@ function blocoValor(data: EmailData): string {
 function blocoCodigoBarras(codigoBarras: string): string {
   return `
   <div style="margin:20px 0;padding:16px 20px;background:#fff8e6;border-radius:8px;border:1px solid #ffd966;">
-    <p style="margin:0 0 6px;font-size:12px;color:#8a6d00;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;">Linha Digitável</p>
+    <p style="margin:0 0 6px;font-size:12px;color:#8a6d00;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;">Linha Digitável do Boleto</p>
     <p style="margin:0;font-size:13px;color:#1a2332;font-family:monospace;word-break:break-all;">${codigoBarras}</p>
+  </div>`;
+}
+
+function blocoPix(codigoPix: string): string {
+  return `
+  <div style="margin:20px 0;padding:16px 20px;background:#e8f5e9;border-radius:8px;border:1px solid #a5d6a7;">
+    <p style="margin:0 0 6px;font-size:12px;color:#1b5e20;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;">🔑 Código PIX (Copia e Cola)</p>
+    <p style="margin:0;font-size:13px;color:#1a2332;font-family:monospace;word-break:break-all;">${codigoPix}</p>
+  </div>`;
+}
+
+function botaoPagar(url: string): string {
+  return `
+  <div style="margin:24px 0;text-align:center;">
+    <a href="${url}" target="_blank"
+       style="display:inline-block;padding:14px 36px;background:#2563eb;color:#ffffff;font-size:15px;font-weight:bold;text-decoration:none;border-radius:6px;">
+      Pagar Boleto Online
+    </a>
   </div>`;
 }
 
@@ -111,7 +133,9 @@ export function templateLembrete(data: EmailData): { subject: string; html: stri
     </p>
 
     ${blocoValor(data)}
+    ${data.urlBoleto ? botaoPagar(data.urlBoleto) : ''}
     ${data.codigoBarras ? blocoCodigoBarras(data.codigoBarras) : ''}
+    ${data.codigoPix ? blocoPix(data.codigoPix) : ''}
 
     <p style="margin:24px 0 0;font-size:13px;color:#6b7a8d;line-height:1.6;">
       💡 <strong>Dica:</strong> Se já realizou o pagamento, desconsidere este aviso.
@@ -133,7 +157,9 @@ export function templateVencimentoHoje(data: EmailData): { subject: string; html
     </p>
 
     ${blocoValor(data)}
+    ${data.urlBoleto ? botaoPagar(data.urlBoleto) : ''}
     ${data.codigoBarras ? blocoCodigoBarras(data.codigoBarras) : ''}
+    ${data.codigoPix ? blocoPix(data.codigoPix) : ''}
 
     <div style="margin:24px 0;padding:16px 20px;background:#fff0f0;border-radius:8px;border:1px solid #fca5a5;">
       <p style="margin:0;font-size:13px;color:#991b1b;line-height:1.6;">
@@ -161,6 +187,9 @@ export function templateCobranca(data: EmailData): { subject: string; html: stri
     </p>
 
     ${blocoValor(data)}
+    ${data.urlBoleto ? botaoPagar(data.urlBoleto) : ''}
+    ${data.codigoBarras ? blocoCodigoBarras(data.codigoBarras) : ''}
+    ${data.codigoPix ? blocoPix(data.codigoPix) : ''}
 
     <div style="margin:24px 0;padding:16px 20px;background:#fef2f2;border-radius:8px;border:1px solid #fca5a5;">
       <p style="margin:0;font-size:13px;color:#991b1b;line-height:1.6;">

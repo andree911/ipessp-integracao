@@ -12,6 +12,7 @@ import {
   MatriculaAlunoApiModel,
   ResponsavelAlunoApiModel,
 } from '../sophia/types/sophia.types';
+import { ResponsavelCache } from '../ia/entities/responsavel-cache.entity';
 
 @Injectable()
 export class SyncService {
@@ -24,6 +25,8 @@ export class SyncService {
     private readonly config: ConfigService,
     @InjectRepository(SyncLog)
     private readonly syncLogRepo: Repository<SyncLog>,
+    @InjectRepository(ResponsavelCache)
+    private readonly cacheRepo: Repository<ResponsavelCache>,
   ) {}
 
   async triggerSync(): Promise<{ message: string }> {
@@ -54,6 +57,7 @@ export class SyncService {
       const contratos: RecivContrato[] = [];
       const titulos: RecivTitulo[] = [];
       const baixas: RecivBaixa[] = [];
+      const cacheEntries: Partial<ResponsavelCache>[] = [];
 
       for (const aluno of alunos) {
         try {
@@ -63,6 +67,18 @@ export class SyncService {
 
           if (!(await this.jaEnviado('cliente', String(respFinanceiro.codigo)))) {
             clientes.push(this.mapCliente(respFinanceiro));
+          }
+
+          // Popula cache de CPF → aluno para o módulo de IA
+          if (respFinanceiro.cpf) {
+            cacheEntries.push({
+              cpf: respFinanceiro.cpf.replace(/\D/g, ''),
+              codigoAluno: aluno.codigo,
+              nomeAluno: aluno.nome,
+              codigoResponsavel: respFinanceiro.codigo,
+              nomeResponsavel: respFinanceiro.nome,
+              email: respFinanceiro.email,
+            });
           }
 
           const matriculas = await this.sophia.getMatriculasAluno(aluno.codigo);
@@ -101,6 +117,12 @@ export class SyncService {
       await this.enviarLote<RecivContrato>('contrato', contratos, (i) => this.receiv.enviarContratos(i));
       await this.enviarLote<RecivTitulo>('titulo', titulos, (i) => this.receiv.enviarTitulos(i));
       await this.enviarLote<RecivBaixa>('baixa', baixas, (i) => this.receiv.enviarBaixas(i));
+
+      // Atualiza cache de CPF para o módulo de IA
+      if (cacheEntries.length > 0) {
+        await this.cacheRepo.upsert(cacheEntries as ResponsavelCache[], ['cpf', 'codigoAluno']);
+        this.logger.log(`Cache IA: ${cacheEntries.length} responsáveis indexados`);
+      }
 
       this.logger.log('=== Sincronização concluída ===');
     } catch (err: any) {

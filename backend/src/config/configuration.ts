@@ -22,6 +22,13 @@ export default () => ({
   webhook: {
     secret: process.env.WEBHOOK_SECRET ?? '',
   },
+  ia: {
+    bearerToken: process.env.IA_BEARER_TOKEN ?? '',
+  },
+  supabase: {
+    url: process.env.SUPABASE_URL ?? '',
+    key: process.env.SUPABASE_SERVICE_KEY ?? '',
+  },
   email: {
     host: process.env.SMTP_HOST ?? '',
     port: parseInt(process.env.SMTP_PORT ?? '587', 10),
@@ -35,5 +42,6 @@ export default () => ({
     diasAposVencimento: (process.env.EMAIL_DIAS_APOS ?? '1,3,7')
       .split(',')
       .map((d) => parseInt(d.trim(), 10)),
+    logoUrl: process.env.EMAIL_LOGO_URL ?? '',
   },
 });

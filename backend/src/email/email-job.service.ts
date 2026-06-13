@@ -82,9 +82,12 @@ export class EmailJobService {
             diasRestantes: diffDias > 0 ? diffDias : undefined,
             diasAtraso: diffDias < 0 ? Math.abs(diffDias) : undefined,
             codigoBarras: lanc.linhaDigitavel,
+            urlBoleto: lanc.urlBoletoDigital,
+            codigoPix: lanc.codigoPix,
             nomeEscola,
             emailEscola,
             telefoneEscola,
+            logoUrl: this.config.get<string>('email.logoUrl') || undefined,
           };
 
           let template: { subject: string; html: string };
