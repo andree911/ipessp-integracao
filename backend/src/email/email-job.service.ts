@@ -24,9 +24,13 @@ export class EmailJobService {
     private readonly emailLogRepo: Repository<EmailLog>,
   ) {}
 
-  // Roda todo dia às 08h
+  // Roda todo dia às 08h — controlado pela flag EMAIL_CRON_HABILITADO
   @Cron('0 8 * * *', { name: 'email_job' })
   async runEmailJob(): Promise<void> {
+    if (this.config.get<string>('email.cronHabilitado') !== 'true') {
+      this.logger.warn('Job de emails desabilitado (EMAIL_CRON_HABILITADO=false)');
+      return;
+    }
     this.logger.log('=== Iniciando job de emails ===');
 
     const diasAntes = this.config.get<number>('email.diasAntes') ?? 3;

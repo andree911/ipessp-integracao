@@ -2,7 +2,8 @@ export default () => ({
   port: parseInt(process.env.PORT ?? '3000', 10),
   sophia: {
     baseUrl: process.env.SOPHIA_BASE_URL ?? '',
-    token: process.env.SOPHIA_TOKEN ?? '',
+    usuario: process.env.SOPHIA_USUARIO ?? '',
+    senha: process.env.SOPHIA_SENHA ?? '',
     tenant: process.env.SOPHIA_TENANT ?? '',
   },
   database: {
@@ -36,5 +37,6 @@ export default () => ({
       .split(',')
       .map((d) => parseInt(d.trim(), 10)),
     logoUrl: process.env.EMAIL_LOGO_URL ?? '',
+    cronHabilitado: process.env.EMAIL_CRON_HABILITADO ?? 'false',
   },
 });
