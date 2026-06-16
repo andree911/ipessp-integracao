@@ -33,27 +33,39 @@ const COR = '#C8102E';
 // necessária porque Outlook não suporta rgba()
 const COR_DARK = '#a40d26';
 
-// ─── 1. Cabeçalho: logo arredondada (igual ao rodapé) + ícones de canal ───────
-
-function iconeCanal(simbolo: string, label: string, url: string): string {
-  return `
-  <td style="padding:0 5px;text-align:center;">
-    <a href="${url}" target="_blank" style="text-decoration:none;display:block;">
-      <!--[if !mso]><!-->
-      <span style="display:inline-block;width:32px;height:32px;background:rgba(255,255,255,0.2);border-radius:50%;text-align:center;line-height:32px;font-size:14px;color:#ffffff;font-family:Arial,sans-serif;">${simbolo}</span>
-      <!--<![endif]-->
-      <!--[if mso]><span style="font-size:16px;color:#ffffff;font-family:Arial,sans-serif;line-height:32px;">${simbolo}</span><![endif]-->
-    </a>
-    <p style="margin:3px 0 0;font-size:8px;color:rgba(255,255,255,0.65);font-family:Arial,sans-serif;">${label}</p>
-  </td>`;
-}
+// ─── 1. Cabeçalho: logo + contatos com ícone + texto ─────────────────────────
 
 function cabecalho(data: EmailData): string {
   const tel = (data.telefoneEscola ?? '').replace(/\D/g, '');
-  const canais: string[] = [];
-  if (data.telefoneEscola) canais.push(iconeCanal('&#9742;', 'Telefone', `tel:+55${tel}`));
-  if (data.emailEscola)    canais.push(iconeCanal('@', 'E-mail', `mailto:${data.emailEscola}`));
-  if (data.siteUrl)        canais.push(iconeCanal('W', 'Site', data.siteUrl));
+
+  const contatoLinha = (icone: string, texto: string, url: string): string => `
+  <tr>
+    <td style="padding:4px 0;">
+      <a href="${url}" target="_blank" style="text-decoration:none;display:inline-block;">
+        <table cellpadding="0" cellspacing="0" border="0">
+          <tr>
+            <!--[if mso]>
+            <td width="22" align="center" valign="middle" style="font-size:13px;color:#ffffff;font-family:Arial,sans-serif;padding-right:6px;">${icone}</td>
+            <![endif]-->
+            <!--[if !mso]><!-->
+            <td width="22" height="22" align="center" valign="middle"
+              style="width:22px;height:22px;line-height:22px;background:rgba(255,255,255,0.18);border-radius:50%;font-size:12px;color:#ffffff;font-family:Arial,sans-serif;text-align:center;">
+              ${icone}
+            </td>
+            <!--<![endif]-->
+            <td style="padding-left:7px;vertical-align:middle;">
+              <span style="font-size:12px;color:#ffffff;font-family:Arial,sans-serif;white-space:nowrap;">${texto}</span>
+            </td>
+          </tr>
+        </table>
+      </a>
+    </td>
+  </tr>`;
+
+  const linhas: string[] = [];
+  if (data.telefoneEscola) linhas.push(contatoLinha('&#9742;', data.telefoneEscola, `tel:+55${tel}`));
+  if (data.emailEscola)    linhas.push(contatoLinha('&#9993;', data.emailEscola, `mailto:${data.emailEscola}`));
+  if (data.siteUrl)        linhas.push(contatoLinha('W', data.siteUrl.replace(/^https?:\/\/(www\.)?/, ''), data.siteUrl));
 
   const logoHtml = data.logoUrl
     ? `<table cellpadding="0" cellspacing="0" border="0">
@@ -74,10 +86,10 @@ function cabecalho(data: EmailData): string {
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
           <td valign="middle">${logoHtml}</td>
-          ${canais.length > 0 ? `
-          <td align="right" valign="middle">
-            <table cellpadding="0" cellspacing="0" border="0" style="margin-left:auto;">
-              <tr>${canais.join('')}</tr>
+          ${linhas.length > 0 ? `
+          <td align="right" valign="top" style="padding-top:4px;">
+            <table cellpadding="0" cellspacing="0" border="0" align="right">
+              ${linhas.join('')}
             </table>
           </td>` : ''}
         </tr>

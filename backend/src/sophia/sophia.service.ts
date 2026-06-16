@@ -31,7 +31,11 @@ export class SophiaService implements OnModuleInit {
   }
 
   async onModuleInit() {
-    await this.autenticar();
+    try {
+      await this.autenticar();
+    } catch (err: any) {
+      this.logger.error(`SophiA: falha na autenticação inicial — ${err.message}`);
+    }
   }
 
   private get apiBase(): string {
