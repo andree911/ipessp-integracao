@@ -45,5 +45,9 @@ export default () => ({
     linkedinUrl: process.env.ESCOLA_LINKEDIN ?? '',
     cnpj: process.env.ESCOLA_CNPJ ?? '',
     endereco: process.env.ESCOLA_ENDERECO ?? '',
+    emailNotificacoes: process.env.ESCOLA_EMAIL_NOTIFICACOES ?? '',
+  },
+  n8n: {
+    leadsWebhookUrl: process.env.N8N_LEADS_WEBHOOK_URL ?? '',
   },
 });

@@ -56,6 +56,10 @@ services:
         value: https://oylhowadealxvsmdhmzc.supabase.co/storage/v1/object/public/assets/logo.png
       - key: IA_BEARER_TOKEN
         sync: false
+      - key: N8N_LEADS_WEBHOOK_URL
+        sync: false
+      - key: ESCOLA_EMAIL_NOTIFICACOES
+        value: matricula.financeiro@ipessp.edu.br
       - key: SUPABASE_URL
         value: https://oylhowadealxvsmdhmzc.supabase.co
       - key: SUPABASE_SERVICE_KEY
