@@ -345,14 +345,15 @@ function doisCtas(data: EmailData): string {
 // bgcolor no <td> (não na <table>) para garantir compatibilidade com Outlook
 
 function avisoSeguranca(data: EmailData): string {
+  const emailDisplay = data.emailEscola.replace(/^.*<(.+)>.*$/, '$1');
   return `
   <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 22px;">
     <tr>
       <td bgcolor="#f5f5f5" style="background-color:#f5f5f5;border-radius:10px;padding:18px 20px;text-align:center;">
         <p style="margin:0 0 6px;font-size:13px;color:#555;line-height:1.7;font-family:Arial,sans-serif;">
           Fique atento: a fatura do ${data.nomeEscola} sempre chegar&#225; pelo remetente<br>
-          <a href="mailto:${data.emailEscola}"
-            style="color:#222;font-weight:bold;text-decoration:none;">${data.emailEscola}</a>
+          <a href="mailto:${emailDisplay}"
+            style="color:#222;font-weight:bold;text-decoration:none;">${emailDisplay}</a>
         </p>
         <p style="margin:0;font-size:12px;color:#777;line-height:1.6;font-family:Arial,sans-serif;">
           Nunca solicitamos dados banc&#225;rios ou senhas por e-mail.
