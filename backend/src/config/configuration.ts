@@ -38,5 +38,12 @@ export default () => ({
       .map((d) => parseInt(d.trim(), 10)),
     logoUrl: process.env.EMAIL_LOGO_URL ?? '',
     cronHabilitado: process.env.EMAIL_CRON_HABILITADO ?? 'false',
+    siteUrl: process.env.ESCOLA_SITE ?? '',
+    instagramUrl: process.env.ESCOLA_INSTAGRAM ?? '',
+    facebookUrl: process.env.ESCOLA_FACEBOOK ?? '',
+    youtubeUrl: process.env.ESCOLA_YOUTUBE ?? '',
+    linkedinUrl: process.env.ESCOLA_LINKEDIN ?? '',
+    cnpj: process.env.ESCOLA_CNPJ ?? '',
+    endereco: process.env.ESCOLA_ENDERECO ?? '',
   },
 });

@@ -24,6 +24,17 @@ export class EmailJobService {
     private readonly emailLogRepo: Repository<EmailLog>,
   ) {}
 
+  private formatarCompetencia(competencia: string): string {
+    const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    // Aceita "2026-06", "06/2026" ou "06-2026"
+    const match = competencia.match(/(\d{4})[-/](\d{2})|(\d{2})[-/](\d{4})/);
+    if (!match) return competencia;
+    const ano = match[1] ?? match[4];
+    const mes = match[2] ?? match[3];
+    const idx = parseInt(mes, 10) - 1;
+    return idx >= 0 && idx < 12 ? `${meses[idx]}/${ano}` : competencia;
+  }
+
   // Roda todo dia às 08h — controlado pela flag EMAIL_CRON_HABILITADO
   @Cron('0 8 * * *', { name: 'email_job' })
   async runEmailJob(): Promise<void> {
@@ -38,6 +49,13 @@ export class EmailJobService {
     const nomeEscola = this.config.get<string>('email.nomeEscola') ?? 'Escola';
     const emailEscola = this.config.get<string>('email.from') ?? '';
     const telefoneEscola = this.config.get<string>('email.telefoneEscola') ?? '';
+    const siteUrl = this.config.get<string>('email.siteUrl') || undefined;
+    const instagramUrl = this.config.get<string>('email.instagramUrl') || undefined;
+    const facebookUrl = this.config.get<string>('email.facebookUrl') || undefined;
+    const youtubeUrl = this.config.get<string>('email.youtubeUrl') || undefined;
+    const linkedinUrl = this.config.get<string>('email.linkedinUrl') || undefined;
+    const cnpj = this.config.get<string>('email.cnpj') || undefined;
+    const endereco = this.config.get<string>('email.endereco') || undefined;
 
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
@@ -88,10 +106,19 @@ export class EmailJobService {
             codigoBarras: lanc.linhaDigitavel,
             urlBoleto: lanc.urlBoletoDigital,
             codigoPix: lanc.codigoPix,
+            codigoMatricula: aluno.codigo ? String(aluno.codigo) : undefined,
+            competencia: lanc.competencia ? this.formatarCompetencia(lanc.competencia) : undefined,
             nomeEscola,
             emailEscola,
             telefoneEscola,
             logoUrl: this.config.get<string>('email.logoUrl') || undefined,
+            siteUrl,
+            instagramUrl,
+            facebookUrl,
+            youtubeUrl,
+            linkedinUrl,
+            cnpj,
+            endereco,
           };
 
           let template: { subject: string; html: string };

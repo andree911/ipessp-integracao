@@ -13,16 +13,445 @@ export interface EmailData {
   emailEscola: string;
   telefoneEscola?: string;
   logoUrl?: string;
+  competencia?: string;
+  codigoMatricula?: string;
+  siteUrl?: string;
+  instagramUrl?: string;
+  facebookUrl?: string;
+  youtubeUrl?: string;
+  linkedinUrl?: string;
+  cnpj?: string;
+  endereco?: string;
+  curso?: string;
+  qrCodeUrl?: string;
+  linkPortalAluno?: string;
+  linkSegundaVia?: string;
 }
 
 const COR = '#C8102E';
+// Cor de sobreposição escura equivalente a rgba(0,0,0,0.18) sobre #C8102E
+// necessária porque Outlook não suporta rgba()
+const COR_DARK = '#a40d26';
 
-// Ícones como tabelas coloridas — funcionam em Outlook, Gmail e todos os clientes
-function iconeCirculo(letra: string, cor: string, bg: string): string {
-  return `<table cellpadding="0" cellspacing="0" style="display:inline-table;"><tr><td style="width:28px;height:28px;background:${bg};border-radius:50%;text-align:center;vertical-align:middle;font-size:14px;font-weight:bold;color:${cor};font-family:Arial,sans-serif;line-height:28px;">${letra}</td></tr></table>`;
+// ─── 1. Cabeçalho: logo arredondada (igual ao rodapé) + ícones de canal ───────
+
+function iconeCanal(simbolo: string, label: string, url: string): string {
+  return `
+  <td style="padding:0 5px;text-align:center;">
+    <a href="${url}" target="_blank" style="text-decoration:none;display:block;">
+      <!--[if !mso]><!-->
+      <span style="display:inline-block;width:32px;height:32px;background:rgba(255,255,255,0.2);border-radius:50%;text-align:center;line-height:32px;font-size:14px;color:#ffffff;font-family:Arial,sans-serif;">${simbolo}</span>
+      <!--<![endif]-->
+      <!--[if mso]><span style="font-size:16px;color:#ffffff;font-family:Arial,sans-serif;line-height:32px;">${simbolo}</span><![endif]-->
+    </a>
+    <p style="margin:3px 0 0;font-size:8px;color:rgba(255,255,255,0.65);font-family:Arial,sans-serif;">${label}</p>
+  </td>`;
 }
 
-function base(titulo: string, subtitulo: string, corpo: string, data: EmailData): string {
+function cabecalho(data: EmailData): string {
+  const tel = (data.telefoneEscola ?? '').replace(/\D/g, '');
+  const canais: string[] = [];
+  if (data.telefoneEscola) canais.push(iconeCanal('&#9742;', 'Telefone', `tel:+55${tel}`));
+  if (data.emailEscola)    canais.push(iconeCanal('@', 'E-mail', `mailto:${data.emailEscola}`));
+  if (data.siteUrl)        canais.push(iconeCanal('W', 'Site', data.siteUrl));
+
+  const logoHtml = data.logoUrl
+    ? `<table cellpadding="0" cellspacing="0" border="0">
+         <tr>
+           <td align="center" style="background:#ffffff;border-radius:10px;padding:8px 16px;line-height:0;">
+             ${data.siteUrl ? `<a href="${data.siteUrl}" target="_blank" style="display:block;line-height:0;border:0;">` : ''}
+             <img src="${data.logoUrl}" alt="${data.nomeEscola}" height="48"
+               style="height:48px;width:auto;display:block;border:0;">
+             ${data.siteUrl ? '</a>' : ''}
+           </td>
+         </tr>
+       </table>`
+    : `<span style="font-size:22px;font-weight:bold;color:#ffffff;font-family:Arial,sans-serif;">${data.nomeEscola}</span>`;
+
+  return `
+  <tr>
+    <td align="center" bgcolor="${COR}" style="background-color:${COR};padding:20px 32px;">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td valign="middle">${logoHtml}</td>
+          ${canais.length > 0 ? `
+          <td align="right" valign="middle">
+            <table cellpadding="0" cellspacing="0" border="0" style="margin-left:auto;">
+              <tr>${canais.join('')}</tr>
+            </table>
+          </td>` : ''}
+        </tr>
+      </table>
+    </td>
+  </tr>`;
+}
+
+// ─── 3. Card de resumo ────────────────────────────────────────────────────────
+// Técnica "faux border": td externo vermelho com padding:2px cria a borda
+// compatível com Outlook (sem border-radius no desktop, mas borda vermelha ✅)
+
+function cartaoResumo(data: EmailData): string {
+  const temMeta = data.codigoMatricula || data.curso || data.competencia;
+
+  const linhasMeta = temMeta ? `
+    <tr>
+      <td style="padding:14px 20px;border-bottom:1px solid #e8e8e8;">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+          <td valign="top">
+            ${data.codigoMatricula ? `
+              <span style="display:block;font-size:10px;color:#888;font-weight:bold;text-transform:uppercase;letter-spacing:0.8px;font-family:Arial,sans-serif;margin-bottom:2px;">C&#243;digo do Aluno / RA</span>
+              <span style="font-size:14px;color:#222;font-weight:bold;font-family:Arial,sans-serif;">${data.codigoMatricula}</span>
+            ` : ''}
+            ${data.curso ? `
+              <span style="display:block;font-size:10px;color:#888;font-weight:bold;text-transform:uppercase;letter-spacing:0.8px;font-family:Arial,sans-serif;margin-top:${data.codigoMatricula ? '8px' : '0'};margin-bottom:2px;">Curso</span>
+              <span style="font-size:13px;color:#444;font-family:Arial,sans-serif;">${data.curso}</span>
+            ` : ''}
+            ${data.competencia && !data.codigoMatricula && !data.curso ? `
+              <span style="display:block;font-size:10px;color:#888;font-weight:bold;text-transform:uppercase;letter-spacing:0.8px;font-family:Arial,sans-serif;margin-bottom:2px;">Compet&#234;ncia</span>
+              <span style="font-size:13px;color:#444;font-family:Arial,sans-serif;">${data.competencia}</span>
+            ` : ''}
+          </td>
+          ${data.competencia && (data.codigoMatricula || data.curso) ? `
+          <td valign="top" align="center" style="padding:0 12px;">
+            <span style="display:block;font-size:10px;color:#888;font-weight:bold;text-transform:uppercase;letter-spacing:0.8px;font-family:Arial,sans-serif;margin-bottom:2px;">Refer&#234;ncia</span>
+            <span style="font-size:13px;color:#444;font-family:Arial,sans-serif;">${data.competencia}</span>
+          </td>` : ''}
+          <td valign="top" align="right">
+            <span style="display:block;font-size:10px;color:#888;font-weight:bold;text-transform:uppercase;letter-spacing:0.8px;font-family:Arial,sans-serif;margin-bottom:2px;">Vencimento</span>
+            <span style="font-size:15px;color:#222;font-weight:bold;font-family:Arial,sans-serif;">${data.vencimento}</span>
+          </td>
+        </tr></table>
+      </td>
+    </tr>` : '';
+
+  const linhaAluno = `
+    <tr>
+      <td style="padding:14px 20px;border-bottom:1px solid #e8e8e8;">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+          <td>
+            <span style="display:block;font-size:10px;color:#888;font-weight:bold;text-transform:uppercase;letter-spacing:0.8px;font-family:Arial,sans-serif;margin-bottom:2px;">Aluno</span>
+            <span style="font-size:14px;color:#222;font-family:Arial,sans-serif;">${data.nomeAluno}</span>
+          </td>
+          ${!temMeta ? `
+          <td align="right">
+            <span style="display:block;font-size:10px;color:#888;font-weight:bold;text-transform:uppercase;letter-spacing:0.8px;font-family:Arial,sans-serif;margin-bottom:2px;">Vencimento</span>
+            <span style="font-size:15px;color:#222;font-weight:bold;font-family:Arial,sans-serif;">${data.vencimento}</span>
+          </td>` : ''}
+        </tr></table>
+      </td>
+    </tr>`;
+
+  const linhaDescricao = data.descricao ? `
+    <tr>
+      <td style="padding:14px 20px;border-bottom:1px solid #e8e8e8;">
+        <span style="display:block;font-size:10px;color:#888;font-weight:bold;text-transform:uppercase;letter-spacing:0.8px;font-family:Arial,sans-serif;margin-bottom:2px;">Descri&#231;&#227;o</span>
+        <span style="font-size:13px;color:#444;font-family:Arial,sans-serif;">${data.descricao}</span>
+      </td>
+    </tr>` : '';
+
+  const linhaTotal = `
+    <tr>
+      <td bgcolor="${COR}" style="background-color:${COR};padding:16px 20px;">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+          <td style="font-size:15px;font-weight:bold;color:#ffffff;font-family:Arial,sans-serif;">Total a pagar</td>
+          <td align="right" style="font-size:26px;font-weight:bold;color:#ffffff;font-family:Arial,sans-serif;line-height:1;">${data.valor}</td>
+        </tr></table>
+      </td>
+    </tr>`;
+
+  return `
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:20px 0 24px;">
+    <tr>
+      <!-- td vermelho com padding:2px = faux border (funciona no Outlook desktop) -->
+      <td bgcolor="${COR}" style="background-color:${COR};padding:2px;border-radius:12px;">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0"
+          bgcolor="#ffffff" style="background-color:#ffffff;border-radius:10px;overflow:hidden;">
+          ${linhasMeta}
+          ${linhaAluno}
+          ${linhaDescricao}
+          ${linhaTotal}
+        </table>
+      </td>
+    </tr>
+  </table>`;
+}
+
+// ─── 4. Intro de pagamento ────────────────────────────────────────────────────
+
+function introsPagamento(): string {
+  return `
+  <p style="margin:0 0 4px;font-size:14px;color:#444;text-align:center;font-family:Arial,sans-serif;line-height:1.6;">
+    &#201; simples efetuar o pagamento desta mensalidade.
+  </p>
+  <p style="margin:0 0 22px;font-size:14px;color:${COR};font-weight:bold;text-align:center;font-family:Arial,sans-serif;">
+    Veja as op&#231;&#245;es que temos para voc&#234;:
+  </p>`;
+}
+
+// ─── 5. Card PIX ─────────────────────────────────────────────────────────────
+
+function secaoPix(data: EmailData): string {
+  if (!data.codigoPix) return '';
+
+  const qrBlock = data.qrCodeUrl
+    ? `<img src="${data.qrCodeUrl}" alt="QR Code PIX" width="130" height="130"
+         style="display:block;border:0;border-radius:8px;background:#ffffff;">`
+    : `<table width="130" cellpadding="0" cellspacing="0" border="0"
+         style="height:130px;border-radius:8px;overflow:hidden;">
+         <tr>
+           <td bgcolor="${COR_DARK}" align="center" valign="middle"
+             style="background-color:${COR_DARK};border-radius:8px;text-align:center;vertical-align:middle;padding:10px;">
+             <span style="font-size:10px;color:#ffb3be;font-family:Arial,sans-serif;line-height:1.5;">QR Code<br>PIX</span>
+           </td>
+         </tr>
+       </table>`;
+
+  return `
+  <table width="100%" cellpadding="0" cellspacing="0" border="0"
+    style="border-radius:12px;overflow:hidden;margin:0 0 16px;">
+    <tr>
+      <td bgcolor="${COR}" style="background-color:${COR};padding:20px 24px;">
+        <p style="margin:0 0 4px;font-size:16px;font-weight:bold;color:#ffffff;font-family:Arial,sans-serif;">PIX</p>
+        <p style="margin:0 0 16px;font-size:13px;color:#ffcccc;font-family:Arial,sans-serif;line-height:1.5;">
+          Acesse o app do seu banco ou Carteira Digital, aponte a c&#226;mera para o QR Code
+          ou copie e cole o c&#243;digo PIX e pronto!
+        </p>
+        <table width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr>
+            <td width="150" valign="top" align="center" style="padding-right:16px;">
+              ${qrBlock}
+              <p style="margin:6px 0 0;font-size:9px;color:#ffb3be;font-family:Arial,sans-serif;">QR Code</p>
+            </td>
+            <td valign="top">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td bgcolor="${COR_DARK}" style="background-color:${COR_DARK};border-radius:8px;padding:14px 16px;">
+                    <p style="margin:0 0 6px;font-size:10px;color:#ffb3be;font-weight:bold;text-transform:uppercase;letter-spacing:1px;font-family:Arial,sans-serif;">Pix copia e cola</p>
+                    <p style="margin:0;font-size:12px;color:#ffffff;font-family:'Courier New',Courier,monospace;word-break:break-all;line-height:1.8;">${data.codigoPix}</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>`;
+}
+
+// ─── 6. Card Boleto ───────────────────────────────────────────────────────────
+
+function secaoBoleto(codigo: string): string {
+  return `
+  <table width="100%" cellpadding="0" cellspacing="0" border="0"
+    style="border-radius:12px;overflow:hidden;margin:0 0 16px;">
+    <tr>
+      <td bgcolor="${COR}" style="background-color:${COR};padding:20px 24px;">
+        <p style="margin:0 0 4px;font-size:16px;font-weight:bold;color:#ffffff;font-family:Arial,sans-serif;">BOLETO / C&#211;DIGO DE BARRAS</p>
+        <p style="margin:0 0 16px;font-size:13px;color:#ffcccc;font-family:Arial,sans-serif;">
+          Utilize o c&#243;digo abaixo para pagar no app do seu banco ou internet banking.
+        </p>
+        <table width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr>
+            <td bgcolor="${COR_DARK}" style="background-color:${COR_DARK};border-radius:8px;padding:14px 16px;">
+              <p style="margin:0 0 6px;font-size:10px;color:#ffb3be;font-weight:bold;text-transform:uppercase;letter-spacing:1px;font-family:Arial,sans-serif;">Linha Digit&#225;vel</p>
+              <p style="margin:0;font-size:13px;color:#ffffff;font-family:'Courier New',Courier,monospace;word-break:break-all;line-height:1.9;">${codigo}</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>`;
+}
+
+// ─── 7. Dois CTAs lado a lado ────────────────────────────────────────────────
+// Bordas via mso-border-*-alt para garantir renderização no Outlook desktop
+
+function doisCtas(data: EmailData): string {
+  const portalUrl = data.linkPortalAluno ?? data.siteUrl ?? '#';
+  const segundaUrl = data.linkSegundaVia ?? data.urlBoleto ?? portalUrl;
+
+  const botaoCta = (url: string): string => `
+    <!--[if mso]>
+    <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word"
+      href="${url}" style="height:38px;v-text-anchor:middle;width:200px;" arcsize="50%"
+      strokecolor="${COR}" fillcolor="${COR}">
+      <w:anchorlock/>
+      <center style="color:#ffffff;font-family:Arial,sans-serif;font-size:13px;font-weight:bold;">Clique aqui</center>
+    </v:roundrect>
+    <![endif]-->
+    <!--[if !mso]><!-->
+    <a href="${url}" target="_blank"
+      style="display:inline-block;background-color:${COR};color:#ffffff;font-size:13px;font-weight:bold;text-decoration:none;padding:10px 22px;border-radius:20px;font-family:Arial,sans-serif;mso-hide:all;">
+      Clique aqui
+    </a>
+    <!--<![endif]-->`;
+
+  const miniCard = (titulo: string, texto: string, url: string): string => `
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td style="border:1.5px solid #e0e0e0;padding:0;border-radius:12px;
+                 mso-border-top-alt:solid #e0e0e0 1.5pt;mso-border-right-alt:solid #e0e0e0 1.5pt;
+                 mso-border-bottom-alt:solid #e0e0e0 1.5pt;mso-border-left-alt:solid #e0e0e0 1.5pt;">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-radius:10px;overflow:hidden;">
+          <tr>
+            <td bgcolor="${COR}" style="background-color:${COR};padding:11px 16px;">
+              <span style="font-size:11px;font-weight:bold;color:#ffffff;text-transform:uppercase;letter-spacing:0.5px;font-family:Arial,sans-serif;">${titulo}</span>
+            </td>
+          </tr>
+          <tr>
+            <td bgcolor="#ffffff" style="background-color:#ffffff;padding:14px 16px 16px;">
+              <p style="margin:0 0 14px;font-size:13px;color:#444;line-height:1.5;font-family:Arial,sans-serif;">${texto}</p>
+              ${botaoCta(url)}
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>`;
+
+  return `
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 24px;">
+    <tr>
+      <td width="48%" valign="top" class="col-cta">
+        ${miniCard(
+          'PIX AUTOM&#193;TICO',
+          'Com a fatura digital e Pix autom&#225;tico, voc&#234; facilita muito mais a sua vida.',
+          portalUrl,
+        )}
+      </td>
+      <td width="4%" class="col-gap">&nbsp;</td>
+      <td width="48%" valign="top" class="col-cta">
+        ${miniCard(
+          '2&#170; VIA / PAGAR AGORA',
+          'Acesse e pague sua fatura diretamente pelo link de segunda via do boleto.',
+          segundaUrl,
+        )}
+      </td>
+    </tr>
+  </table>`;
+}
+
+// ─── 8. Aviso de segurança ────────────────────────────────────────────────────
+// bgcolor no <td> (não na <table>) para garantir compatibilidade com Outlook
+
+function avisoSeguranca(data: EmailData): string {
+  return `
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 22px;">
+    <tr>
+      <td bgcolor="#f5f5f5" style="background-color:#f5f5f5;border-radius:10px;padding:18px 20px;text-align:center;">
+        <p style="margin:0 0 6px;font-size:13px;color:#555;line-height:1.7;font-family:Arial,sans-serif;">
+          Fique atento: a fatura do ${data.nomeEscola} sempre chegar&#225; pelo remetente<br>
+          <a href="mailto:${data.emailEscola}"
+            style="color:#222;font-weight:bold;text-decoration:none;">${data.emailEscola}</a>
+        </p>
+        <p style="margin:0;font-size:12px;color:#777;line-height:1.6;font-family:Arial,sans-serif;">
+          Nunca solicitamos dados banc&#225;rios ou senhas por e-mail.
+          ${data.siteUrl ? `Acesse <a href="${data.siteUrl}" style="color:${COR};text-decoration:none;font-weight:bold;">${data.siteUrl.replace(/^https?:\/\/(www\.)?/, '')}</a> para confirmar a veracidade.` : ''}
+        </p>
+      </td>
+    </tr>
+  </table>`;
+}
+
+// ─── 9. Botão CTA principal ───────────────────────────────────────────────────
+
+function botaoPrincipal(url: string): string {
+  return `
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 8px;">
+    <tr>
+      <td>
+        <!--[if mso]>
+        <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word"
+          href="${url}" style="height:54px;v-text-anchor:middle;width:520px;" arcsize="8%"
+          strokecolor="${COR}" fillcolor="${COR}">
+          <w:anchorlock/>
+          <center style="color:#ffffff;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;letter-spacing:1.5px;">VEJA COMO ACESSAR SUA FATURA</center>
+        </v:roundrect>
+        <![endif]-->
+        <!--[if !mso]><!-->
+        <a href="${url}" target="_blank"
+           style="display:block;background-color:${COR};color:#ffffff;font-size:14px;font-weight:bold;text-decoration:none;padding:18px 24px;border-radius:10px;font-family:Arial,sans-serif;text-align:center;letter-spacing:1.5px;mso-hide:all;">
+          VEJA COMO ACESSAR SUA FATURA
+        </a>
+        <!--<![endif]-->
+      </td>
+    </tr>
+  </table>`;
+}
+
+// ─── 10. Rodapé ───────────────────────────────────────────────────────────────
+
+function redesSociais(data: EmailData): string {
+  const redes: Array<{ letra: string; nome: string; url: string }> = [];
+  if (data.facebookUrl)  redes.push({ letra: 'f',  nome: 'Facebook',  url: data.facebookUrl });
+  if (data.instagramUrl) redes.push({ letra: 'ig', nome: 'Instagram', url: data.instagramUrl });
+  if (data.youtubeUrl)   redes.push({ letra: 'yt', nome: 'YouTube',   url: data.youtubeUrl });
+  if (data.linkedinUrl)  redes.push({ letra: 'in', nome: 'LinkedIn',  url: data.linkedinUrl });
+  if (redes.length === 0) return '';
+
+  return `
+  <table cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 8px;">
+    <tr>
+      ${redes.map(({ letra, nome, url }) => {
+        const fs = letra.length > 1 ? 11 : 16;
+        const inset = letra.length > 1 ? 11 : 9;
+        return `
+        <td style="padding:0 8px;text-align:center;">
+          <a href="${url}" target="_blank" style="text-decoration:none;">
+            <!--[if mso]><v:oval xmlns:v="urn:schemas-microsoft-com:vml" style="width:40px;height:40px;" fillcolor="#ffffff" stroked="false"><v:textbox inset="0,${inset}px,0,0" style="mso-fit-shape-to-text:false;"><center><span style="font-family:Arial;font-size:${fs}px;font-weight:bold;color:${COR};">${letra}</span></center></v:textbox></v:oval><![endif]-->
+            <!--[if !mso]><!--><span style="display:inline-block;width:40px;height:40px;background:#ffffff;border-radius:50%;text-align:center;line-height:40px;font-size:${fs}px;font-weight:bold;color:${COR};font-family:Arial,sans-serif;">${letra}</span><!--<![endif]-->
+          </a>
+          <p style="margin:4px 0 0;font-size:9px;color:rgba(255,255,255,0.6);font-family:Arial,sans-serif;">${nome}</p>
+        </td>`;
+      }).join('')}
+    </tr>
+  </table>`;
+}
+
+function rodape(data: EmailData): string {
+  const ano = new Date().getFullYear();
+  const tel = (data.telefoneEscola ?? '').replace(/\D/g, '');
+  const infos: string[] = [];
+  if (data.cnpj)     infos.push(`CNPJ: ${data.cnpj}`);
+  if (data.endereco) infos.push(data.endereco);
+
+  const logoRodape = data.logoUrl
+    ? `<table cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 20px;">
+         <tr>
+           <td align="center" style="background:#ffffff;border-radius:10px;padding:8px 18px;line-height:0;">
+             ${data.siteUrl ? `<a href="${data.siteUrl}" target="_blank" style="display:block;line-height:0;border:0;">` : ''}
+             <img src="${data.logoUrl}" alt="${data.nomeEscola}" height="40"
+               style="height:40px;width:auto;display:block;border:0;">
+             ${data.siteUrl ? '</a>' : ''}
+           </td>
+         </tr>
+       </table>`
+    : `<p style="margin:0 0 16px;font-size:20px;font-weight:bold;color:#ffffff;font-family:Arial,sans-serif;">${data.nomeEscola}</p>`;
+
+  return `
+  <tr>
+    <td align="center" bgcolor="${COR}" style="background-color:${COR};padding:28px 40px 24px;">
+      ${logoRodape}
+      ${redesSociais(data)}
+      <table cellpadding="0" cellspacing="0" border="0" style="margin:16px auto 0;">
+        <tr><td style="height:1px;width:220px;background:rgba(255,255,255,0.3);font-size:0;line-height:0;">&nbsp;</td></tr>
+      </table>
+      <p style="margin:14px 0 4px;font-size:11px;color:rgba(255,255,255,0.85);font-family:Arial,sans-serif;line-height:1.7;">
+        &#169; ${ano} ${data.nomeEscola} &#8226; Todos os direitos reservados
+        ${data.siteUrl ? `&#8226; <a href="${data.siteUrl}" style="color:rgba(255,255,255,0.75);text-decoration:none;">${data.siteUrl.replace(/^https?:\/\/(www\.)?/, '')}</a>` : ''}
+      </p>
+      ${infos.length > 0 ? `<p style="margin:4px 0 0;font-size:10px;color:rgba(255,255,255,0.65);font-family:Arial,sans-serif;">${infos.join(' &#8226; ')}</p>` : ''}
+      ${data.telefoneEscola ? `<p style="margin:4px 0 0;font-size:10px;color:rgba(255,255,255,0.65);font-family:Arial,sans-serif;"><a href="tel:+55${tel}" style="color:rgba(255,255,255,0.75);text-decoration:none;">${data.telefoneEscola}</a></p>` : ''}
+    </td>
+  </tr>`;
+}
+
+// ─── Base ─────────────────────────────────────────────────────────────────────
+
+function base(subject: string, introTitulo: string, descParagrafo: string, nota: string, data: EmailData): string {
+  const portalUrl = data.linkPortalAluno ?? data.siteUrl ?? '#';
+
   return `<!DOCTYPE html>
 <html lang="pt-BR" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
@@ -31,329 +460,124 @@ function base(titulo: string, subtitulo: string, corpo: string, data: EmailData)
   <meta name="color-scheme" content="light only">
   <meta name="supported-color-schemes" content="light only">
   <!--[if gte mso 9]><xml><o:OfficeDocumentSettings><o:AllowPNG/><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml><![endif]-->
-  <title>${titulo}</title>
+  <title>${subject}</title>
   <style>
     :root { color-scheme: light only; }
-    body { margin:0!important; padding:0!important; background-color:#f0f2f5!important; }
-    table { border-collapse:collapse; }
-    .bg-white { background-color:#ffffff!important; }
-    .bg-red { background-color:${COR}!important; }
-    .bg-gray { background-color:#f0f2f5!important; }
-    .bg-footer { background-color:#f8f9fb!important; }
-    .bg-card { background-color:#fafbfc!important; }
-    .bg-yellow { background-color:#fffbeb!important; }
-    .bg-red-light { background-color:#fff5f5!important; }
-    .bg-green { background-color:#f0fdf4!important; }
+    body { margin: 0 !important; padding: 0 !important; background-color: #f0f2f5 !important; }
+    table { border-collapse: collapse; }
+    /* Responsivo: empilha colunas abaixo de 480px */
+    @media only screen and (max-width: 480px) {
+      .wrapper  { width: 100% !important; }
+      .body-pad { padding: 24px 20px 16px !important; }
+      .col-cta  { display: block !important; width: 100% !important; padding-bottom: 12px !important; }
+      .col-gap  { display: none !important; }
+    }
   </style>
 </head>
 <body style="margin:0;padding:0;background-color:#f0f2f5;" bgcolor="#f0f2f5">
-  <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f0f2f5" style="background-color:#f0f2f5;padding:32px 8px;">
-    <tr><td align="center">
-      <table width="600" cellpadding="0" cellspacing="0" border="0" class="bg-white" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:12px;overflow:hidden;">
+<table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f0f2f5"
+  style="background-color:#f0f2f5;padding:28px 8px;">
+  <tr><td align="center">
 
-        <!-- Cabeçalho vermelho -->
-        <tr>
-          <td align="center" class="bg-red" style="background-color:${COR};padding:36px 40px 30px;">
-            ${data.logoUrl ? `
-            <table cellpadding="0" cellspacing="0" border="0" style="margin-bottom:16px;">
-              <tr><td align="center" style="background:#ffffff;border-radius:10px;padding:8px 16px;line-height:0;">
-                <img src="${data.logoUrl}" alt="${data.nomeEscola}" height="48" style="height:48px;width:auto;display:block;border:0;">
-              </td></tr>
-            </table>` : ''}
-            <p style="margin:0 0 6px;color:#ffffff;font-size:20px;font-weight:bold;font-family:Arial,sans-serif;">${data.nomeEscola}</p>
-            <p style="margin:0;color:rgba(255,255,255,0.80);font-size:11px;font-weight:bold;letter-spacing:1.5px;text-transform:uppercase;font-family:Arial,sans-serif;">${subtitulo}</p>
-          </td>
-        </tr>
+    <table width="600" cellpadding="0" cellspacing="0" border="0" class="wrapper"
+      style="max-width:600px;width:100%;background-color:#ffffff;border-radius:16px;overflow:hidden;">
 
-        <!-- Corpo -->
-        <tr>
-          <td class="bg-white" style="background-color:#ffffff;padding:36px 40px 28px;">
-            ${corpo}
-          </td>
-        </tr>
+      <!-- 1. Cabeçalho -->
+      ${cabecalho(data)}
 
-        <!-- Divisor -->
-        <tr>
-          <td class="bg-white" style="background-color:#ffffff;padding:0 40px;">
-            <table width="100%" cellpadding="0" cellspacing="0" border="0">
-              <tr><td style="height:1px;background-color:#edf0f4;font-size:0;line-height:0;">&nbsp;</td></tr>
-            </table>
-          </td>
-        </tr>
+      <!-- 2–9. Corpo -->
+      <tr>
+        <td bgcolor="#ffffff" class="body-pad" style="background-color:#ffffff;padding:32px 40px 20px;">
 
-        <!-- Rodapé -->
-        <tr>
-          <td class="bg-footer" style="background-color:#f8f9fb;padding:20px 40px;border-radius:0 0 12px 12px;">
-            <table cellpadding="0" cellspacing="0" border="0" style="margin-bottom:6px;">
-              <tr>
-                ${data.telefoneEscola ? `
-                <td style="padding-right:20px;white-space:nowrap;">
-                  <table cellpadding="0" cellspacing="0" border="0"><tr>
-                    <td valign="middle">
-                      <!--[if mso]><v:oval xmlns:v="urn:schemas-microsoft-com:vml" style="width:22px;height:22px;" fillcolor="#C8102E" stroked="false"><v:textbox inset="0,2px,0,0" style="mso-fit-shape-to-text:false;"><center><span style="font-family:Arial;font-size:12px;font-weight:bold;color:#ffffff;">T</span></center></v:textbox></v:oval><![endif]-->
-                      <!--[if !mso]><!--><span style="display:inline-block;width:22px;height:22px;background-color:#C8102E;border-radius:50%;text-align:center;line-height:22px;font-size:12px;font-weight:bold;color:#ffffff;font-family:Arial,sans-serif;">T</span><!--<![endif]-->
-                    </td>
-                    <td style="padding-left:7px;font-size:12px;color:#6b7a8d;font-family:Arial,sans-serif;vertical-align:middle;">${data.telefoneEscola}</td>
-                  </tr></table>
-                </td>` : ''}
-                <td style="white-space:nowrap;">
-                  <table cellpadding="0" cellspacing="0" border="0"><tr>
-                    <td valign="middle">
-                      <!--[if mso]><v:oval xmlns:v="urn:schemas-microsoft-com:vml" style="width:22px;height:22px;" fillcolor="#C8102E" stroked="false"><v:textbox inset="0,2px,0,0" style="mso-fit-shape-to-text:false;"><center><span style="font-family:Arial;font-size:12px;font-weight:bold;color:#ffffff;">@</span></center></v:textbox></v:oval><![endif]-->
-                      <!--[if !mso]><!--><span style="display:inline-block;width:22px;height:22px;background-color:#C8102E;border-radius:50%;text-align:center;line-height:22px;font-size:12px;font-weight:bold;color:#ffffff;font-family:Arial,sans-serif;">@</span><!--<![endif]-->
-                    </td>
-                    <td style="padding-left:7px;font-size:12px;font-family:Arial,sans-serif;vertical-align:middle;">
-                      <a href="mailto:${data.emailEscola}" style="color:#6b7a8d;text-decoration:none;">${data.emailEscola}</a>
-                    </td>
-                  </tr></table>
-                </td>
-              </tr>
-            </table>
-            <p style="margin:0;font-size:11px;color:#b0b8c9;font-family:Arial,sans-serif;line-height:1.5;">
-              Este e-mail foi gerado automaticamente pelo sistema financeiro. Por favor, n&#227;o responda diretamente a esta mensagem.
-            </p>
-          </td>
-        </tr>
+          <!-- 2. Saudação -->
+          <p style="margin:0 0 6px;font-size:16px;font-weight:bold;color:#222222;font-family:Arial,sans-serif;">${introTitulo}</p>
+          <p style="margin:0 0 18px;font-size:17px;font-weight:bold;color:${COR};text-transform:uppercase;font-family:Arial,sans-serif;">${data.nomeResponsavel},</p>
+          <p style="margin:0 0 4px;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">${descParagrafo}</p>
 
-      </table>
-    </td></tr>
-  </table>
+          <!-- 3. Card de resumo -->
+          ${cartaoResumo(data)}
+
+          <!-- 4. Intro de pagamento -->
+          ${introsPagamento()}
+
+          <!-- 5. PIX -->
+          ${secaoPix(data)}
+
+          <!-- 6. Boleto -->
+          ${data.codigoBarras ? secaoBoleto(data.codigoBarras) : ''}
+
+          <!-- 7. Dois CTAs lado a lado -->
+          ${doisCtas(data)}
+
+          <!-- 8. Aviso de segurança -->
+          ${avisoSeguranca(data)}
+
+          <!-- 9. Botão CTA principal -->
+          ${botaoPrincipal(portalUrl)}
+
+          <!-- Nota de rodapé do corpo -->
+          ${nota}
+
+        </td>
+      </tr>
+
+      <!-- 10. Rodapé vermelho -->
+      ${rodape(data)}
+
+    </table>
+  </td></tr>
+</table>
 </body>
 </html>`;
 }
 
-function blocoValor(data: EmailData): string {
-  return `
-  <table width="100%" cellpadding="0" cellspacing="0" border="0" class="bg-card" style="margin:24px 0;background-color:#fafbfc;border-radius:10px;border:1px solid #edf0f4;">
-    <tr>
-      <td style="padding:22px 24px;">
-        <table width="100%" cellpadding="0" cellspacing="0" border="0">
-          <tr>
-            <td width="50%" style="padding-bottom:2px;">
-              <span style="font-size:10px;color:#9aa4b2;font-weight:bold;text-transform:uppercase;letter-spacing:1px;font-family:Arial,sans-serif;">Descri&#231;&#227;o</span>
-            </td>
-            <td width="50%" align="right" style="padding-bottom:2px;">
-              <span style="font-size:10px;color:#9aa4b2;font-weight:bold;text-transform:uppercase;letter-spacing:1px;font-family:Arial,sans-serif;">Vencimento</span>
-            </td>
-          </tr>
-          <tr>
-            <td>
-              <span style="font-size:15px;color:#1a2332;font-weight:bold;font-family:Arial,sans-serif;">${data.descricao}</span>
-            </td>
-            <td align="right">
-              <span style="font-size:15px;color:#1a2332;font-weight:bold;font-family:Arial,sans-serif;">${data.vencimento}</span>
-            </td>
-          </tr>
-          <tr>
-            <td colspan="2" style="padding:14px 0;">
-              <table width="100%" cellpadding="0" cellspacing="0" border="0">
-                <tr><td style="height:1px;background:#edf0f4;font-size:0;line-height:0;">&nbsp;</td></tr>
-              </table>
-            </td>
-          </tr>
-          <tr>
-            <td valign="bottom">
-              <span style="display:block;font-size:10px;color:#9aa4b2;font-weight:bold;text-transform:uppercase;letter-spacing:1px;font-family:Arial,sans-serif;margin-bottom:3px;">Aluno</span>
-              <span style="font-size:14px;color:#1a2332;font-family:Arial,sans-serif;">${data.nomeAluno}</span>
-            </td>
-            <td align="right" valign="bottom">
-              <span style="display:block;font-size:10px;color:#9aa4b2;font-weight:bold;text-transform:uppercase;letter-spacing:1px;font-family:Arial,sans-serif;margin-bottom:3px;">Valor</span>
-              <span style="font-size:28px;color:${COR};font-weight:bold;font-family:Arial,sans-serif;line-height:1;">${data.valor}</span>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>`;
-}
+// ─── Templates exportados ─────────────────────────────────────────────────────
 
-function botaoPagar(url: string): string {
-  return `
-  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:20px 0;">
-    <tr>
-      <td align="center">
-        <!--[if mso]>
-        <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word"
-          href="${url}" style="height:50px;v-text-anchor:middle;width:240px;" arcsize="10%"
-          strokecolor="${COR}" fillcolor="${COR}">
-          <w:anchorlock/>
-          <center style="color:#ffffff;font-family:Arial,sans-serif;font-size:15px;font-weight:bold;">Pagar Boleto Online</center>
-        </v:roundrect>
-        <![endif]-->
-        <!--[if !mso]><!-->
-        <a href="${url}" target="_blank"
-           style="display:inline-block;background-color:${COR};color:#ffffff;font-size:15px;font-weight:bold;text-decoration:none;padding:15px 48px;border-radius:8px;font-family:Arial,sans-serif;mso-hide:all;">
-          Pagar Boleto Online
-        </a>
-        <!--<![endif]-->
-      </td>
-    </tr>
-  </table>`;
-}
-
-function blocoCodigoBarras(codigoBarras: string): string {
-  return `
-  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:10px 0;">
-    <tr>
-      <td class="bg-yellow" style="background-color:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:16px 20px;">
-        <table width="100%" cellpadding="0" cellspacing="0" border="0">
-          <tr>
-            <td width="32" valign="top" style="padding-right:10px;padding-top:2px;">
-              ${iconeCirculo('&#9650;', '#92400e', '#fde68a')}
-            </td>
-            <td>
-              <span style="display:block;font-size:10px;color:#92400e;font-weight:bold;text-transform:uppercase;letter-spacing:1px;font-family:Arial,sans-serif;margin-bottom:8px;">Linha Digit&#225;vel do Boleto</span>
-              <span style="font-size:12px;color:#1a2332;font-family:'Courier New',Courier,monospace;word-break:break-all;line-height:1.7;">${codigoBarras}</span>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>`;
-}
-
-function blocoPix(codigoPix: string): string {
-  return `
-  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:10px 0;">
-    <tr>
-      <td class="bg-green" style="background-color:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:16px 20px;">
-        <table width="100%" cellpadding="0" cellspacing="0" border="0">
-          <tr>
-            <td style="padding-bottom:8px;">
-              <span style="display:inline-block;background:#00B894;color:#ffffff;font-size:11px;font-weight:bold;padding:3px 10px;border-radius:4px;font-family:Arial,sans-serif;letter-spacing:0.5px;">PIX</span>
-              <span style="font-size:10px;color:#14532d;font-weight:bold;text-transform:uppercase;letter-spacing:1px;font-family:Arial,sans-serif;margin-left:8px;">C&#243;digo Copia e Cola</span>
-            </td>
-          </tr>
-          <tr>
-            <td>
-              <span style="font-size:12px;color:#1a2332;font-family:'Courier New',Courier,monospace;word-break:break-all;line-height:1.7;">${codigoPix}</span>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>`;
-}
-
-function blocoAviso(icone: string, cor: string, bgCor: string, bordaCor: string, texto: string): string {
-  return `
-  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:18px 0;">
-    <tr>
-      <td style="background:${bgCor};border:1px solid ${bordaCor};border-radius:8px;padding:15px 18px;">
-        <table width="100%" cellpadding="0" cellspacing="0" border="0">
-          <tr>
-            <td width="38" valign="top" style="padding-right:10px;padding-top:2px;">${icone}</td>
-            <td style="font-size:13px;color:${cor};line-height:1.6;font-family:Arial,sans-serif;">${texto}</td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>`;
-}
-
-// ─── Template: Lembrete (X dias antes) ───────────────────────────────────────
 export function templateLembrete(data: EmailData): { subject: string; html: string } {
-  const subject = `[${data.nomeEscola}] Lembrete: boleto vence em ${data.diasRestantes} dia${data.diasRestantes === 1 ? '' : 's'}`;
+  const subject = `[${data.nomeEscola}] Sua mensalidade vence em ${data.diasRestantes} dia${data.diasRestantes === 1 ? '' : 's'}`;
 
-  const corpo = `
-    <p style="margin:0 0 4px;font-size:16px;color:#1a2332;font-weight:bold;font-family:Arial,sans-serif;">Ol&#225;, ${data.nomeResponsavel}!</p>
-    <p style="margin:0 0 4px;font-size:14px;color:#4a5568;line-height:1.7;font-family:Arial,sans-serif;">
-      Voc&#234; tem um boleto com vencimento em <strong style="color:${COR};">${data.diasRestantes} dia${data.diasRestantes === 1 ? '' : 's'}</strong>.
-      Efetue o pagamento em dia para evitar juros e multas.
-    </p>
+  const desc = `Voc&#234; est&#225; recebendo o aviso de que o boleto do(a) aluno(a)
+    <strong>${data.nomeAluno}</strong> vence em
+    <strong style="color:${COR};">${data.diasRestantes} dia${data.diasRestantes === 1 ? '' : 's'}</strong>,
+    no dia <strong>${data.vencimento}</strong>.
+    Efetue o pagamento em dia para evitar juros e multas.`;
 
-    ${blocoValor(data)}
+  const nota = `<p style="margin:12px 0 0;font-size:12px;color:#999;line-height:1.7;font-family:Arial,sans-serif;">
+    * Se j&#225; realizou o pagamento, desconsidere este aviso.
+    O sistema pode levar at&#233; 2 dias &#250;teis para processar a compensa&#231;&#227;o.
+  </p>`;
 
-    ${blocoAviso(
-      iconeCirculo('i', '#6b4c00', '#fde68a'),
-      '#6b4c00',
-      '#fffbeb',
-      '#fde68a',
-      `Seu boleto vence em <strong>${data.diasRestantes} dia${data.diasRestantes === 1 ? '' : 's'}</strong>. Realize o pagamento at&#233; a data de vencimento para evitar encargos adicionais.`,
-    )}
-
-    ${data.urlBoleto ? botaoPagar(data.urlBoleto) : ''}
-    ${data.codigoBarras ? blocoCodigoBarras(data.codigoBarras) : ''}
-    ${data.codigoPix ? blocoPix(data.codigoPix) : ''}
-
-    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:20px;">
-      <tr>
-        <td style="font-size:12px;color:#9aa4b2;line-height:1.7;font-family:Arial,sans-serif;">
-          * Se j&#225; realizou o pagamento, desconsidere este aviso. O sistema pode levar at&#233; 2 dias &#250;teis para processar a compensa&#231;&#227;o.
-        </td>
-      </tr>
-    </table>`;
-
-  return { subject, html: base(subject, 'Lembrete de Vencimento', corpo, data) };
+  return { subject, html: base(subject, 'Sua mensalidade do IPESSP chegou.', desc, nota, data) };
 }
 
-// ─── Template: Vencimento hoje ────────────────────────────────────────────────
 export function templateVencimentoHoje(data: EmailData): { subject: string; html: string } {
-  const subject = `[${data.nomeEscola}] Seu boleto vence HOJE`;
+  const subject = `[${data.nomeEscola}] Sua mensalidade vence HOJE`;
 
-  const corpo = `
-    <p style="margin:0 0 4px;font-size:16px;color:#1a2332;font-weight:bold;font-family:Arial,sans-serif;">Ol&#225;, ${data.nomeResponsavel}!</p>
-    <p style="margin:0 0 4px;font-size:14px;color:#4a5568;line-height:1.7;font-family:Arial,sans-serif;">
-      Seu boleto <strong style="color:${COR};">vence hoje</strong>. Efetue o pagamento at&#233; o final do dia para evitar juros e multas.
-    </p>
+  const desc = `Voc&#234; est&#225; recebendo o aviso de que o boleto do(a) aluno(a)
+    <strong>${data.nomeAluno}</strong>
+    <strong style="color:${COR};">vence hoje, ${data.vencimento}</strong>.
+    Efetue o pagamento at&#233; o final do dia para evitar juros e multas.`;
 
-    ${blocoValor(data)}
+  const nota = `<p style="margin:12px 0 0;font-size:12px;color:#999;line-height:1.7;font-family:Arial,sans-serif;">
+    * Se j&#225; realizou o pagamento hoje, desconsidere este aviso.
+  </p>`;
 
-    ${blocoAviso(
-      iconeCirculo('!', '#92400e', '#fde68a'),
-      '#92400e',
-      '#fffbeb',
-      '#fde68a',
-      `<strong>Vencimento hoje!</strong> Ap&#243;s o vencimento, o boleto poder&#225; ser reapresentado com acr&#233;scimos de juros e multa conforme contrato.`,
-    )}
-
-    ${data.urlBoleto ? botaoPagar(data.urlBoleto) : ''}
-    ${data.codigoBarras ? blocoCodigoBarras(data.codigoBarras) : ''}
-    ${data.codigoPix ? blocoPix(data.codigoPix) : ''}
-
-    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:20px;">
-      <tr>
-        <td style="font-size:12px;color:#9aa4b2;line-height:1.7;font-family:Arial,sans-serif;">
-          * Se j&#225; realizou o pagamento hoje, desconsidere este aviso.
-        </td>
-      </tr>
-    </table>`;
-
-  return { subject, html: base(subject, 'Vencimento Hoje', corpo, data) };
+  return { subject, html: base(subject, 'Sua mensalidade do IPESSP vence hoje.', desc, nota, data) };
 }
 
-// ─── Template: Cobrança (após vencimento) ────────────────────────────────────
 export function templateCobranca(data: EmailData): { subject: string; html: string } {
-  const subject = `[${data.nomeEscola}] Boleto em atraso &#8212; ${data.diasAtraso} dia${data.diasAtraso === 1 ? '' : 's'}`;
+  const subject = `[${data.nomeEscola}] Mensalidade em atraso &#8212; ${data.diasAtraso} dia${data.diasAtraso === 1 ? '' : 's'}`;
 
-  const corpo = `
-    <p style="margin:0 0 4px;font-size:16px;color:#1a2332;font-weight:bold;font-family:Arial,sans-serif;">Ol&#225;, ${data.nomeResponsavel}!</p>
-    <p style="margin:0 0 4px;font-size:14px;color:#4a5568;line-height:1.7;font-family:Arial,sans-serif;">
-      Identificamos que o boleto abaixo est&#225; em aberto h&#225; <strong style="color:${COR};">${data.diasAtraso} dia${data.diasAtraso === 1 ? '' : 's'}</strong> ap&#243;s o vencimento.
-      Regularize sua situa&#231;&#227;o o quanto antes para evitar maiores encargos.
-    </p>
+  const desc = `Identificamos que o boleto do(a) aluno(a) <strong>${data.nomeAluno}</strong>
+    est&#225; em aberto h&#225;
+    <strong style="color:${COR};">${data.diasAtraso} dia${data.diasAtraso === 1 ? '' : 's'}</strong>
+    ap&#243;s o vencimento em <strong>${data.vencimento}</strong>.
+    Regularize sua situa&#231;&#227;o o quanto antes para evitar maiores encargos.`;
 
-    ${blocoValor(data)}
+  const nota = `<p style="margin:12px 0 0;font-size:12px;color:#999;line-height:1.7;font-family:Arial,sans-serif;">
+    Caso tenha dificuldades para efetuar o pagamento, entre em contato conosco.
+    Estamos &#224; disposi&#231;&#227;o para encontrar a melhor solu&#231;&#227;o.
+  </p>`;
 
-    ${blocoAviso(
-      iconeCirculo('!', '#991b1b', '#fecaca'),
-      '#991b1b',
-      '#fff5f5',
-      '#fecaca',
-      `<strong>Boleto em atraso h&#225; ${data.diasAtraso} dia${data.diasAtraso === 1 ? '' : 's'}.</strong> O n&#227;o pagamento pode resultar em <strong>juros, multa e encaminhamento para cobran&#231;a</strong> conforme as condi&#231;&#245;es do seu contrato.`,
-    )}
-
-    ${data.urlBoleto ? botaoPagar(data.urlBoleto) : ''}
-    ${data.codigoBarras ? blocoCodigoBarras(data.codigoBarras) : ''}
-    ${data.codigoPix ? blocoPix(data.codigoPix) : ''}
-
-    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:20px;">
-      <tr>
-        <td style="font-size:13px;color:#4a5568;line-height:1.7;font-family:Arial,sans-serif;">
-          Caso tenha dificuldades para efetuar o pagamento, entre em contato conosco. Estamos &#224; disposi&#231;&#227;o para encontrar a melhor solu&#231;&#227;o.
-        </td>
-      </tr>
-    </table>`;
-
-  return { subject, html: base(subject, 'Aviso de Cobran&#231;a', corpo, data) };
+  return { subject, html: base(subject, 'Cobran&#231;a em aberto.', desc, nota, data) };
 }
