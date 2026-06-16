@@ -38,22 +38,19 @@ const COR_DARK = '#a40d26';
 function cabecalho(data: EmailData): string {
   const tel = (data.telefoneEscola ?? '').replace(/\D/g, '');
 
-  const contatoLinha = (icone: string, texto: string, url: string): string => `
+  const contatoLinha = (badge: string, texto: string, url: string): string => `
   <tr>
     <td style="padding:4px 0;">
       <a href="${url}" target="_blank" style="text-decoration:none;display:inline-block;">
         <table cellpadding="0" cellspacing="0" border="0">
           <tr>
-            <!--[if mso]>
-            <td width="22" align="center" valign="middle" style="font-size:13px;color:#ffffff;font-family:Arial,sans-serif;padding-right:6px;">${icone}</td>
-            <![endif]-->
-            <!--[if !mso]><!-->
-            <td width="22" height="22" align="center" valign="middle"
-              style="width:22px;height:22px;line-height:22px;background:rgba(255,255,255,0.18);border-radius:50%;font-size:12px;color:#ffffff;font-family:Arial,sans-serif;text-align:center;">
-              ${icone}
+            <td align="center" valign="middle" bgcolor="#ffffff"
+              style="background:#ffffff;padding:3px 7px;border-radius:4px;
+                     mso-border-top-alt:solid #ffffff 1pt;mso-border-right-alt:solid #ffffff 1pt;
+                     mso-border-bottom-alt:solid #ffffff 1pt;mso-border-left-alt:solid #ffffff 1pt;">
+              <span style="font-size:10px;font-weight:bold;color:${COR};font-family:Arial,sans-serif;white-space:nowrap;letter-spacing:0.5px;">${badge}</span>
             </td>
-            <!--<![endif]-->
-            <td style="padding-left:7px;vertical-align:middle;">
+            <td style="padding-left:8px;vertical-align:middle;">
               <span style="font-size:12px;color:#ffffff;font-family:Arial,sans-serif;white-space:nowrap;">${texto}</span>
             </td>
           </tr>
@@ -63,9 +60,9 @@ function cabecalho(data: EmailData): string {
   </tr>`;
 
   const linhas: string[] = [];
-  if (data.telefoneEscola) linhas.push(contatoLinha('&#9742;', data.telefoneEscola, `tel:+55${tel}`));
-  if (data.emailEscola)    linhas.push(contatoLinha('&#9993;', data.emailEscola, `mailto:${data.emailEscola}`));
-  if (data.siteUrl)        linhas.push(contatoLinha('W', data.siteUrl.replace(/^https?:\/\/(www\.)?/, ''), data.siteUrl));
+  if (data.telefoneEscola) linhas.push(contatoLinha('TEL', data.telefoneEscola, `tel:+55${tel}`));
+  if (data.emailEscola)    linhas.push(contatoLinha('E-MAIL', data.emailEscola, `mailto:${data.emailEscola}`));
+  if (data.siteUrl)        linhas.push(contatoLinha('SITE', data.siteUrl.replace(/^https?:\/\/(www\.)?/, ''), data.siteUrl));
 
   const logoHtml = data.logoUrl
     ? `<table cellpadding="0" cellspacing="0" border="0">
