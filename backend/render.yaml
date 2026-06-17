@@ -15,7 +15,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: CORS_ORIGINS
-        value: http://localhost:3000
+        value: https://www.ipessp.edu.br,https://ipessp.edu.br
       - key: DATABASE_PATH
         value: /opt/render/project/src/data/sync.db
       - key: SOPHIA_BASE_URL
@@ -66,3 +66,9 @@ services:
         value: https://oylhowadealxvsmdhmzc.supabase.co
       - key: SUPABASE_SERVICE_KEY
         sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: ADMIN_API_KEY
+        sync: false
+      - key: SITE_URL
+        value: https://www.ipessp.edu.br
