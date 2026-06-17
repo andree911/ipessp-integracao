@@ -28,6 +28,23 @@ export class EmailService implements OnModuleInit {
     this.logger.log(`Email enviado → ${para} | ${assunto}`);
   }
 
+  async enviarComAnexo(
+    para: string,
+    assunto: string,
+    html: string,
+    anexo: { nome: string; buffer: Buffer; tipo: string },
+  ): Promise<void> {
+    const from = this.config.get<string>('email.from');
+    await this.transporter.sendMail({
+      from,
+      to: para,
+      subject: assunto,
+      html,
+      attachments: [{ filename: anexo.nome, content: anexo.buffer, contentType: anexo.tipo }],
+    });
+    this.logger.log(`Email com anexo enviado → ${para} | ${assunto}`);
+  }
+
   async verificarConexao(): Promise<boolean> {
     try {
       await this.transporter.verify();

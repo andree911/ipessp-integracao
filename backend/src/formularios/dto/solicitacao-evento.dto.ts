@@ -22,5 +22,9 @@ export class SolicitacaoEventoDto {
 
   @IsOptional()
   @IsString()
+  tipoEvento?: string;
+
+  @IsOptional()
+  @IsString()
   dataEvento?: string;
 }

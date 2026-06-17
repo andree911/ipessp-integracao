@@ -17,6 +17,9 @@ export class SolicitacaoEvento {
   @Column({ nullable: true })
   organizacao: string;
 
+  @Column({ nullable: true })
+  tipoEvento: string;
+
   @Column({ type: 'text' })
   descricao: string;
 

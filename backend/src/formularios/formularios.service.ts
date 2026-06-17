@@ -91,6 +91,7 @@ export class FormulariosService {
         <p><strong>E-mail:</strong> ${dto.email}</p>
         ${dto.telefone ? `<p><strong>Telefone:</strong> ${dto.telefone}</p>` : ''}
         ${dto.organizacao ? `<p><strong>Organização:</strong> ${dto.organizacao}</p>` : ''}
+        ${dto.tipoEvento ? `<p><strong>Tipo de evento:</strong> ${dto.tipoEvento}</p>` : ''}
         ${dto.dataEvento ? `<p><strong>Data do evento:</strong> ${dto.dataEvento}</p>` : ''}
         <p><strong>Descrição:</strong></p>
         <p>${dto.descricao.replace(/\n/g, '<br>')}</p>

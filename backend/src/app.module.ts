@@ -10,12 +10,14 @@ import { EmailModule } from './email/email.module';
 import { IaModule } from './ia/ia.module';
 import { LeadsModule } from './leads/leads.module';
 import { FormulariosModule } from './formularios/formularios.module';
+import { CandidaturasModule } from './candidaturas/candidaturas.module';
 import { EmailLog } from './email/entities/email-log.entity';
 import { ResponsavelCache } from './ia/entities/responsavel-cache.entity';
 import { Lead } from './leads/entities/lead.entity';
 import { MensagemContato } from './formularios/entities/mensagem-contato.entity';
 import { Manifestacao } from './formularios/entities/manifestacao.entity';
 import { SolicitacaoEvento } from './formularios/entities/solicitacao-evento.entity';
+import { Candidatura } from './candidaturas/entities/candidatura.entity';
 
 @Module({
   controllers: [AppController],
@@ -31,7 +33,7 @@ import { SolicitacaoEvento } from './formularios/entities/solicitacao-evento.ent
       useFactory: (config: ConfigService) => ({
         type: 'better-sqlite3',
         database: config.get<string>('database.path') ?? './data/sync.db',
-        entities: [EmailLog, ResponsavelCache, Lead, MensagemContato, Manifestacao, SolicitacaoEvento],
+        entities: [EmailLog, ResponsavelCache, Lead, MensagemContato, Manifestacao, SolicitacaoEvento, Candidatura],
         synchronize: true,
       }),
     }),
@@ -41,6 +43,7 @@ import { SolicitacaoEvento } from './formularios/entities/solicitacao-evento.ent
     IaModule,
     LeadsModule,
     FormulariosModule,
+    CandidaturasModule,
   ],
 })
 export class AppModule {}
