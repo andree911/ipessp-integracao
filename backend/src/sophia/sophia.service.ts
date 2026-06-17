@@ -5,7 +5,12 @@ import { firstValueFrom } from 'rxjs';
 import { AxiosRequestConfig } from 'axios';
 import {
   AlunoApiModel,
+  AlunoDetalhadoApiModel,
+  ColaboradorApiModel,
   LancamentoAlunoApiModel,
+  ListaChamadaItem,
+  AtaNotaItem,
+  NotaAlunoItem,
   MatriculaAlunoApiModel,
   MatriculasWrapperApiModel,
   ResponsavelAlunoApiModel,
@@ -130,6 +135,82 @@ export class SophiaService implements OnModuleInit {
       this.http.post(`${this.apiBase}/clientes`, body, { headers: this.headers() }),
     );
     return data;
+  }
+
+  async getAlunoById(id: number): Promise<AlunoDetalhadoApiModel> {
+    return this.get<AlunoDetalhadoApiModel>(`${this.apiBase}/Alunos/${id}`);
+  }
+
+  async searchAlunoByEmail(email: string): Promise<AlunoApiModel | null> {
+    // Tenta filtrar por email direto; se não suportado, varre as páginas
+    try {
+      const result = await this.get<AlunoApiModel[]>(`${this.apiBase}/Alunos`, {
+        Email: email,
+        TamanhoPagina: 1,
+      });
+      if (result.length > 0) return result[0];
+    } catch { /* ignora e tenta varredura */ }
+
+    let pagina = 1;
+    const tamanhoPagina = 100;
+    while (true) {
+      const page = await this.getAlunos(pagina, tamanhoPagina);
+      const found = page.find(a => a.email?.toLowerCase() === email.toLowerCase());
+      if (found) return found;
+      if (page.length < tamanhoPagina) break;
+      pagina++;
+    }
+    return null;
+  }
+
+  async getBoleto(idAluno: number, codigoBoleto: number): Promise<Buffer> {
+    const url = `${this.apiBase}/alunos/${idAluno}/Boletos/${codigoBoleto}`;
+    const { data } = await firstValueFrom(
+      this.http.get<string>(url, { headers: this.headers(), responseType: 'text' }),
+    );
+    const b64 = (data as string).replace(/^"|"$/g, '');
+    return Buffer.from(b64, 'base64');
+  }
+
+  async getNotas(idMatricula: number, params?: Record<string, string>): Promise<unknown> {
+    return this.get<unknown>(`${this.apiBase}/alunos/Matriculas/${idMatricula}/NotasAvaliacoes`, params);
+  }
+
+  async getNotasCompleto(idMatricula: number, params?: Record<string, string>): Promise<unknown> {
+    return this.get<unknown>(`${this.apiBase}/alunos/Matriculas/${idMatricula}/NotasAvaliacoesCompleto`, params);
+  }
+
+  async getFrequencia(idMatricula: number, params?: Record<string, string>): Promise<unknown> {
+    return this.get<unknown>(`${this.apiBase}/alunos/Matriculas/${idMatricula}/FrequenciaCompleto`, params);
+  }
+
+  async getHorarios(idAluno: number): Promise<unknown> {
+    return this.get<unknown>(`${this.apiBase}/alunos/${idAluno}/QuadrosHorarios`);
+  }
+
+  async getColaboradores(params?: { Email?: string; Nome?: string; Pagina?: number; TamanhoPagina?: number }): Promise<ColaboradorApiModel[]> {
+    const p: Record<string, unknown> = {};
+    if (params?.Email)         p['Email']         = params.Email;
+    if (params?.Nome)          p['Nome']           = params.Nome;
+    if (params?.Pagina)        p['Pagina']         = params.Pagina;
+    if (params?.TamanhoPagina) p['TamanhoPagina']  = params.TamanhoPagina;
+    return this.get<ColaboradorApiModel[]>(`${this.apiBase}/Colaboradores`, p);
+  }
+
+  async getListaChamadaProfessor(idProfessor: number, params?: Record<string, string>): Promise<ListaChamadaItem[]> {
+    return this.get<ListaChamadaItem[]>(`${this.apiBase}/ListaChamada/Professor/${idProfessor}`, params);
+  }
+
+  async getAlunosListaChamada(idLista: number): Promise<unknown[]> {
+    return this.get<unknown[]>(`${this.apiBase}/ListaChamada/Alunos/${idLista}`);
+  }
+
+  async getAtaNotas(params?: Record<string, string>): Promise<AtaNotaItem[]> {
+    return this.get<AtaNotaItem[]>(`${this.apiBase}/AtaNota`, params);
+  }
+
+  async getNotasAlunos(idAta: number): Promise<NotaAlunoItem[]> {
+    return this.get<NotaAlunoItem[]>(`${this.apiBase}/AtaNota/${idAta}/NotaAlunos`);
   }
 
   async getAllAlunos(): Promise<AlunoApiModel[]> {

@@ -38,6 +38,52 @@ export interface MatriculasWrapperApiModel {
   matriculas: MatriculaAlunoApiModel[];
 }
 
+export interface AlunoDetalhadoApiModel {
+  codigo: number;
+  nome: string;
+  cpf?: string;
+  email?: string;
+  telefone?: string;
+  codigoExterno?: string;
+  turmas?: Array<{ codigo: number; descricao: string }>;
+  [key: string]: unknown;
+}
+
+export interface ColaboradorApiModel {
+  codigo: number;
+  nome: string;
+  email?: string;
+  emailCorporativo?: string;
+  [key: string]: unknown;
+}
+
+export interface ListaChamadaItem {
+  codigoLista: number;
+  codigoTurma: number;
+  disciplina: string;
+  dataListaChamada: string;
+  horaInicio: string;
+  horaFinal: string;
+  turma: string;
+  status: string;
+  [key: string]: unknown;
+}
+
+export interface AtaNotaItem {
+  codigo: number;
+  nomeAvaliacao: string;
+  nomeResumidoAvaliacao: string;
+  dataAvaliacao?: string;
+  situacao: number;
+  [key: string]: unknown;
+}
+
+export interface NotaAlunoItem {
+  codigoMatricula: number;
+  nota: string;
+  nome: string;
+}
+
 // Campos reais retornados por GET /alunos/{id}/Lancamentos
 export interface LancamentoAlunoApiModel {
   codigo: number;

@@ -50,4 +50,11 @@ export default () => ({
   n8n: {
     leadsWebhookUrl: process.env.N8N_LEADS_WEBHOOK_URL ?? '',
   },
+  jwt: {
+    secret: process.env.JWT_SECRET ?? 'change-me-in-production',
+    siteUrl: process.env.SITE_URL ?? 'http://localhost:3000',
+  },
+  admin: {
+    apiKey: process.env.ADMIN_API_KEY ?? '',
+  },
 });

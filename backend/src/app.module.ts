@@ -11,6 +11,9 @@ import { IaModule } from './ia/ia.module';
 import { LeadsModule } from './leads/leads.module';
 import { FormulariosModule } from './formularios/formularios.module';
 import { CandidaturasModule } from './candidaturas/candidaturas.module';
+import { AuthModule } from './auth/auth.module';
+import { MeModule } from './me/me.module';
+import { AdminModule } from './admin/admin.module';
 import { EmailLog } from './email/entities/email-log.entity';
 import { ResponsavelCache } from './ia/entities/responsavel-cache.entity';
 import { Lead } from './leads/entities/lead.entity';
@@ -18,6 +21,10 @@ import { MensagemContato } from './formularios/entities/mensagem-contato.entity'
 import { Manifestacao } from './formularios/entities/manifestacao.entity';
 import { SolicitacaoEvento } from './formularios/entities/solicitacao-evento.entity';
 import { Candidatura } from './candidaturas/entities/candidatura.entity';
+import { Usuario } from './auth/entities/usuario.entity';
+import { Professor } from './auth/entities/professor.entity';
+import { RefreshToken } from './auth/entities/refresh-token.entity';
+import { ResetToken } from './auth/entities/reset-token.entity';
 
 @Module({
   controllers: [AppController],
@@ -33,7 +40,10 @@ import { Candidatura } from './candidaturas/entities/candidatura.entity';
       useFactory: (config: ConfigService) => ({
         type: 'better-sqlite3',
         database: config.get<string>('database.path') ?? './data/sync.db',
-        entities: [EmailLog, ResponsavelCache, Lead, MensagemContato, Manifestacao, SolicitacaoEvento, Candidatura],
+        entities: [
+          EmailLog, ResponsavelCache, Lead, MensagemContato, Manifestacao,
+          SolicitacaoEvento, Candidatura, Usuario, Professor, RefreshToken, ResetToken,
+        ],
         synchronize: true,
       }),
     }),
@@ -44,6 +54,9 @@ import { Candidatura } from './candidaturas/entities/candidatura.entity';
     LeadsModule,
     FormulariosModule,
     CandidaturasModule,
+    AuthModule,
+    MeModule,
+    AdminModule,
   ],
 })
 export class AppModule {}
