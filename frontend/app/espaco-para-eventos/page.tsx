@@ -103,7 +103,7 @@ const diferenciais = [
 ];
 
 export default function EspacoParaEventos() {
-  const [form, setForm] = useState({ nome: '', email: '', telefone: '', tipo_evento: '', mensagem: '' });
+  const [form, setForm] = useState({ nome: '', email: '', telefone: '', tipoEvento: '', descricao: '' });
   const [enviado, setEnviado] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState('');
@@ -383,9 +383,9 @@ export default function EspacoParaEventos() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       <label style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, color: 'var(--ink-700)' }}>Tipo de evento *</label>
                       <select
-                        name="tipo_evento"
+                        name="tipoEvento"
                         required
-                        value={form.tipo_evento}
+                        value={form.tipoEvento}
                         onChange={handleChange}
                         style={{ border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', padding: '12px 14px', fontSize: 'var(--fs-sm)', color: 'var(--ink-900)', background: 'var(--surface)', outline: 'none', width: '100%', cursor: 'pointer' }}
                       >
@@ -400,8 +400,8 @@ export default function EspacoParaEventos() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       <label style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, color: 'var(--ink-700)' }}>Mensagem</label>
                       <textarea
-                        name="mensagem"
-                        value={form.mensagem}
+                        name="descricao"
+                        value={form.descricao}
                         onChange={handleChange}
                         rows={4}
                         placeholder="Descreva seu evento: data prevista, número de participantes e necessidades específicas..."
