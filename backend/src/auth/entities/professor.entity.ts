@@ -8,10 +8,10 @@ export class Professor {
   @Column({ name: 'usuario_id' })
   usuarioId: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   matricula: string | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   telefone: string | null;
 
   @Column({ default: false })
