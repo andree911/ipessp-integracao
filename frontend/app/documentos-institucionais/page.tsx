@@ -100,6 +100,9 @@ export default function DocumentosInstitucionaisPage() {
           </div>
         </section>
 
+        <style>{`
+          .documento-row:hover { background: var(--surface-alt) !important; }
+        `}</style>
         <section className="section-gap" style={{ background: 'var(--surface)' }}>
           <div className="container-site">
             <div
@@ -159,13 +162,12 @@ export default function DocumentosInstitucionaisPage() {
                     {cat.documentos.map((doc, i) => (
                       <div
                         key={doc.nome}
-                        className="px-7 py-4 flex items-center gap-3 transition-colors"
+                        className="documento-row px-7 py-4 flex items-center gap-3 transition-colors"
                         style={{
                           borderTop: i === 0 ? 'none' : '1px solid var(--line)',
                           cursor: 'pointer',
+                          background: 'var(--surface)',
                         }}
-                        onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = 'var(--surface-alt)'; }}
-                        onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = 'var(--surface)'; }}
                       >
                         <PdfIcon />
                         <div className="flex-1 min-w-0">

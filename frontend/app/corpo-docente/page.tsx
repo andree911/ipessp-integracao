@@ -162,6 +162,10 @@ export default function CorpoDocente() {
               @media (max-width: 768px) {
                 .intro-grid { grid-template-columns: 1fr !important; }
               }
+              .professor-card:hover {
+                box-shadow: var(--shadow-md);
+                transform: translateY(-2px);
+              }
             `}</style>
 
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '40px' }}>
@@ -176,6 +180,7 @@ export default function CorpoDocente() {
               {professores.map((p) => (
                 <div
                   key={p.nome}
+                  className="professor-card"
                   style={{
                     background: 'var(--surface-alt)',
                     borderRadius: 'var(--radius-lg)',
@@ -188,8 +193,6 @@ export default function CorpoDocente() {
                     gap: '14px',
                     transition: 'box-shadow 0.2s, transform 0.2s',
                   }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = 'var(--shadow-md)'; (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-2px)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = ''; (e.currentTarget as HTMLDivElement).style.transform = ''; }}
                 >
                   <div style={{ width: '72px', height: '72px', borderRadius: '50%', background: p.cor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1rem', letterSpacing: '0.04em', flexShrink: 0, border: '3px solid var(--surface)' }}>
                     {p.iniciais}

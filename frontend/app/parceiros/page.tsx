@@ -66,6 +66,12 @@ export default function Parceiros() {
           </div>
         </section>
 
+        <style>{`
+          .parceiro-card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+          }
+        `}</style>
         <section className="section-gap" style={{ background: 'var(--surface)' }}>
           <div className="container-site">
             <div style={{ maxWidth: '700px', marginBottom: 'clamp(48px,6vw,72px)' }}>
@@ -92,6 +98,7 @@ export default function Parceiros() {
                   {cat.parceiros.map((p) => (
                     <div
                       key={p.nome}
+                      className="parceiro-card"
                       style={{
                         background: 'var(--surface-alt)',
                         borderRadius: 'var(--radius-md)',
@@ -102,8 +109,6 @@ export default function Parceiros() {
                         gap: '16px',
                         transition: 'box-shadow 0.2s, transform 0.2s',
                       }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = 'var(--shadow-md)'; (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-2px)'; }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = ''; (e.currentTarget as HTMLDivElement).style.transform = ''; }}
                     >
                       <div style={{ width: '52px', height: '52px', borderRadius: 'var(--radius-sm)', background: 'var(--brand-600)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '0.7rem', letterSpacing: '0.04em', flexShrink: 0 }}>
                         {p.iniciais}
