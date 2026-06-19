@@ -141,10 +141,9 @@ export default function TrabalheConoscoPage() {
       if (form.mensagem) body.append('mensagem', form.mensagem);
       if (form.arquivo)  body.append('file', form.arquivo);
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'}/v1/candidaturas`, {
+      const res = await apiFetch('/v1/candidaturas', {
         method: 'POST',
         body,
-        credentials: 'include',
       });
       if (!res.ok) {
         const data = await res.json();
