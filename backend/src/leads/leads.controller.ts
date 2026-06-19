@@ -1,9 +1,11 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, ParseIntPipe } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, ParseIntPipe, UseGuards } from '@nestjs/common';
 import { LeadsService } from './leads.service';
 import { CriarLeadDto } from './dto/criar-lead.dto';
 import { AtualizarLeadDto } from './dto/atualizar-lead.dto';
+import { IaBearerGuard } from '../ia/ia.guard';
 
 @Controller('v1/leads')
+@UseGuards(IaBearerGuard)
 export class LeadsController {
   constructor(private readonly leadsService: LeadsService) {}
 
