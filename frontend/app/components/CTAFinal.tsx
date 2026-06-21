@@ -93,6 +93,7 @@ export default function CTAFinal() {
   const [form, setForm] = useState({ nome: '', email: '', telefone: '', curso: '' });
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [erro, setErro] = useState('');
 
   const handleChange = (e: { target: { name: string; value: string } }) => {
     setForm(f => ({ ...f, [e.target.name]: e.target.value }));
@@ -101,9 +102,26 @@ export default function CTAFinal() {
   const handleSubmit = async (e: { preventDefault(): void }) => {
     e.preventDefault();
     setLoading(true);
-    await new Promise(r => setTimeout(r, 1000));
-    setSent(true);
-    setLoading(false);
+    setErro('');
+    try {
+      const res = await fetch('/api/lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nome: form.nome,
+          email: form.email,
+          telefone: form.telefone,
+          cursoInteresse: form.curso,
+          origem: 'site',
+        }),
+      });
+      if (!res.ok) throw new Error('Erro ao enviar');
+      setSent(true);
+    } catch {
+      setErro('Não foi possível enviar. Tente novamente ou ligue para (11) 97692-2127.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -328,6 +346,10 @@ export default function CTAFinal() {
                       </>
                     ) : 'Quero ser aluno IPESSP'}
                   </button>
+
+                  {erro && (
+                    <p className="text-xs text-center" style={{ color: '#dc2626' }}>{erro}</p>
+                  )}
 
                   <p className="text-xs text-center" style={{ color: 'var(--ink-300)' }}>
                     Ao enviar, você concorda com nossa{' '}
