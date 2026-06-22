@@ -60,6 +60,10 @@ export class EmailController {
       telefoneEscola: '(11) 97692-2127',
       logoUrl: this.config.get('EMAIL_LOGO_URL'),
       siteUrl: 'https://ipessp.edu.br',
+      instagramUrl: 'https://www.instagram.com/ipessp/',
+      linkedinUrl: 'https://www.linkedin.com/company/ipessp---educa-o/',
+      facebookUrl: 'https://www.facebook.com/ipesspedu/',
+      youtubeUrl: 'https://www.youtube.com/channel/UC7dgP6NBgM9L0m11UbhCyHg',
     });
     await this.emailService.enviar(para, subject, html);
     return { ok: true, para };
