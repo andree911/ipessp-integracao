@@ -76,6 +76,19 @@ export default function FaleConosco() {
         setErro(data.error ?? 'Erro ao enviar. Tente novamente.');
         return;
       }
+      // Cria lead em background — não bloqueia nem exibe erro ao usuário
+      fetch('/api/lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nome: form.nome,
+          email: form.email,
+          telefone: form.telefone || undefined,
+          cursoInteresse: form.assunto || undefined,
+          observacao: form.mensagem || undefined,
+          origem: 'site',
+        }),
+      }).catch(() => {});
       setEnviado(true);
     } catch {
       setErro('Erro de conexão. Tente novamente.');

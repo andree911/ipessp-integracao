@@ -125,12 +125,15 @@ export default function AdminPage() {
         <span style={{ fontFamily: 'var(--font-sora)', fontWeight: 700, fontSize: '1rem', color: 'var(--brand-600)' }}>
           IPESSP — Painel Admin
         </span>
-        <button
-          onClick={() => { setAutenticado(false); setApiKey(''); setProfessores([]); }}
-          style={{ fontSize: '0.8125rem', color: 'var(--ink-500)', background: 'none', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', padding: '0.375rem 0.75rem', cursor: 'pointer' }}
-        >
-          Sair
-        </button>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <a href="/admin/leads" style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--brand-600)', textDecoration: 'none', border: '1px solid var(--brand-200)', borderRadius: 'var(--radius-sm)', padding: '0.375rem 0.75rem' }}>CRM Leads →</a>
+          <button
+            onClick={() => { setAutenticado(false); setApiKey(''); setProfessores([]); }}
+            style={{ fontSize: '0.8125rem', color: 'var(--ink-500)', background: 'none', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', padding: '0.375rem 0.75rem', cursor: 'pointer' }}
+          >
+            Sair
+          </button>
+        </div>
       </header>
 
       <main style={{ maxWidth: '860px', margin: '0 auto', padding: '2rem 1.5rem' }}>
