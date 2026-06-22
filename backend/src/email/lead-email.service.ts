@@ -122,7 +122,7 @@ export class LeadEmailService {
 
   private cabecalhoHtml(subtitulo?: string): string {
     const logoBlock = this.logoUrl
-      ? `<table cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;">
+      ? `<table cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;">
            <tr>
              <td align="center" bgcolor="#ffffff"
                style="background-color:#ffffff;border-radius:10px;padding:8px 18px;line-height:0;
@@ -148,7 +148,7 @@ export class LeadEmailService {
 
   private redesSociaisHtml(): string {
     return `
-    <table cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 16px;">
+    <table cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto 16px;">
       <tr>
         ${REDES.map(({ letra, nome, url }) => {
           const fs = letra.length > 1 ? 11 : 16;
@@ -168,7 +168,7 @@ export class LeadEmailService {
 
   private rodapeHtml(): string {
     const logoBlock = this.logoUrl
-      ? `<table cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 16px;">
+      ? `<table cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto 16px;">
            <tr>
              <td align="center" bgcolor="#ffffff"
                style="background-color:#ffffff;border-radius:10px;padding:6px 14px;line-height:0;
@@ -198,15 +198,22 @@ export class LeadEmailService {
 
   private wrapEmail(conteudo: string, subtitulo?: string): string {
     return `<!DOCTYPE html>
-<html lang="pt-BR">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#f5f5f5;font-family:Arial,sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" border="0">
+<html lang="pt-BR" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<!--[if mso]>
+<xml><o:OfficeDocumentSettings><o:AllowPNG/><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml>
+<![endif]-->
+</head>
+<body bgcolor="#f5f5f5" style="margin:0;padding:0;background-color:#f5f5f5;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f5f5f5"
+  style="background-color:#f5f5f5;">
   <tr><td align="center" style="padding:40px 16px;">
-    <table width="580" cellpadding="0" cellspacing="0" border="0"
-      style="background:#ffffff;border-radius:8px;overflow:hidden;">
+    <table width="580" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff"
+      style="background-color:#ffffff;border-radius:8px;">
       ${this.cabecalhoHtml(subtitulo)}
-      <tr><td style="padding:40px;">${conteudo}</td></tr>
+      <tr><td bgcolor="#ffffff" style="background-color:#ffffff;padding:40px;">${conteudo}</td></tr>
       ${this.rodapeHtml()}
     </table>
   </td></tr>
