@@ -16,7 +16,9 @@ import { MeModule } from './me/me.module';
 import { AdminModule } from './admin/admin.module';
 import { EmailLog } from './email/entities/email-log.entity';
 import { ResponsavelCache } from './ia/entities/responsavel-cache.entity';
+import { TelefoneCpfCache } from './ia/entities/telefone-cpf-cache.entity';
 import { Lead } from './leads/entities/lead.entity';
+import { LeadHistorico } from './leads/entities/lead-historico.entity';
 import { MensagemContato } from './formularios/entities/mensagem-contato.entity';
 import { Manifestacao } from './formularios/entities/manifestacao.entity';
 import { SolicitacaoEvento } from './formularios/entities/solicitacao-evento.entity';
@@ -41,7 +43,7 @@ import { ResetToken } from './auth/entities/reset-token.entity';
         type: 'better-sqlite3',
         database: config.get<string>('database.path') ?? './data/sync.db',
         entities: [
-          EmailLog, ResponsavelCache, Lead, MensagemContato, Manifestacao,
+          EmailLog, ResponsavelCache, TelefoneCpfCache, Lead, LeadHistorico, MensagemContato, Manifestacao,
           SolicitacaoEvento, Candidatura, Usuario, Professor, RefreshToken, ResetToken,
         ],
         synchronize: true,

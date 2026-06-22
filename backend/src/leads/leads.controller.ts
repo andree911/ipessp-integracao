@@ -2,6 +2,7 @@ import { Body, Controller, Get, Param, Patch, Post, Query, ParseIntPipe, UseGuar
 import { LeadsService } from './leads.service';
 import { CriarLeadDto } from './dto/criar-lead.dto';
 import { AtualizarLeadDto } from './dto/atualizar-lead.dto';
+import { MoverEstagioDto } from './dto/mover-estagio.dto';
 import { IaBearerGuard } from '../ia/ia.guard';
 
 @Controller('v1/leads')
@@ -29,8 +30,29 @@ export class LeadsController {
     return this.leadsService.relatorio();
   }
 
+  @Get(':id/historico')
+  getHistorico(@Param('id', ParseIntPipe) id: number) {
+    return this.leadsService.getHistorico(id);
+  }
+
+  @Patch(':id/estagio')
+  moverEstagio(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: MoverEstagioDto,
+  ) {
+    return this.leadsService.moverEstagio(id, dto);
+  }
+
   @Patch(':id')
   atualizar(@Param('id', ParseIntPipe) id: number, @Body() dto: AtualizarLeadDto) {
     return this.leadsService.atualizar(id, dto);
+  }
+
+  @Patch(':id/vincular-aluno')
+  vincularAluno(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('codigoAluno', ParseIntPipe) codigoAluno: number,
+  ) {
+    return this.leadsService.vincularAluno(id, codigoAluno);
   }
 }

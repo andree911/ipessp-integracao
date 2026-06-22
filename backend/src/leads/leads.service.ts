@@ -1,13 +1,16 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, FindOptionsWhere } from 'typeorm';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 import { Lead } from './entities/lead.entity';
+import { LeadHistorico } from './entities/lead-historico.entity';
 import { SophiaService } from '../sophia/sophia.service';
 import { CriarLeadDto } from './dto/criar-lead.dto';
 import { AtualizarLeadDto } from './dto/atualizar-lead.dto';
+import { MoverEstagioDto } from './dto/mover-estagio.dto';
+import { LeadEmailService } from '../email/lead-email.service';
 
 @Injectable()
 export class LeadsService {
@@ -16,9 +19,12 @@ export class LeadsService {
   constructor(
     @InjectRepository(Lead)
     private readonly leadRepo: Repository<Lead>,
+    @InjectRepository(LeadHistorico)
+    private readonly historicoRepo: Repository<LeadHistorico>,
     private readonly sophia: SophiaService,
     private readonly http: HttpService,
     private readonly config: ConfigService,
+    @Optional() private readonly leadEmail?: LeadEmailService,
   ) {}
 
   async criar(dto: CriarLeadDto): Promise<Lead> {
@@ -49,8 +55,9 @@ export class LeadsService {
 
     const salvo = await this.leadRepo.save(lead);
 
-    // Dispara webhook no n8n de forma assíncrona (não bloqueia a resposta)
+    // Dispara webhook e email de boas-vindas de forma assíncrona
     void this.dispararWebhook(salvo);
+    if (this.leadEmail) void this.leadEmail.enviarBoasVindas(salvo);
 
     return salvo;
   }
@@ -70,12 +77,43 @@ export class LeadsService {
     return this.leadRepo.find({ where, order: { criadoEm: 'DESC' } });
   }
 
+  async buscarPorId(id: number): Promise<Lead> {
+    const lead = await this.leadRepo.findOneBy({ id });
+    if (!lead) throw new NotFoundException(`Lead #${id} não encontrado`);
+    return lead;
+  }
+
   async atualizar(id: number, dto: AtualizarLeadDto): Promise<Lead> {
     const lead = await this.leadRepo.findOneBy({ id });
     if (!lead) throw new NotFoundException(`Lead #${id} não encontrado`);
     if (dto.status) lead.status = dto.status as Lead['status'];
     if (dto.observacao !== undefined) lead.observacao = dto.observacao;
     return this.leadRepo.save(lead);
+  }
+
+  async vincularAluno(id: number, codigoAluno: number): Promise<Lead> {
+    const lead = await this.leadRepo.findOneBy({ id });
+    if (!lead) throw new NotFoundException(`Lead #${id} não encontrado`);
+    const anterior = lead.status;
+    lead.sophiaAlunoId = codigoAluno;
+    lead.status = 'matriculado';
+    await this.historicoRepo.save({ leadId: id, estagioAnterior: anterior, estagioNovo: 'matriculado', observacao: `Vinculado ao aluno SophiA #${codigoAluno}` });
+    return this.leadRepo.save(lead);
+  }
+
+  async moverEstagio(id: number, dto: MoverEstagioDto): Promise<Lead> {
+    const lead = await this.leadRepo.findOneBy({ id });
+    if (!lead) throw new NotFoundException(`Lead #${id} não encontrado`);
+    const anterior = lead.status;
+    lead.status = dto.estagio as Lead['status'];
+    await this.historicoRepo.save({ leadId: id, estagioAnterior: anterior, estagioNovo: dto.estagio, observacao: dto.observacao ?? null });
+    return this.leadRepo.save(lead);
+  }
+
+  async getHistorico(id: number): Promise<LeadHistorico[]> {
+    const lead = await this.leadRepo.findOneBy({ id });
+    if (!lead) throw new NotFoundException(`Lead #${id} não encontrado`);
+    return this.historicoRepo.find({ where: { leadId: id }, order: { criadoEm: 'ASC' } });
   }
 
   async relatorio(): Promise<object> {
@@ -105,7 +143,25 @@ export class LeadsService {
       .where('l.sophiaCodigo IS NOT NULL AND l.sophiaCodigo != ""')
       .getCount();
 
-    return { total, noMes, sincronizadosSophia, porStatus, porOrigem };
+    const estagios = ['novo', 'contatado', 'agendado', 'inscrito', 'matriculado', 'perdido'];
+    const contagemPorEstagio = await this.leadRepo
+      .createQueryBuilder('l')
+      .select('l.status', 'estagio')
+      .addSelect('COUNT(*)', 'total')
+      .groupBy('l.status')
+      .getRawMany();
+
+    const funil = estagios.map(e => ({
+      estagio: e,
+      total: Number(contagemPorEstagio.find(r => r.estagio === e)?.total ?? 0),
+    }));
+
+    const totalAtivos = funil.filter(f => f.estagio !== 'perdido').reduce((s, f) => s + f.total, 0);
+    const taxaConversao = totalAtivos > 0
+      ? ((funil.find(f => f.estagio === 'matriculado')?.total ?? 0) / totalAtivos * 100).toFixed(1) + '%'
+      : '0%';
+
+    return { total, noMes, sincronizadosSophia, porStatus, porOrigem, funil, taxaConversao };
   }
 
   private async dispararWebhook(lead: Lead): Promise<void> {

@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SophiaService } from '../sophia/sophia.service';
 import { ResponsavelCache } from '../ia/entities/responsavel-cache.entity';
+import { Lead } from '../leads/entities/lead.entity';
 
 @Injectable()
 export class SyncService {
@@ -14,6 +15,8 @@ export class SyncService {
     private readonly sophia: SophiaService,
     @InjectRepository(ResponsavelCache)
     private readonly cacheRepo: Repository<ResponsavelCache>,
+    @InjectRepository(Lead)
+    private readonly leadRepo: Repository<Lead>,
   ) {}
 
   async triggerSync(): Promise<{ message: string }> {
@@ -62,11 +65,49 @@ export class SyncService {
         this.logger.log(`Cache IA: ${cacheEntries.length} responsáveis indexados`);
       }
 
+      // Reconcilia leads não convertidos com alunos do SophiA (match por e-mail)
+      await this.reconciliarLeads(alunos);
+
       this.logger.log('=== Sincronização concluída ===');
     } catch (err: any) {
       this.logger.error(`Erro no ciclo de sync: ${err.message}`, err.stack);
     } finally {
       this.running = false;
+    }
+  }
+
+  // Cruza leads sem vínculo de aluno com a lista de alunos do SophiA por e-mail.
+  // Quando há match, marca o lead como 'matriculado' e grava o sophiaAlunoId.
+  private async reconciliarLeads(alunos: { codigo: number; nome: string; email?: string }[]): Promise<void> {
+    // Busca leads que têm email e ainda não foram convertidos
+    const leads = await this.leadRepo
+      .createQueryBuilder('l')
+      .where('l.sophiaAlunoId IS NULL')
+      .andWhere("l.email IS NOT NULL AND l.email != ''")
+      .getMany();
+
+    if (leads.length === 0) return;
+
+    // Monta índice email → codigoAluno para O(1) lookup
+    const emailMap = new Map<string, number>();
+    for (const aluno of alunos) {
+      if (aluno.email) emailMap.set(aluno.email.toLowerCase(), aluno.codigo);
+    }
+
+    let convertidos = 0;
+    for (const lead of leads) {
+      const codigoAluno = emailMap.get(lead.email.toLowerCase());
+      if (!codigoAluno) continue;
+
+      await this.leadRepo.update(lead.id, {
+        sophiaAlunoId: codigoAluno,
+        status: 'matriculado',
+      });
+      convertidos++;
+    }
+
+    if (convertidos > 0) {
+      this.logger.log(`Leads reconciliados: ${convertidos} marcados como matriculados`);
     }
   }
 }

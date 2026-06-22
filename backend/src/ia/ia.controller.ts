@@ -2,6 +2,9 @@ import { BadRequestException, Body, Controller, Get, Post, Query, UseGuards } fr
 import { IaBearerGuard } from './ia.guard';
 import { IaService } from './ia.service';
 import { CriarProspectivoDto } from './dto/prospectivo.dto';
+import { CriarResponsavelDto } from './dto/criar-responsavel.dto';
+import { MatricularAlunoDto } from './dto/matricular-aluno.dto';
+import { AssociarTelefoneDto } from './dto/associar-telefone.dto';
 
 @Controller('ia')
 @UseGuards(IaBearerGuard)
@@ -27,5 +30,26 @@ export class IaController {
   @Post('prospectivo')
   criarProspectivo(@Body() dto: CriarProspectivoDto) {
     return this.iaService.criarProspectivo(dto);
+  }
+
+  @Post('responsavel')
+  criarResponsavel(@Body() dto: CriarResponsavelDto) {
+    return this.iaService.criarResponsavel(dto);
+  }
+
+  @Post('matricula')
+  matricularAluno(@Body() dto: MatricularAlunoDto) {
+    return this.iaService.matricularAluno(dto);
+  }
+
+  @Post('associar-telefone')
+  associarTelefoneCpf(@Body() dto: AssociarTelefoneDto) {
+    return this.iaService.associarTelefoneCpf(dto);
+  }
+
+  @Get('cpf-por-telefone')
+  getCpfPorTelefone(@Query('telefone') telefone: string) {
+    if (!telefone) throw new BadRequestException('Parâmetro telefone é obrigatório');
+    return this.iaService.getCpfPorTelefone(telefone);
   }
 }

@@ -2,6 +2,7 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -16,6 +17,7 @@ import { Professor } from './entities/professor.entity';
 import { RefreshToken } from './entities/refresh-token.entity';
 import { ResetToken } from './entities/reset-token.entity';
 import { EmailService } from '../email/email.service';
+import { SophiaService } from '../sophia/sophia.service';
 import {
   RegisterAlunoDto,
   RegisterProfessorDto,
@@ -31,6 +33,8 @@ const RESET_TTL_MS = 60 * 60 * 1000;
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     @InjectRepository(Usuario) private readonly usuarioRepo: Repository<Usuario>,
     @InjectRepository(Professor) private readonly professorRepo: Repository<Professor>,
@@ -38,6 +42,7 @@ export class AuthService {
     @InjectRepository(ResetToken) private readonly resetRepo: Repository<ResetToken>,
     private readonly config: ConfigService,
     private readonly email: EmailService,
+    private readonly sophia: SophiaService,
   ) {}
 
   private get jwtSecret() {
@@ -61,14 +66,49 @@ export class AuthService {
     if (exists) throw new ConflictException('email já cadastrado');
 
     const senhaHash = await bcrypt.hash(dto.senha, BCRYPT_ROUNDS);
-    await this.usuarioRepo.save({
+    const usuario = await this.usuarioRepo.save({
       email: dto.email.toLowerCase(),
       senhaHash,
       tipo: 'aluno',
       nome: dto.nome,
       ativo: true,
     });
-    return { ok: true };
+
+    const sophiaAlunoId = await this.buscarAlunoSophiaPorEmail(usuario.id, dto.email.toLowerCase());
+
+    if (sophiaAlunoId) {
+      return { ok: true };
+    }
+
+    return {
+      ok: true,
+      aviso: 'Conta criada com sucesso, mas seu e-mail não foi encontrado no sistema acadêmico. Verifique com a secretaria se o e-mail cadastrado está correto.',
+    };
+  }
+
+  // Retorna o codigoAluno do SophiA se encontrado; null caso contrário ou timeout.
+  // Limite de 5 s para não travar o cadastro se o SophiA estiver lento.
+  private async buscarAlunoSophiaPorEmail(usuarioId: string, email: string): Promise<number | null> {
+    const TIMEOUT_MS = 5000;
+    const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), TIMEOUT_MS));
+
+    const lookup = (async () => {
+      try {
+        const aluno = await this.sophia.searchAlunoByEmail(email);
+        if (aluno) {
+          await this.usuarioRepo.update(usuarioId, { sophiaAlunoId: aluno.codigo });
+          this.logger.log(`Aluno ${email} vinculado ao SophiA: codigoAluno=${aluno.codigo}`);
+          return aluno.codigo;
+        }
+        this.logger.warn(`Aluno ${email} não encontrado no SophiA pelo e-mail`);
+        return null;
+      } catch (err: any) {
+        this.logger.warn(`Falha ao buscar aluno ${email} no SophiA: ${err.message}`);
+        return null;
+      }
+    })();
+
+    return Promise.race([lookup, timeout]);
   }
 
   async registerProfessor(dto: RegisterProfessorDto) {

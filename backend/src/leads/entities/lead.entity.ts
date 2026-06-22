@@ -1,6 +1,6 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
 
-export type LeadStatus = 'novo' | 'contatado' | 'convertido' | 'perdido';
+export type LeadStatus = 'novo' | 'contatado' | 'agendado' | 'inscrito' | 'matriculado' | 'perdido';
 export type LeadOrigem = 'site' | 'chatbot' | 'whatsapp' | 'n8n' | 'manual';
 
 @Entity('lead')
@@ -32,6 +32,10 @@ export class Lead {
 
   @Column({ nullable: true })
   sophiaCodigo: string;
+
+  // Código do aluno no SophiA após conversão de lead → aluno matriculado
+  @Column({ nullable: true, type: 'integer' })
+  sophiaAlunoId: number | null;
 
   @Column({ nullable: true, type: 'text' })
   sophiaErro: string;

@@ -1,9 +1,10 @@
-import { Controller, Post, Get, HttpCode } from '@nestjs/common';
+import { Controller, Post, Get, HttpCode, Body, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { EmailJobService } from './email-job.service';
 import { EmailService } from './email.service';
 import { EmailLog } from './entities/email-log.entity';
+import { templateLembrete } from './templates/email.templates';
 
 @Controller('email')
 export class EmailController {
@@ -35,5 +36,29 @@ export class EmailController {
   async smtpCheck(): Promise<{ ok: boolean }> {
     const ok = await this.emailService.verificarConexao();
     return { ok };
+  }
+
+  @Post('test')
+  @HttpCode(200)
+  async testar(@Body('para') para: string): Promise<{ ok: boolean; para: string }> {
+    if (!para) throw new BadRequestException('Informe o campo "para" com o email de destino');
+    const { subject, html } = templateLembrete({
+      nomeAluno: 'André Nicézio (Teste)',
+      nomeResponsavel: 'André Nicézio',
+      descricao: 'Mensalidade — Pós-Graduação em Análises Clínicas',
+      valor: 'R$ 890,00',
+      vencimento: new Date(Date.now() + 3 * 86400000).toLocaleDateString('pt-BR'),
+      diasRestantes: 3,
+      codigoBarras: '34191.09008 63521.109002 61703.590000 6 00000000089000',
+      codigoPix: '00020126580014BR.GOV.BCB.PIX0136test-chave-pix-exemplo5204000053039865802BR5925IPESSP6008SAOPAULO62070503***6304ABCD',
+      codigoMatricula: '12345',
+      competencia: 'Junho/2026',
+      nomeEscola: 'IPESSP',
+      emailEscola: 'marketing@ipessp.edu.br',
+      telefoneEscola: '(11) 97692-2127',
+      siteUrl: 'https://ipessp.edu.br',
+    });
+    await this.emailService.enviar(para, subject, html);
+    return { ok: true, para };
   }
 }

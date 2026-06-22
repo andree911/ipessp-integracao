@@ -1,6 +1,12 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, Index } from 'typeorm';
 
-export type EmailTipo = 'lembrete' | 'vencimento_hoje' | 'cobranca';
+export type EmailTipo =
+  | 'lembrete'
+  | 'vencimento_hoje'
+  | 'cobranca'
+  | 'lead_boas_vindas'
+  | 'lead_followup'
+  | 'lead_cta';
 
 @Entity('email_log')
 export class EmailLog {
@@ -8,8 +14,12 @@ export class EmailLog {
   id: number;
 
   @Index()
-  @Column({ type: 'varchar' })
+  @Column({ type: 'varchar', default: '' })
   codigoLancamento: string;
+
+  @Index()
+  @Column({ type: 'integer', nullable: true })
+  leadId: number | null;
 
   @Column({ type: 'varchar' })
   tipo: EmailTipo;

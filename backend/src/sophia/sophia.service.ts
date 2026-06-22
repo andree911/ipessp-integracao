@@ -14,6 +14,9 @@ import {
   MatriculaAlunoApiModel,
   MatriculasWrapperApiModel,
   ResponsavelAlunoApiModel,
+  CriarResponsavelAlunoApiModel,
+  CriarResponsavelAlunoRetornoApiModel,
+  MatriculaInclusaoApiModel,
 } from './types/sophia.types';
 
 @Injectable()
@@ -68,6 +71,44 @@ export class SophiaService implements OnModuleInit {
   }
 
   // Reautentica em caso de 401 e retenta a chamada uma vez
+  private async post<T>(url: string, body: unknown): Promise<T> {
+    try {
+      const { data } = await firstValueFrom(
+        this.http.post<T>(url, body, { headers: this.headers() }),
+      );
+      return data;
+    } catch (err: any) {
+      if (err?.response?.status === 401) {
+        this.logger.warn('SophiA: token expirado, reautenticando...');
+        await this.autenticar();
+        const { data } = await firstValueFrom(
+          this.http.post<T>(url, body, { headers: this.headers() }),
+        );
+        return data;
+      }
+      throw err;
+    }
+  }
+
+  private async put<T>(url: string, body: unknown): Promise<T> {
+    try {
+      const { data } = await firstValueFrom(
+        this.http.put<T>(url, body, { headers: this.headers() }),
+      );
+      return data;
+    } catch (err: any) {
+      if (err?.response?.status === 401) {
+        this.logger.warn('SophiA: token expirado, reautenticando...');
+        await this.autenticar();
+        const { data } = await firstValueFrom(
+          this.http.put<T>(url, body, { headers: this.headers() }),
+        );
+        return data;
+      }
+      throw err;
+    }
+  }
+
   private async get<T>(url: string, params?: Record<string, unknown>): Promise<T> {
     try {
       const { data } = await firstValueFrom(
@@ -227,5 +268,26 @@ export class SophiaService implements OnModuleInit {
 
     this.logger.log(`SophiA: ${results.length} alunos carregados`);
     return results;
+  }
+
+  async criarResponsavelAluno(
+    idAluno: number,
+    dados: CriarResponsavelAlunoApiModel,
+  ): Promise<CriarResponsavelAlunoRetornoApiModel> {
+    return this.post<CriarResponsavelAlunoRetornoApiModel>(
+      `${this.apiBase}/alunos/${idAluno}/responsaveis`,
+      dados,
+    );
+  }
+
+  async vincularResponsavelFinanceiro(idAluno: number, idResponsavel: number): Promise<void> {
+    await this.put<unknown>(
+      `${this.apiBase}/alunos/${idAluno}/responsavelFinanceiro`,
+      idResponsavel,
+    );
+  }
+
+  async matricularAluno(idAluno: number, dados: MatriculaInclusaoApiModel): Promise<unknown> {
+    return this.post<unknown>(`${this.apiBase}/alunos/${idAluno}/Matriculas`, dados);
   }
 }

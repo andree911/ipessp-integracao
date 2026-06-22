@@ -1,0 +1,425 @@
+{
+  "name": "CRM IPESSP — Leads",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ipessp-crm-leads",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [0, 0],
+      "id": "4e068473-d4b4-4208-a8d5-b5cc592930c3",
+      "name": "Webhook Novo Lead",
+      "webhookId": "ipessp-crm-leads"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [1],
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 288],
+      "id": "f6fee8f9-6ad1-4a96-8d6b-bc22004f0679",
+      "name": "Relatorio Segunda 08h"
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead = $input.first().json.body;\nconst data = new Date(lead.criadoEm).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });\nconst sophia = lead.sophiaCodigo ? '✅ Registrado no SophiA' : '⚠️ Pendente de sync no SophiA';\n\nreturn [{ json: {\n  mensagem:\n    `🎯 *Novo Lead Captado!*\\n\\n` +\n    `👤 Nome: ${lead.nome}\\n` +\n    `📧 E-mail: ${lead.email || 'não informado'}\\n` +\n    `📱 Telefone: ${lead.telefone || 'não informado'}\\n` +\n    `📚 Interesse: ${lead.cursoInteresse || 'não informado'}\\n` +\n    `🌐 Origem: ${lead.origem}\\n` +\n    `⏰ Em: ${data}\\n` +\n    `${sophia}`\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [272, 0],
+      "id": "2a3d2cc3-f097-42d3-a660-5ed5b6351b6a",
+      "name": "Formatar Mensagem Lead"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.z-api.io/instances/3F497673391262B5E38ECAD85331F05F/token/23DD6E612F8766B7536l0EE4/send-text",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"phone\": \"5511999999999\",\n  \"message\": \"{{ $json.mensagem }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [528, 0],
+      "id": "ccb27ed7-6c63-47e6-9e60-4252035ab170",
+      "name": "Notificar Equipe WhatsApp"
+    },
+    {
+      "parameters": {
+        "url": "https://integracao-sophia-n8n.onrender.com/v1/leads/relatorio",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer d381c324adfc9ce74e195fcb7dc024e99b7e8bcf91d4bc86aa26f7c89c368a1c"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [272, 288],
+      "id": "5fba223f-5e12-4529-96e3-74f6715a8411",
+      "name": "Buscar Relatorio"
+    },
+    {
+      "parameters": {
+        "jsCode": "const r = $input.first().json;\nconst hoje = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });\n\nconst funilLines = (r.funil || []).map(f => `• ${f.estagio}: ${f.total}`).join('\\n') || '• sem dados';\nconst origemLines = (r.porOrigem || []).map(o => `• ${o.origem}: ${o.total}`).join('\\n') || '• sem dados';\n\nreturn [{ json: {\n  mensagem:\n    `📊 *Relatório Semanal de Leads — IPESSP*\\n` +\n    `📅 ${hoje}\\n\\n` +\n    `📌 Total geral: ${r.total}\\n` +\n    `🗓️ Novos este mês: ${r.noMes}\\n` +\n    `🔄 Sincronizados SophiA: ${r.sincronizadosSophia}\\n` +\n    `📈 Taxa de conversão: ${r.taxaConversao}\\n\\n` +\n    `🔽 *Funil:*\\n${funilLines}\\n\\n` +\n    `🌐 *Por Origem:*\\n${origemLines}`\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [528, 288],
+      "id": "e9501eef-bfbc-46bb-8a0e-2472cd0ba2f3",
+      "name": "Formatar Relatorio"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.z-api.io/instances/3F497673391262B5E38ECAD85331F05F/token/23DD6E612F8766B7536l0EE4/send-text",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"phone\": \"5511999999999\",\n  \"message\": \"{{ $json.mensagem }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [784, 288],
+      "id": "9daf7e9e-4e0a-4868-9c43-86d1a929988b",
+      "name": "Enviar Relatorio WhatsApp"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+              "leftValue": "={{ $('Webhook Novo Lead').item.json.body.telefone }}",
+              "rightValue": "",
+              "operator": { "type": "string", "operation": "notEmpty", "singleValue": true }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [784, 0],
+      "id": "aa111111-1111-1111-1111-111111111101",
+      "name": "Tem telefone?"
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead = $('Webhook Novo Lead').item.json.body;\nreturn [{ json: {\n  phone: (lead.telefone || '').replace(/\\D/g, ''),\n  nome: lead.nome,\n  leadId: lead.id\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1040, 0],
+      "id": "aa111111-1111-1111-1111-111111111102",
+      "name": "Preparar Dados Lead"
+    },
+    {
+      "parameters": { "amount": 5, "unit": "minutes" },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [1296, 0],
+      "id": "aa111111-1111-1111-1111-111111111103",
+      "name": "Aguarda 5 min"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.z-api.io/instances/3F497673391262B5E38ECAD85331F05F/token/23DD6E612F8766B7536l0EE4/send-text",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"phone\": \"{{ $('Preparar Dados Lead').item.json.phone }}\",\n  \"message\": \"Olá, {{ $('Preparar Dados Lead').item.json.nome }}! 👋\\n\\nFicamos felizes com seu interesse no IPESSP!\\n\\nSou a assistente virtual e estou aqui para tirar suas dúvidas sobre nossos cursos. Pode me perguntar qualquer coisa! 😊\\n\\nSe preferir, nossa equipe também está disponível para um atendimento personalizado.\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1552, 0],
+      "id": "aa111111-1111-1111-1111-111111111104",
+      "name": "WhatsApp Boas-vindas"
+    },
+    {
+      "parameters": { "amount": 1, "unit": "days" },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [1808, 0],
+      "id": "aa111111-1111-1111-1111-111111111105",
+      "name": "Aguarda 1 dia"
+    },
+    {
+      "parameters": {
+        "url": "={{ 'https://integracao-sophia-n8n.onrender.com/v1/admin/leads/' + $('Preparar Dados Lead').item.json.leadId }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer d381c324adfc9ce74e195fcb7dc024e99b7e8bcf91d4bc86aa26f7c89c368a1c"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [2064, 0],
+      "id": "aa111111-1111-1111-1111-111111111106",
+      "name": "Verificar Status 1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead = $input.first().json;\nconst ativo = ['novo', 'contatado'].includes(lead.status);\nreturn [{ json: { continuar: ativo } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2320, 0],
+      "id": "aa111111-1111-1111-1111-111111111107",
+      "name": "Ainda ativo? 1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+              "leftValue": "={{ $json.continuar }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "true", "singleValue": true }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [2576, 0],
+      "id": "aa111111-1111-1111-1111-111111111108",
+      "name": "Lead ainda ativo? 1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.z-api.io/instances/3F497673391262B5E38ECAD85331F05F/token/23DD6E612F8766B7536l0EE4/send-text",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"phone\": \"{{ $('Preparar Dados Lead').item.json.phone }}\",\n  \"message\": \"{{ $('Preparar Dados Lead').item.json.nome }}, vi que você ainda está conhecendo o IPESSP! 😊\\n\\nPosso te ajudar com:\\n📚 Cursos disponíveis\\n💰 Formas de pagamento\\n📅 Próximas turmas\\n\\nResponda aqui ou fale com nossa equipe!\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [2832, 0],
+      "id": "aa111111-1111-1111-1111-111111111109",
+      "name": "WhatsApp Follow-up"
+    },
+    {
+      "parameters": { "amount": 2, "unit": "days" },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [3088, 0],
+      "id": "aa111111-1111-1111-1111-111111111110",
+      "name": "Aguarda 2 dias"
+    },
+    {
+      "parameters": {
+        "url": "={{ 'https://integracao-sophia-n8n.onrender.com/v1/admin/leads/' + $('Preparar Dados Lead').item.json.leadId }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer d381c324adfc9ce74e195fcb7dc024e99b7e8bcf91d4bc86aa26f7c89c368a1c"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [3344, 0],
+      "id": "aa111111-1111-1111-1111-111111111111",
+      "name": "Verificar Status 2"
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead = $input.first().json;\nconst ativo = ['novo', 'contatado'].includes(lead.status);\nreturn [{ json: { continuar: ativo } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3600, 0],
+      "id": "aa111111-1111-1111-1111-111111111112",
+      "name": "Ainda ativo? 2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "c3d4e5f6-a7b8-9012-cdef-a12345678902",
+              "leftValue": "={{ $json.continuar }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "true", "singleValue": true }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [3856, 0],
+      "id": "aa111111-1111-1111-1111-111111111113",
+      "name": "Lead ainda ativo? 2"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.z-api.io/instances/3F497673391262B5E38ECAD85331F05F/token/23DD6E612F8766B7536l0EE4/send-text",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"phone\": \"{{ $('Preparar Dados Lead').item.json.phone }}\",\n  \"message\": \"⏰ {{ $('Preparar Dados Lead').item.json.nome }}, as vagas estão preenchendo!\\n\\n✅ Processo seletivo simples\\n✅ Parcelamento facilitado\\n✅ Certificado reconhecido\\n\\nGaranta sua vaga: https://ipessp.edu.br/inscricao\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [4112, 0],
+      "id": "aa111111-1111-1111-1111-111111111114",
+      "name": "WhatsApp CTA"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook Novo Lead": {
+      "main": [[
+        { "node": "Formatar Mensagem Lead", "type": "main", "index": 0 }
+      ]]
+    },
+    "Formatar Mensagem Lead": {
+      "main": [[
+        { "node": "Notificar Equipe WhatsApp", "type": "main", "index": 0 }
+      ]]
+    },
+    "Notificar Equipe WhatsApp": {
+      "main": [[
+        { "node": "Tem telefone?", "type": "main", "index": 0 }
+      ]]
+    },
+    "Relatorio Segunda 08h": {
+      "main": [[
+        { "node": "Buscar Relatorio", "type": "main", "index": 0 }
+      ]]
+    },
+    "Buscar Relatorio": {
+      "main": [[
+        { "node": "Formatar Relatorio", "type": "main", "index": 0 }
+      ]]
+    },
+    "Formatar Relatorio": {
+      "main": [[
+        { "node": "Enviar Relatorio WhatsApp", "type": "main", "index": 0 }
+      ]]
+    },
+    "Tem telefone?": {
+      "main": [
+        [{ "node": "Preparar Dados Lead", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "Preparar Dados Lead": {
+      "main": [[
+        { "node": "Aguarda 5 min", "type": "main", "index": 0 }
+      ]]
+    },
+    "Aguarda 5 min": {
+      "main": [[
+        { "node": "WhatsApp Boas-vindas", "type": "main", "index": 0 }
+      ]]
+    },
+    "WhatsApp Boas-vindas": {
+      "main": [[
+        { "node": "Aguarda 1 dia", "type": "main", "index": 0 }
+      ]]
+    },
+    "Aguarda 1 dia": {
+      "main": [[
+        { "node": "Verificar Status 1", "type": "main", "index": 0 }
+      ]]
+    },
+    "Verificar Status 1": {
+      "main": [[
+        { "node": "Ainda ativo? 1", "type": "main", "index": 0 }
+      ]]
+    },
+    "Ainda ativo? 1": {
+      "main": [[
+        { "node": "Lead ainda ativo? 1", "type": "main", "index": 0 }
+      ]]
+    },
+    "Lead ainda ativo? 1": {
+      "main": [
+        [{ "node": "WhatsApp Follow-up", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "WhatsApp Follow-up": {
+      "main": [[
+        { "node": "Aguarda 2 dias", "type": "main", "index": 0 }
+      ]]
+    },
+    "Aguarda 2 dias": {
+      "main": [[
+        { "node": "Verificar Status 2", "type": "main", "index": 0 }
+      ]]
+    },
+    "Verificar Status 2": {
+      "main": [[
+        { "node": "Ainda ativo? 2", "type": "main", "index": 0 }
+      ]]
+    },
+    "Ainda ativo? 2": {
+      "main": [[
+        { "node": "Lead ainda ativo? 2", "type": "main", "index": 0 }
+      ]]
+    },
+    "Lead ainda ativo? 2": {
+      "main": [
+        [{ "node": "WhatsApp CTA", "type": "main", "index": 0 }],
+        []
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "1d1ae8a7-0196-4f34-a35a-53c782da4299",
+  "meta": {
+    "instanceId": "a2c712cc769c66c8367ef5c1897b06d87d72291b660d37ca0117ef217864317c"
+  },
+  "nodeGroups": [],
+  "id": "6stKINVZ51X4HKIt",
+  "tags": []
+}

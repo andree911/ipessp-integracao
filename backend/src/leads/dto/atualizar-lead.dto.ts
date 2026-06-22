@@ -2,7 +2,7 @@ import { IsIn, IsOptional, IsString } from 'class-validator';
 
 export class AtualizarLeadDto {
   @IsOptional()
-  @IsIn(['novo', 'contatado', 'convertido', 'perdido'])
+  @IsIn(['novo', 'contatado', 'agendado', 'inscrito', 'matriculado', 'perdido'])
   status?: string;
 
   @IsOptional()

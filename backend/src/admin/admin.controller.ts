@@ -1,9 +1,12 @@
-import { Controller, Get, NotFoundException, Param, Patch, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, NotFoundException, Param, Patch, ParseIntPipe, Query, UseGuards } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AdminApiKeyGuard } from './guards/admin-api-key.guard';
 import { Usuario } from '../auth/entities/usuario.entity';
 import { Professor } from '../auth/entities/professor.entity';
+import { Lead } from '../leads/entities/lead.entity';
+import { LeadHistorico } from '../leads/entities/lead-historico.entity';
+import { LeadsService } from '../leads/leads.service';
 
 @Controller('v1/admin')
 @UseGuards(AdminApiKeyGuard)
@@ -11,7 +14,12 @@ export class AdminController {
   constructor(
     @InjectRepository(Usuario) private readonly usuarioRepo: Repository<Usuario>,
     @InjectRepository(Professor) private readonly professorRepo: Repository<Professor>,
+    @InjectRepository(Lead) private readonly leadRepo: Repository<Lead>,
+    @InjectRepository(LeadHistorico) private readonly historicoRepo: Repository<LeadHistorico>,
+    private readonly leadsService: LeadsService,
   ) {}
+
+  // ─── Professores ─────────────────────────────────────────────────────────────
 
   @Get('professores')
   async listar() {
@@ -54,5 +62,40 @@ export class AdminController {
     await this.usuarioRepo.update(id, { ativo: false });
 
     return { ok: true, professor: { id: usuario.id, nome: usuario.nome, email: usuario.email } };
+  }
+
+  // ─── Leads / CRM ─────────────────────────────────────────────────────────────
+
+  @Get('leads')
+  listarLeads(
+    @Query('status') status?: string,
+    @Query('origem') origem?: string,
+    @Query('de') de?: string,
+    @Query('ate') ate?: string,
+  ) {
+    return this.leadsService.listar({ status, origem, de, ate });
+  }
+
+  @Get('leads/funil')
+  funil() {
+    return this.leadsService.relatorio();
+  }
+
+  @Get('leads/:id')
+  buscarLead(@Param('id', ParseIntPipe) id: number) {
+    return this.leadsService.buscarPorId(id);
+  }
+
+  @Get('leads/:id/historico')
+  historicoLead(@Param('id', ParseIntPipe) id: number) {
+    return this.leadsService.getHistorico(id);
+  }
+
+  @Patch('leads/:id/estagio')
+  moverEstagioLead(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { estagio: string; observacao?: string },
+  ) {
+    return this.leadsService.moverEstagio(id, body as any);
   }
 }

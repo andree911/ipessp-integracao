@@ -8,11 +8,13 @@ import { Professor } from './entities/professor.entity';
 import { RefreshToken } from './entities/refresh-token.entity';
 import { ResetToken } from './entities/reset-token.entity';
 import { EmailModule } from '../email/email.module';
+import { SophiaModule } from '../sophia/sophia.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Usuario, Professor, RefreshToken, ResetToken]),
     EmailModule,
+    SophiaModule,
   ],
   providers: [AuthService, JwtAuthGuard],
   controllers: [AuthController],
