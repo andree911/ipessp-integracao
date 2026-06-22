@@ -6,6 +6,7 @@ import { Repository } from 'typeorm';
 import { SophiaService } from '../sophia/sophia.service';
 import { EmailService } from './email.service';
 import { EmailLog, EmailTipo } from './entities/email-log.entity';
+import { ResponsavelCache } from '../ia/entities/responsavel-cache.entity';
 import {
   templateCobranca,
   templateLembrete,
@@ -22,6 +23,8 @@ export class EmailJobService {
     private readonly config: ConfigService,
     @InjectRepository(EmailLog)
     private readonly emailLogRepo: Repository<EmailLog>,
+    @InjectRepository(ResponsavelCache)
+    private readonly cacheRepo: Repository<ResponsavelCache>,
   ) {}
 
   private formatarCompetencia(competencia: string): string {
@@ -220,5 +223,64 @@ export class EmailJobService {
     }
 
     throw new Error('Nenhum aluno com lançamento em aberto encontrado no SophiA');
+  }
+
+  async previewPorCpf(cpf: string, destinatario: string): Promise<{ aluno: string; tipo: string; lancamento: number }> {
+    const cpfLimpo = cpf.replace(/\D/g, '');
+    const cache = await this.cacheRepo.findOne({ where: { cpf: cpfLimpo } });
+    if (!cache) throw new Error(`CPF ${cpf} não encontrado na cache. Execute POST /sync/trigger primeiro.`);
+
+    const nomeEscola = this.config.get<string>('email.nomeEscola') ?? 'Escola';
+    const emailEscola = this.config.get<string>('email.from') ?? '';
+    const telefoneEscola = this.config.get<string>('email.telefoneEscola') ?? '';
+    const siteUrl = this.config.get<string>('email.siteUrl') || undefined;
+    const instagramUrl = this.config.get<string>('email.instagramUrl') || undefined;
+    const facebookUrl = this.config.get<string>('email.facebookUrl') || undefined;
+    const youtubeUrl = this.config.get<string>('email.youtubeUrl') || undefined;
+    const linkedinUrl = this.config.get<string>('email.linkedinUrl') || undefined;
+    const cnpj = this.config.get<string>('email.cnpj') || undefined;
+    const endereco = this.config.get<string>('email.endereco') || undefined;
+
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+
+    const lancamentos = await this.sophia.getLancamentosAluno(cache.codigoAluno);
+    const lanc = lancamentos.find((l) => l.recebido === 0);
+    if (!lanc) throw new Error(`Aluno ${cache.nomeAluno} não possui lançamentos em aberto no SophiA`);
+
+    const venc = new Date(lanc.dataVencimento);
+    venc.setHours(0, 0, 0, 0);
+    const diffDias = Math.round((venc.getTime() - hoje.getTime()) / 86_400_000);
+
+    let tipo: EmailTipo;
+    if (diffDias === 0) tipo = 'vencimento_hoje';
+    else if (diffDias < 0) tipo = 'cobranca';
+    else tipo = 'lembrete';
+
+    const emailData = {
+      nomeAluno: cache.nomeAluno,
+      nomeResponsavel: cache.nomeResponsavel,
+      descricao: lanc.descricao ?? 'Mensalidade',
+      valor: `R$ ${lanc.valorPrevisto.toFixed(2).replace('.', ',')}`,
+      vencimento: venc.toLocaleDateString('pt-BR'),
+      diasRestantes: diffDias > 0 ? diffDias : undefined,
+      diasAtraso: diffDias < 0 ? Math.abs(diffDias) : undefined,
+      codigoBarras: lanc.linhaDigitavel,
+      urlBoleto: lanc.urlBoletoDigital,
+      codigoPix: lanc.codigoPix,
+      codigoMatricula: String(cache.codigoAluno),
+      competencia: lanc.competencia ? this.formatarCompetencia(lanc.competencia) : undefined,
+      nomeEscola, emailEscola, telefoneEscola,
+      logoUrl: this.config.get<string>('email.logoUrl') || undefined,
+      siteUrl, instagramUrl, facebookUrl, youtubeUrl, linkedinUrl, cnpj, endereco,
+    };
+
+    let template: { subject: string; html: string };
+    if (tipo === 'lembrete') template = templateLembrete(emailData);
+    else if (tipo === 'vencimento_hoje') template = templateVencimentoHoje(emailData);
+    else template = templateCobranca(emailData);
+
+    await this.emailService.enviar(destinatario, `[PREVIEW] ${template.subject}`, template.html);
+    return { aluno: cache.nomeAluno, tipo, lancamento: lanc.codigo };
   }
 }

@@ -48,6 +48,18 @@ export class EmailController {
     return { ok: true, ...resultado };
   }
 
+  @Post('test/cpf')
+  @HttpCode(200)
+  async testarPorCpf(
+    @Body('cpf') cpf: string,
+    @Body('para') para: string,
+  ): Promise<{ ok: boolean; aluno: string; tipo: string; lancamento: number }> {
+    if (!cpf) throw new BadRequestException('Informe o campo "cpf"');
+    if (!para) throw new BadRequestException('Informe o campo "para" com o email de destino');
+    const resultado = await this.jobService.previewPorCpf(cpf, para);
+    return { ok: true, ...resultado };
+  }
+
   @Post('test')
   @HttpCode(200)
   async testar(@Body('para') para: string): Promise<{ ok: boolean; para: string }> {
