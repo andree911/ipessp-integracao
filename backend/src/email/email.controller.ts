@@ -1,4 +1,4 @@
-import { Controller, Post, Get, HttpCode, Body, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Get, HttpCode, Body, BadRequestException, NotFoundException, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
@@ -56,8 +56,14 @@ export class EmailController {
   ): Promise<{ ok: boolean; aluno: string; tipo: string; lancamento: number }> {
     if (!cpf) throw new BadRequestException('Informe o campo "cpf"');
     if (!para) throw new BadRequestException('Informe o campo "para" com o email de destino');
-    const resultado = await this.jobService.previewPorCpf(cpf, para);
-    return { ok: true, ...resultado };
+    try {
+      const resultado = await this.jobService.previewPorCpf(cpf, para);
+      return { ok: true, ...resultado };
+    } catch (err: any) {
+      if (err.message?.includes('não encontrado na cache')) throw new NotFoundException(err.message);
+      if (err.message?.includes('não possui lançamentos')) throw new NotFoundException(err.message);
+      throw new InternalServerErrorException(err.message);
+    }
   }
 
   @Post('test')
