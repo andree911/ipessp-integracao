@@ -154,4 +154,74 @@ export class EmailJobService {
       `=== Job de emails concluído: ${totalEnviados} enviados, ${totalErros} erros ===`,
     );
   }
+
+  async previewComDadosSophia(destinatario: string): Promise<{ aluno: string; tipo: string; lancamento: number }> {
+    const nomeEscola = this.config.get<string>('email.nomeEscola') ?? 'Escola';
+    const emailEscola = this.config.get<string>('email.from') ?? '';
+    const telefoneEscola = this.config.get<string>('email.telefoneEscola') ?? '';
+    const siteUrl = this.config.get<string>('email.siteUrl') || undefined;
+    const instagramUrl = this.config.get<string>('email.instagramUrl') || undefined;
+    const facebookUrl = this.config.get<string>('email.facebookUrl') || undefined;
+    const youtubeUrl = this.config.get<string>('email.youtubeUrl') || undefined;
+    const linkedinUrl = this.config.get<string>('email.linkedinUrl') || undefined;
+    const cnpj = this.config.get<string>('email.cnpj') || undefined;
+    const endereco = this.config.get<string>('email.endereco') || undefined;
+    const diasAntes = this.config.get<number>('email.diasAntes') ?? 3;
+    const diasAposVencimento = this.config.get<number[]>('email.diasAposVencimento') ?? [1, 3, 7];
+
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+
+    const alunos = await this.sophia.getAllAlunos();
+
+    for (const aluno of alunos) {
+      const responsaveis = await this.sophia.getResponsaveisAluno(aluno.codigo);
+      const resp = responsaveis.find((r) => r.responsavelFinanceiro) ?? responsaveis[0];
+      if (!resp) continue;
+
+      const lancamentos = await this.sophia.getLancamentosAluno(aluno.codigo);
+
+      for (const lanc of lancamentos) {
+        if (lanc.recebido !== 0) continue;
+
+        const venc = new Date(lanc.dataVencimento);
+        venc.setHours(0, 0, 0, 0);
+        const diffDias = Math.round((venc.getTime() - hoje.getTime()) / 86_400_000);
+
+        let tipo: EmailTipo | null = null;
+        if (diffDias === 0) tipo = 'vencimento_hoje';
+        else if (diffDias > 0 && diffDias <= diasAntes) tipo = 'lembrete';
+        else if (diffDias < 0 && diasAposVencimento.includes(Math.abs(diffDias))) tipo = 'cobranca';
+        if (!tipo) continue;
+
+        const emailData = {
+          nomeAluno: aluno.nome,
+          nomeResponsavel: resp.nome,
+          descricao: lanc.descricao ?? 'Mensalidade',
+          valor: `R$ ${lanc.valorPrevisto.toFixed(2).replace('.', ',')}`,
+          vencimento: venc.toLocaleDateString('pt-BR'),
+          diasRestantes: diffDias > 0 ? diffDias : undefined,
+          diasAtraso: diffDias < 0 ? Math.abs(diffDias) : undefined,
+          codigoBarras: lanc.linhaDigitavel,
+          urlBoleto: lanc.urlBoletoDigital,
+          codigoPix: lanc.codigoPix,
+          codigoMatricula: aluno.codigo ? String(aluno.codigo) : undefined,
+          competencia: lanc.competencia ? this.formatarCompetencia(lanc.competencia) : undefined,
+          nomeEscola, emailEscola, telefoneEscola,
+          logoUrl: this.config.get<string>('email.logoUrl') || undefined,
+          siteUrl, instagramUrl, facebookUrl, youtubeUrl, linkedinUrl, cnpj, endereco,
+        };
+
+        let template: { subject: string; html: string };
+        if (tipo === 'lembrete') template = templateLembrete(emailData);
+        else if (tipo === 'vencimento_hoje') template = templateVencimentoHoje(emailData);
+        else template = templateCobranca(emailData);
+
+        await this.emailService.enviar(destinatario, `[PREVIEW] ${template.subject}`, template.html);
+        return { aluno: aluno.nome, tipo, lancamento: lanc.codigo };
+      }
+    }
+
+    throw new Error('Nenhum lançamento em aberto encontrado no SophiA para gerar preview');
+  }
 }
