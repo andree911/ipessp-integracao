@@ -2,19 +2,26 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Cron } from '@nestjs/schedule';
+import { ConfigService } from '@nestjs/config';
 import { EmailService } from './email.service';
 import { EmailLog } from './entities/email-log.entity';
 import { Lead } from '../leads/entities/lead.entity';
 
+const SITE_URL = 'https://ipessp.edu.br';
+
 @Injectable()
 export class LeadEmailService {
   private readonly logger = new Logger(LeadEmailService.name);
+  private readonly logoUrl: string;
 
   constructor(
     @InjectRepository(EmailLog) private readonly logRepo: Repository<EmailLog>,
     @InjectRepository(Lead) private readonly leadRepo: Repository<Lead>,
     private readonly emailService: EmailService,
-  ) {}
+    private readonly config: ConfigService,
+  ) {
+    this.logoUrl = this.config.get<string>('EMAIL_LOGO_URL') ?? '';
+  }
 
   async enviarBoasVindas(lead: Lead): Promise<void> {
     if (!lead.email) return;
@@ -87,80 +94,106 @@ export class LeadEmailService {
 
   // ─── Templates ───────────────────────────────────────────────────────────────
 
-  private templateBoasVindas(nome: string, curso?: string): string {
-    const cursoTexto = curso ? ` no curso <strong>${curso}</strong>` : '';
+  private cabecalhoHtml(subtitulo?: string): string {
+    const logoBlock = this.logoUrl
+      ? `<a href="${SITE_URL}" target="_blank" style="display:inline-block;line-height:0;border:0;text-decoration:none;">
+           <img src="${this.logoUrl}" alt="IPESSP" height="56"
+             style="height:56px;width:auto;display:block;border:0;border-radius:50%;">
+         </a>`
+      : `<span style="font-size:24px;font-weight:bold;color:#ffffff;font-family:Arial,sans-serif;">IPESSP</span>`;
+
     return `
-<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#f5f5f5;font-family:Arial,sans-serif">
-<table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:40px 16px">
-<table width="580" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08)">
-  <tr><td style="background:#C8102E;padding:32px 40px;text-align:center">
-    <h1 style="color:#ffffff;margin:0;font-size:22px;font-weight:700">IPESSP</h1>
-    <p style="color:rgba(255,255,255,.85);margin:8px 0 0;font-size:14px">Instituto de Pesquisa e Ensino Superior de São Paulo</p>
-  </td></tr>
-  <tr><td style="padding:40px">
-    <h2 style="color:#1a1a1a;font-size:20px;margin:0 0 16px">Olá, ${nome}! 👋</h2>
-    <p style="color:#444;line-height:1.7;margin:0 0 16px">Ficamos muito felizes com seu interesse${cursoTexto} no IPESSP. Nossa equipe já foi notificada e entrará em contato em breve.</p>
-    <p style="color:#444;line-height:1.7;margin:0 0 24px">Enquanto isso, que tal conhecer mais sobre nossos cursos e estrutura?</p>
-    <table cellpadding="0" cellspacing="0"><tr><td style="background:#C8102E;border-radius:6px">
-      <a href="https://ipessp.edu.br" style="display:block;color:#ffffff;text-decoration:none;font-weight:700;font-size:15px;padding:14px 32px">Ver nossos cursos</a>
-    </td></tr></table>
-  </td></tr>
-  <tr><td style="background:#f8f8f8;padding:24px 40px;text-align:center;border-top:1px solid #eeeeee">
-    <p style="color:#999;font-size:12px;margin:0">IPESSP · São Paulo, SP · contato@ipessp.edu.br</p>
+  <tr>
+    <td bgcolor="#C8102E" style="background-color:#C8102E;padding:28px 40px;text-align:center;">
+      ${logoBlock}
+      ${subtitulo ? `<p style="color:rgba(255,255,255,.85);margin:10px 0 0;font-size:13px;font-family:Arial,sans-serif;">${subtitulo}</p>` : ''}
+    </td>
+  </tr>`;
+  }
+
+  private rodapeHtml(): string {
+    const logoBlock = this.logoUrl
+      ? `<a href="${SITE_URL}" target="_blank" style="display:inline-block;line-height:0;border:0;text-decoration:none;margin-bottom:12px;">
+           <img src="${this.logoUrl}" alt="IPESSP" height="40"
+             style="height:40px;width:auto;display:block;border:0;border-radius:50%;">
+         </a>`
+      : `<span style="font-size:16px;font-weight:bold;color:#888;font-family:Arial,sans-serif;display:block;margin-bottom:12px;">IPESSP</span>`;
+
+    return `
+  <tr>
+    <td style="background:#f8f8f8;padding:24px 40px;text-align:center;border-top:1px solid #eeeeee;">
+      ${logoBlock}
+      <p style="color:#999;font-size:12px;margin:0;font-family:Arial,sans-serif;">
+        IPESSP &middot; S&atilde;o Paulo, SP &middot; contato@ipessp.edu.br
+      </p>
+    </td>
+  </tr>`;
+  }
+
+  private wrapEmail(conteudo: string, subtitulo?: string): string {
+    return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f5f5f5;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr><td align="center" style="padding:40px 16px;">
+    <table width="580" cellpadding="0" cellspacing="0" border="0"
+      style="background:#ffffff;border-radius:8px;overflow:hidden;">
+      ${this.cabecalhoHtml(subtitulo)}
+      <tr><td style="padding:40px;">${conteudo}</td></tr>
+      ${this.rodapeHtml()}
+    </table>
   </td></tr>
 </table>
-</td></tr></table></body></html>`;
+</body></html>`;
+  }
+
+  private templateBoasVindas(nome: string, curso?: string): string {
+    const cursoTexto = curso ? ` no curso <strong>${curso}</strong>` : '';
+    return this.wrapEmail(`
+    <h2 style="color:#1a1a1a;font-size:20px;margin:0 0 16px;font-family:Arial,sans-serif;">Ol&aacute;, ${nome}! &#128075;</h2>
+    <p style="color:#444;line-height:1.7;margin:0 0 16px;font-family:Arial,sans-serif;">Ficamos muito felizes com seu interesse${cursoTexto} no IPESSP. Nossa equipe j&aacute; foi notificada e entrar&aacute; em contato em breve.</p>
+    <p style="color:#444;line-height:1.7;margin:0 0 24px;font-family:Arial,sans-serif;">Enquanto isso, que tal conhecer mais sobre nossos cursos e estrutura?</p>
+    <table cellpadding="0" cellspacing="0" border="0">
+      <tr><td bgcolor="#C8102E" style="background-color:#C8102E;border-radius:6px;">
+        <a href="${SITE_URL}" target="_blank"
+          style="display:block;color:#ffffff;text-decoration:none;font-weight:700;font-size:15px;padding:14px 32px;font-family:Arial,sans-serif;">
+          Ver nossos cursos
+        </a>
+      </td></tr>
+    </table>`);
   }
 
   private templateFollowUp(nome: string, curso?: string): string {
     const cursoTexto = curso ? `sobre o curso <strong>${curso}</strong>` : 'sobre nossos cursos';
-    return `
-<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"></head>
-<body style="margin:0;padding:0;background:#f5f5f5;font-family:Arial,sans-serif">
-<table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:40px 16px">
-<table width="580" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08)">
-  <tr><td style="background:#C8102E;padding:28px 40px;text-align:center">
-    <h1 style="color:#ffffff;margin:0;font-size:20px;font-weight:700">IPESSP</h1>
-  </td></tr>
-  <tr><td style="padding:40px">
-    <h2 style="color:#1a1a1a;font-size:19px;margin:0 0 16px">Ainda com dúvidas, ${nome}?</h2>
-    <p style="color:#444;line-height:1.7;margin:0 0 16px">Notamos que você demonstrou interesse ${cursoTexto}. Nossa equipe está pronta para responder todas as suas perguntas sobre processo seletivo, valores e estrutura.</p>
-    <p style="color:#444;line-height:1.7;margin:0 0 24px">Fale conosco pelo WhatsApp — é rápido e sem compromisso!</p>
-    <table cellpadding="0" cellspacing="0"><tr><td style="background:#25D366;border-radius:6px">
-      <a href="https://wa.me/5511XXXXXXXXX" style="display:block;color:#ffffff;text-decoration:none;font-weight:700;font-size:15px;padding:14px 32px">Falar pelo WhatsApp</a>
-    </td></tr></table>
-  </td></tr>
-  <tr><td style="background:#f8f8f8;padding:20px 40px;text-align:center;border-top:1px solid #eeeeee">
-    <p style="color:#999;font-size:12px;margin:0">IPESSP · contato@ipessp.edu.br</p>
-  </td></tr>
-</table>
-</td></tr></table></body></html>`;
+    return this.wrapEmail(`
+    <h2 style="color:#1a1a1a;font-size:19px;margin:0 0 16px;font-family:Arial,sans-serif;">Ainda com d&uacute;vidas, ${nome}?</h2>
+    <p style="color:#444;line-height:1.7;margin:0 0 16px;font-family:Arial,sans-serif;">Notamos que voc&ecirc; demonstrou interesse ${cursoTexto}. Nossa equipe est&aacute; pronta para responder todas as suas perguntas sobre processo seletivo, valores e estrutura.</p>
+    <p style="color:#444;line-height:1.7;margin:0 0 24px;font-family:Arial,sans-serif;">Fale conosco pelo WhatsApp &mdash; &eacute; r&aacute;pido e sem compromisso!</p>
+    <table cellpadding="0" cellspacing="0" border="0">
+      <tr><td bgcolor="#25D366" style="background-color:#25D366;border-radius:6px;">
+        <a href="https://wa.me/5511976922127" target="_blank"
+          style="display:block;color:#ffffff;text-decoration:none;font-weight:700;font-size:15px;padding:14px 32px;font-family:Arial,sans-serif;">
+          Falar pelo WhatsApp
+        </a>
+      </td></tr>
+    </table>`);
   }
 
   private templateCta(nome: string, curso?: string): string {
     const cursoTexto = curso ? ` para o curso de ${curso}` : '';
-    return `
-<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"></head>
-<body style="margin:0;padding:0;background:#f5f5f5;font-family:Arial,sans-serif">
-<table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:40px 16px">
-<table width="580" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08)">
-  <tr><td style="background:#C8102E;padding:28px 40px;text-align:center">
-    <h1 style="color:#ffffff;margin:0;font-size:20px;font-weight:700">IPESSP</h1>
-    <p style="color:rgba(255,255,255,.85);margin:6px 0 0;font-size:13px">⏰ Vagas limitadas</p>
-  </td></tr>
-  <tr><td style="padding:40px">
-    <h2 style="color:#1a1a1a;font-size:19px;margin:0 0 16px">${nome}, as inscrições estão abertas!</h2>
-    <p style="color:#444;line-height:1.7;margin:0 0 16px">As vagas${cursoTexto} estão preenchendo rapidamente. Garanta a sua agora e dê o próximo passo na sua carreira com o suporte de um dos melhores institutos de São Paulo.</p>
-    <table cellpadding="0" cellspacing="0" style="margin-bottom:16px"><tr><td style="background:#C8102E;border-radius:6px">
-      <a href="https://ipessp.edu.br/inscricao" style="display:block;color:#ffffff;text-decoration:none;font-weight:700;font-size:15px;padding:14px 32px">Fazer minha inscrição agora</a>
-    </td></tr></table>
-    <p style="color:#888;font-size:13px;margin:0">Dúvidas? Responda este e-mail ou fale conosco no WhatsApp.</p>
-  </td></tr>
-  <tr><td style="background:#f8f8f8;padding:20px 40px;text-align:center;border-top:1px solid #eeeeee">
-    <p style="color:#999;font-size:12px;margin:0">IPESSP · contato@ipessp.edu.br</p>
-  </td></tr>
-</table>
-</td></tr></table></body></html>`;
+    return this.wrapEmail(`
+    <h2 style="color:#1a1a1a;font-size:19px;margin:0 0 16px;font-family:Arial,sans-serif;">${nome}, as inscri&ccedil;&otilde;es est&atilde;o abertas!</h2>
+    <p style="color:#444;line-height:1.7;margin:0 0 16px;font-family:Arial,sans-serif;">As vagas${cursoTexto} est&atilde;o preenchendo rapidamente. Garanta a sua agora e d&ecirc; o pr&oacute;ximo passo na sua carreira com o suporte de um dos melhores institutos de S&atilde;o Paulo.</p>
+    <table cellpadding="0" cellspacing="0" border="0" style="margin-bottom:16px;">
+      <tr><td bgcolor="#C8102E" style="background-color:#C8102E;border-radius:6px;">
+        <a href="${SITE_URL}/inscricao" target="_blank"
+          style="display:block;color:#ffffff;text-decoration:none;font-weight:700;font-size:15px;padding:14px 32px;font-family:Arial,sans-serif;">
+          Fazer minha inscri&ccedil;&atilde;o agora
+        </a>
+      </td></tr>
+    </table>
+    <p style="color:#888;font-size:13px;margin:0;font-family:Arial,sans-serif;">D&uacute;vidas? Responda este e-mail ou fale conosco no WhatsApp.</p>`,
+    '&#9200; Vagas limitadas');
   }
 }

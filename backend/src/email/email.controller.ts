@@ -1,6 +1,7 @@
 import { Controller, Post, Get, HttpCode, Body, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { ConfigService } from '@nestjs/config';
 import { EmailJobService } from './email-job.service';
 import { EmailService } from './email.service';
 import { EmailLog } from './entities/email-log.entity';
@@ -11,6 +12,7 @@ export class EmailController {
   constructor(
     private readonly jobService: EmailJobService,
     private readonly emailService: EmailService,
+    private readonly config: ConfigService,
     @InjectRepository(EmailLog)
     private readonly emailLogRepo: Repository<EmailLog>,
   ) {}
@@ -53,9 +55,10 @@ export class EmailController {
       codigoPix: '00020126580014BR.GOV.BCB.PIX0136test-chave-pix-exemplo5204000053039865802BR5925IPESSP6008SAOPAULO62070503***6304ABCD',
       codigoMatricula: '12345',
       competencia: 'Junho/2026',
-      nomeEscola: 'IPESSP',
-      emailEscola: 'marketing@ipessp.edu.br',
+      nomeEscola: this.config.get('EMAIL_NOME_ESCOLA') ?? 'IPESSP',
+      emailEscola: this.config.get('EMAIL_FROM') ?? 'marketing@ipessp.edu.br',
       telefoneEscola: '(11) 97692-2127',
+      logoUrl: this.config.get('EMAIL_LOGO_URL'),
       siteUrl: 'https://ipessp.edu.br',
     });
     await this.emailService.enviar(para, subject, html);
