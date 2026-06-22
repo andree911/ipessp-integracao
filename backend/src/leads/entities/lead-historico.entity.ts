@@ -9,7 +9,7 @@ export class LeadHistorico {
   @Column()
   leadId: number;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   estagioAnterior: string | null;
 
   @Column()
