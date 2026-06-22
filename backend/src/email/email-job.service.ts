@@ -180,48 +180,45 @@ export class EmailJobService {
       if (!resp) continue;
 
       const lancamentos = await this.sophia.getLancamentosAluno(aluno.codigo);
+      const lanc = lancamentos.find((l) => l.recebido === 0);
+      if (!lanc) continue;
 
-      for (const lanc of lancamentos) {
-        if (lanc.recebido !== 0) continue;
+      const venc = new Date(lanc.dataVencimento);
+      venc.setHours(0, 0, 0, 0);
+      const diffDias = Math.round((venc.getTime() - hoje.getTime()) / 86_400_000);
 
-        const venc = new Date(lanc.dataVencimento);
-        venc.setHours(0, 0, 0, 0);
-        const diffDias = Math.round((venc.getTime() - hoje.getTime()) / 86_400_000);
+      let tipo: EmailTipo;
+      if (diffDias === 0) tipo = 'vencimento_hoje';
+      else if (diffDias < 0) tipo = 'cobranca';
+      else tipo = 'lembrete';
 
-        let tipo: EmailTipo | null = null;
-        if (diffDias === 0) tipo = 'vencimento_hoje';
-        else if (diffDias > 0 && diffDias <= diasAntes) tipo = 'lembrete';
-        else if (diffDias < 0 && diasAposVencimento.includes(Math.abs(diffDias))) tipo = 'cobranca';
-        if (!tipo) continue;
+      const emailData = {
+        nomeAluno: aluno.nome,
+        nomeResponsavel: resp.nome,
+        descricao: lanc.descricao ?? 'Mensalidade',
+        valor: `R$ ${lanc.valorPrevisto.toFixed(2).replace('.', ',')}`,
+        vencimento: venc.toLocaleDateString('pt-BR'),
+        diasRestantes: diffDias > 0 ? diffDias : undefined,
+        diasAtraso: diffDias < 0 ? Math.abs(diffDias) : undefined,
+        codigoBarras: lanc.linhaDigitavel,
+        urlBoleto: lanc.urlBoletoDigital,
+        codigoPix: lanc.codigoPix,
+        codigoMatricula: aluno.codigo ? String(aluno.codigo) : undefined,
+        competencia: lanc.competencia ? this.formatarCompetencia(lanc.competencia) : undefined,
+        nomeEscola, emailEscola, telefoneEscola,
+        logoUrl: this.config.get<string>('email.logoUrl') || undefined,
+        siteUrl, instagramUrl, facebookUrl, youtubeUrl, linkedinUrl, cnpj, endereco,
+      };
 
-        const emailData = {
-          nomeAluno: aluno.nome,
-          nomeResponsavel: resp.nome,
-          descricao: lanc.descricao ?? 'Mensalidade',
-          valor: `R$ ${lanc.valorPrevisto.toFixed(2).replace('.', ',')}`,
-          vencimento: venc.toLocaleDateString('pt-BR'),
-          diasRestantes: diffDias > 0 ? diffDias : undefined,
-          diasAtraso: diffDias < 0 ? Math.abs(diffDias) : undefined,
-          codigoBarras: lanc.linhaDigitavel,
-          urlBoleto: lanc.urlBoletoDigital,
-          codigoPix: lanc.codigoPix,
-          codigoMatricula: aluno.codigo ? String(aluno.codigo) : undefined,
-          competencia: lanc.competencia ? this.formatarCompetencia(lanc.competencia) : undefined,
-          nomeEscola, emailEscola, telefoneEscola,
-          logoUrl: this.config.get<string>('email.logoUrl') || undefined,
-          siteUrl, instagramUrl, facebookUrl, youtubeUrl, linkedinUrl, cnpj, endereco,
-        };
+      let template: { subject: string; html: string };
+      if (tipo === 'lembrete') template = templateLembrete(emailData);
+      else if (tipo === 'vencimento_hoje') template = templateVencimentoHoje(emailData);
+      else template = templateCobranca(emailData);
 
-        let template: { subject: string; html: string };
-        if (tipo === 'lembrete') template = templateLembrete(emailData);
-        else if (tipo === 'vencimento_hoje') template = templateVencimentoHoje(emailData);
-        else template = templateCobranca(emailData);
-
-        await this.emailService.enviar(destinatario, `[PREVIEW] ${template.subject}`, template.html);
-        return { aluno: aluno.nome, tipo, lancamento: lanc.codigo };
-      }
+      await this.emailService.enviar(destinatario, `[PREVIEW] ${template.subject}`, template.html);
+      return { aluno: aluno.nome, tipo, lancamento: lanc.codigo };
     }
 
-    throw new Error('Nenhum lançamento em aberto encontrado no SophiA para gerar preview');
+    throw new Error('Nenhum aluno com lançamento em aberto encontrado no SophiA');
   }
 }
