@@ -2,6 +2,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SophiaService } from '../sophia/sophia.service';
+import { FinanceiroService } from '../financeiro/financeiro.service';
 import { ResponsavelCache } from './entities/responsavel-cache.entity';
 import { TelefoneCpfCache } from './entities/telefone-cpf-cache.entity';
 import { SupabaseService } from './supabase.service';
@@ -16,6 +17,7 @@ export class IaService {
 
   constructor(
     private readonly sophia: SophiaService,
+    private readonly financeiro: FinanceiroService,
     private readonly supabase: SupabaseService,
     @InjectRepository(ResponsavelCache)
     private readonly cacheRepo: Repository<ResponsavelCache>,
@@ -27,41 +29,22 @@ export class IaService {
     const cpfNumeros = cpf.replace(/\D/g, '');
     if (!cpfNumeros) throw new NotFoundException('CPF inválido');
 
-    const registros = await this.cacheRepo.find({ where: { cpf: cpfNumeros } });
-    if (registros.length === 0) {
-      throw new NotFoundException(
-        'Nenhum aluno encontrado para o CPF informado. Verifique se o CPF do responsável financeiro está cadastrado no sistema.',
-      );
-    }
+    const dados = await this.financeiro.getByCpf(cpfNumeros);
 
-    const resultado: object[] = [];
-    for (const reg of registros) {
-      const lancamentos = await this.sophia.getLancamentosAluno(reg.codigoAluno);
-      const pendencias = lancamentos
-        .filter((l) => l.recebido === 0)
-        .map((l) => ({
-          codigo: l.codigo,
-          descricao: l.descricao ?? 'Mensalidade',
-          vencimento: l.dataVencimento.substring(0, 10),
-          valor: l.valorPrevisto,
-          linhaDigitavel: l.linhaDigitavel ?? null,
-          urlBoleto: l.urlBoletoDigital ?? null,
-          pix: l.codigoPix ?? null,
-        }));
-
-      resultado.push({
-        aluno: { codigo: reg.codigoAluno, nome: reg.nomeAluno },
-        responsavel: {
-          codigo: reg.codigoResponsavel,
-          nome: reg.nomeResponsavel,
-          email: reg.email ?? null,
-        },
-        pendencias,
-        totalPendente: pendencias.reduce((s, l) => s + l.valor, 0),
-      });
-    }
-
-    return resultado;
+    return [{
+      aluno: { nome: dados.nomeAluno },
+      responsavel: { nome: dados.nomeResponsavel, email: dados.emailResponsavel },
+      pendencias: dados.pendencias.map((p) => ({
+        codigo: p.codigo,
+        descricao: p.descricao,
+        vencimento: p.vencimento,
+        valor: p.valor,
+        linhaDigitavel: p.linhaDigitavel ?? null,
+        urlBoleto: p.urlBoleto ?? null,
+        pix: p.codigoPix ?? null,
+      })),
+      totalPendente: dados.pendencias.reduce((s, p) => s + p.valor, 0),
+    }];
   }
 
   async getAvisos() {

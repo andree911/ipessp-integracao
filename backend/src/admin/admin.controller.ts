@@ -1,4 +1,4 @@
-import { Body, Controller, Get, NotFoundException, Param, Patch, ParseIntPipe, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, NotFoundException, Param, Patch, ParseIntPipe, Post, Query, UseGuards } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AdminApiKeyGuard } from './guards/admin-api-key.guard';
@@ -7,6 +7,8 @@ import { Professor } from '../auth/entities/professor.entity';
 import { Lead } from '../leads/entities/lead.entity';
 import { LeadHistorico } from '../leads/entities/lead-historico.entity';
 import { LeadsService } from '../leads/leads.service';
+import { FinanceiroService } from '../financeiro/financeiro.service';
+import { ImportacaoService } from '../financeiro/importacao.service';
 
 @Controller('v1/admin')
 @UseGuards(AdminApiKeyGuard)
@@ -17,6 +19,8 @@ export class AdminController {
     @InjectRepository(Lead) private readonly leadRepo: Repository<Lead>,
     @InjectRepository(LeadHistorico) private readonly historicoRepo: Repository<LeadHistorico>,
     private readonly leadsService: LeadsService,
+    private readonly financeiroService: FinanceiroService,
+    private readonly importacaoService: ImportacaoService,
   ) {}
 
   // ─── Professores ─────────────────────────────────────────────────────────────
@@ -97,5 +101,26 @@ export class AdminController {
     @Body() body: { estagio: string; observacao?: string },
   ) {
     return this.leadsService.moverEstagio(id, body as any);
+  }
+
+  // ─── Financeiro ──────────────────────────────────────────────────────────────
+
+  @Get('financeiro/stats')
+  statsFinanceiro() {
+    return this.financeiroService.stats();
+  }
+
+  @Post('financeiro/importar/csv')
+  @HttpCode(200)
+  async importarCsv(@Body('csv') csv: string) {
+    if (!csv) return { erro: 'Envie o conteúdo do CSV no campo "csv"' };
+    return this.importacaoService.importarCsv(csv);
+  }
+
+  @Post('financeiro/importar/json')
+  @HttpCode(200)
+  async importarJson(@Body() body: { registros: Parameters<ImportacaoService['importarClientes']>[0] }) {
+    if (!body?.registros?.length) return { erro: 'Envie os registros no campo "registros"' };
+    return this.importacaoService.importarClientes(body.registros);
   }
 }

@@ -14,6 +14,9 @@ import { CandidaturasModule } from './candidaturas/candidaturas.module';
 import { AuthModule } from './auth/auth.module';
 import { MeModule } from './me/me.module';
 import { AdminModule } from './admin/admin.module';
+import { FinanceiroModule } from './financeiro/financeiro.module';
+import { ClienteCache } from './financeiro/entities/cliente-cache.entity';
+import { LancamentoCache } from './financeiro/entities/lancamento-cache.entity';
 import { EmailLog } from './email/entities/email-log.entity';
 import { ResponsavelCache } from './ia/entities/responsavel-cache.entity';
 import { TelefoneCpfCache } from './ia/entities/telefone-cpf-cache.entity';
@@ -45,6 +48,7 @@ import { ResetToken } from './auth/entities/reset-token.entity';
         entities: [
           EmailLog, ResponsavelCache, TelefoneCpfCache, Lead, LeadHistorico, MensagemContato, Manifestacao,
           SolicitacaoEvento, Candidatura, Usuario, Professor, RefreshToken, ResetToken,
+          ClienteCache, LancamentoCache,
         ],
         synchronize: true,
       }),
@@ -53,6 +57,7 @@ import { ResetToken } from './auth/entities/reset-token.entity';
     SyncModule,
     EmailModule,
     IaModule,
+    FinanceiroModule,
     LeadsModule,
     FormulariosModule,
     CandidaturasModule,

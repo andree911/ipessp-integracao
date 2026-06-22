@@ -3,6 +3,7 @@ import { Cron } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SophiaService } from '../sophia/sophia.service';
+import { ImportacaoService } from '../financeiro/importacao.service';
 import { ResponsavelCache } from '../ia/entities/responsavel-cache.entity';
 import { Lead } from '../leads/entities/lead.entity';
 
@@ -13,6 +14,7 @@ export class SyncService {
 
   constructor(
     private readonly sophia: SophiaService,
+    private readonly importacao: ImportacaoService,
     @InjectRepository(ResponsavelCache)
     private readonly cacheRepo: Repository<ResponsavelCache>,
     @InjectRepository(Lead)
@@ -65,6 +67,9 @@ export class SyncService {
         this.logger.log(`Cache IA: ${cacheEntries.length} responsáveis indexados`);
       }
 
+      // Sincroniza alunos Sophia nas novas tabelas financeiro (clientes_cache + lancamentos_cache)
+      await this.sincronizarFinanceiro(alunos);
+
       // Reconcilia leads não convertidos com alunos do SophiA (match por e-mail)
       await this.reconciliarLeads(alunos);
 
@@ -73,6 +78,48 @@ export class SyncService {
       this.logger.error(`Erro no ciclo de sync: ${err.message}`, err.stack);
     } finally {
       this.running = false;
+    }
+  }
+
+  private async sincronizarFinanceiro(alunos: { codigo: number; nome: string; email?: string }[]): Promise<void> {
+    const registros: Parameters<ImportacaoService['importarClientes']>[0] = [];
+
+    for (const aluno of alunos) {
+      try {
+        const responsaveis = await this.sophia.getResponsaveisAluno(aluno.codigo);
+        const resp = responsaveis.find((r) => r.responsavelFinanceiro) ?? responsaveis[0];
+        if (!resp?.cpf || !resp?.email) continue;
+
+        const lancamentos = await this.sophia.getLancamentosAluno(aluno.codigo);
+        registros.push({
+          codigoSophia: aluno.codigo,
+          cpf: resp.cpf,
+          nomeAluno: aluno.nome,
+          nomeResponsavel: resp.nome,
+          emailResponsavel: resp.email,
+          telefoneResponsavel: resp.celular ?? resp.telefone,
+          lancamentos: lancamentos.map((l) => ({
+            codigoSophia: l.codigo,
+            descricao: l.descricao,
+            valorPrevisto: l.valorPrevisto,
+            dataVencimento: l.dataVencimento,
+            recebido: l.recebido,
+            linhaDigitavel: l.linhaDigitavel,
+            urlBoleto: l.urlBoletoDigital,
+            codigoPix: l.codigoPix,
+            competencia: l.competencia,
+          })),
+        });
+      } catch (err: any) {
+        this.logger.error(`Financeiro sync: erro no aluno ${aluno.codigo}: ${err.message}`);
+      }
+    }
+
+    if (registros.length > 0) {
+      const resultado = await this.importacao.importarClientes(registros);
+      this.logger.log(
+        `Financeiro sync: ${resultado.clientesImportados} clientes, ${resultado.lancamentosImportados} lançamentos sincronizados`,
+      );
     }
   }
 

@@ -3,14 +3,14 @@ import { Cron } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { SophiaService } from '../sophia/sophia.service';
+import { FinanceiroService } from '../financeiro/financeiro.service';
 import { EmailService } from './email.service';
 import { EmailLog, EmailTipo } from './entities/email-log.entity';
-import { ResponsavelCache } from '../ia/entities/responsavel-cache.entity';
 import {
   templateCobranca,
   templateLembrete,
   templateVencimentoHoje,
+  type EmailData,
 } from './templates/email.templates';
 
 @Injectable()
@@ -18,18 +18,15 @@ export class EmailJobService {
   private readonly logger = new Logger(EmailJobService.name);
 
   constructor(
-    private readonly sophia: SophiaService,
+    private readonly financeiro: FinanceiroService,
     private readonly emailService: EmailService,
     private readonly config: ConfigService,
     @InjectRepository(EmailLog)
     private readonly emailLogRepo: Repository<EmailLog>,
-    @InjectRepository(ResponsavelCache)
-    private readonly cacheRepo: Repository<ResponsavelCache>,
   ) {}
 
   private formatarCompetencia(competencia: string): string {
     const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-    // Aceita "2026-06", "06/2026" ou "06-2026"
     const match = competencia.match(/(\d{4})[-/](\d{2})|(\d{2})[-/](\d{4})/);
     if (!match) return competencia;
     const ano = match[1] ?? match[4];
@@ -38,7 +35,22 @@ export class EmailJobService {
     return idx >= 0 && idx < 12 ? `${meses[idx]}/${ano}` : competencia;
   }
 
-  // Roda todo dia às 08h — controlado pela flag EMAIL_CRON_HABILITADO
+  private dadosEscola() {
+    return {
+      nomeEscola:     this.config.get<string>('email.nomeEscola') ?? 'Escola',
+      emailEscola:    this.config.get<string>('email.from') ?? '',
+      telefoneEscola: this.config.get<string>('email.telefoneEscola') ?? '',
+      logoUrl:        this.config.get<string>('email.logoUrl') || undefined,
+      siteUrl:        this.config.get<string>('email.siteUrl') || undefined,
+      instagramUrl:   this.config.get<string>('email.instagramUrl') || undefined,
+      facebookUrl:    this.config.get<string>('email.facebookUrl') || undefined,
+      youtubeUrl:     this.config.get<string>('email.youtubeUrl') || undefined,
+      linkedinUrl:    this.config.get<string>('email.linkedinUrl') || undefined,
+      cnpj:           this.config.get<string>('email.cnpj') || undefined,
+      endereco:       this.config.get<string>('email.endereco') || undefined,
+    };
+  }
+
   @Cron('0 8 * * *', { name: 'email_job' })
   async runEmailJob(): Promise<void> {
     if (this.config.get<string>('email.cronHabilitado') !== 'true') {
@@ -49,222 +61,89 @@ export class EmailJobService {
 
     const diasAntes = this.config.get<number>('email.diasAntes') ?? 3;
     const diasAposVencimento = this.config.get<number[]>('email.diasAposVencimento') ?? [1, 3, 7];
-    const nomeEscola = this.config.get<string>('email.nomeEscola') ?? 'Escola';
-    const emailEscola = this.config.get<string>('email.from') ?? '';
-    const telefoneEscola = this.config.get<string>('email.telefoneEscola') ?? '';
-    const siteUrl = this.config.get<string>('email.siteUrl') || undefined;
-    const instagramUrl = this.config.get<string>('email.instagramUrl') || undefined;
-    const facebookUrl = this.config.get<string>('email.facebookUrl') || undefined;
-    const youtubeUrl = this.config.get<string>('email.youtubeUrl') || undefined;
-    const linkedinUrl = this.config.get<string>('email.linkedinUrl') || undefined;
-    const cnpj = this.config.get<string>('email.cnpj') || undefined;
-    const endereco = this.config.get<string>('email.endereco') || undefined;
-
+    const escola = this.dadosEscola();
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
 
-    const alunos = await this.sophia.getAllAlunos();
+    const pendentes = await this.financeiro.getLancamentosPendentes();
     let totalEnviados = 0;
     let totalErros = 0;
 
-    for (const aluno of alunos) {
+    for (const { cliente, lancamento } of pendentes) {
       try {
-        const responsaveis = await this.sophia.getResponsaveisAluno(aluno.codigo);
-        const resp = responsaveis.find((r) => r.responsavelFinanceiro) ?? responsaveis[0];
-        if (!resp?.email) continue;
+        const venc = new Date(lancamento.dataVencimento);
+        venc.setHours(0, 0, 0, 0);
+        const diffDias = Math.round((venc.getTime() - hoje.getTime()) / 86_400_000);
 
-        const lancamentos = await this.sophia.getLancamentosAluno(aluno.codigo);
+        let tipo: EmailTipo | null = null;
+        if (diffDias === 0) tipo = 'vencimento_hoje';
+        else if (diffDias > 0 && diffDias <= diasAntes) tipo = 'lembrete';
+        else if (diffDias < 0 && diasAposVencimento.includes(Math.abs(diffDias))) tipo = 'cobranca';
 
-        for (const lanc of lancamentos) {
-          if (lanc.recebido !== 0) continue; // só lançamentos em aberto
+        if (!tipo) continue;
 
-          const venc = new Date(lanc.dataVencimento);
-          venc.setHours(0, 0, 0, 0);
-          const diffDias = Math.round((venc.getTime() - hoje.getTime()) / 86_400_000);
+        const jaEnviado = await this.emailLogRepo.findOne({
+          where: { codigoLancamento: String(lancamento.id), tipo, enviado: true },
+        });
+        if (jaEnviado && new Date(jaEnviado.enviadoEm).toDateString() === hoje.toDateString()) continue;
 
-          let tipo: EmailTipo | null = null;
-          if (diffDias === 0) tipo = 'vencimento_hoje';
-          else if (diffDias > 0 && diffDias <= diasAntes) tipo = 'lembrete';
-          else if (diffDias < 0 && diasAposVencimento.includes(Math.abs(diffDias))) tipo = 'cobranca';
+        const emailData: EmailData = {
+          nomeAluno:       cliente.nomeAluno,
+          nomeResponsavel: cliente.nomeResponsavel ?? cliente.nomeAluno,
+          descricao:       lancamento.descricao ?? 'Mensalidade',
+          valor:           `R$ ${Number(lancamento.valorPrevisto).toFixed(2).replace('.', ',')}`,
+          vencimento:      venc.toLocaleDateString('pt-BR'),
+          diasRestantes:   diffDias > 0 ? diffDias : undefined,
+          diasAtraso:      diffDias < 0 ? Math.abs(diffDias) : undefined,
+          codigoBarras:    lancamento.linhaDigitavel ?? undefined,
+          urlBoleto:       lancamento.urlBoleto ?? undefined,
+          codigoPix:       lancamento.codigoPix ?? undefined,
+          codigoMatricula: String(cliente.codigoSophia ?? cliente.id),
+          competencia:     lancamento.competencia ? this.formatarCompetencia(lancamento.competencia) : undefined,
+          ...escola,
+        };
 
-          if (!tipo) continue;
+        let template: { subject: string; html: string };
+        if (tipo === 'lembrete') template = templateLembrete(emailData);
+        else if (tipo === 'vencimento_hoje') template = templateVencimentoHoje(emailData);
+        else template = templateCobranca(emailData);
 
-          // Evita reenvio no mesmo dia para o mesmo tipo
-          const jaEnviado = await this.emailLogRepo.findOne({
-            where: { codigoLancamento: String(lanc.codigo), tipo, enviado: true },
-          });
-          if (jaEnviado) {
-            const enviadoHoje = new Date(jaEnviado.enviadoEm).toDateString() === hoje.toDateString();
-            if (enviadoHoje) continue;
-          }
+        const log = this.emailLogRepo.create({
+          codigoLancamento: String(lancamento.id),
+          tipo,
+          destinatario: cliente.emailResponsavel,
+          enviado: false,
+        });
 
-          const emailData = {
-            nomeAluno: aluno.nome,
-            nomeResponsavel: resp.nome,
-            descricao: lanc.descricao ?? 'Mensalidade',
-            valor: `R$ ${lanc.valorPrevisto.toFixed(2).replace('.', ',')}`,
-            vencimento: venc.toLocaleDateString('pt-BR'),
-            diasRestantes: diffDias > 0 ? diffDias : undefined,
-            diasAtraso: diffDias < 0 ? Math.abs(diffDias) : undefined,
-            codigoBarras: lanc.linhaDigitavel,
-            urlBoleto: lanc.urlBoletoDigital,
-            codigoPix: lanc.codigoPix,
-            codigoMatricula: aluno.codigo ? String(aluno.codigo) : undefined,
-            competencia: lanc.competencia ? this.formatarCompetencia(lanc.competencia) : undefined,
-            nomeEscola,
-            emailEscola,
-            telefoneEscola,
-            logoUrl: this.config.get<string>('email.logoUrl') || undefined,
-            siteUrl,
-            instagramUrl,
-            facebookUrl,
-            youtubeUrl,
-            linkedinUrl,
-            cnpj,
-            endereco,
-          };
-
-          let template: { subject: string; html: string };
-          if (tipo === 'lembrete') template = templateLembrete(emailData);
-          else if (tipo === 'vencimento_hoje') template = templateVencimentoHoje(emailData);
-          else template = templateCobranca(emailData);
-
-          const log = this.emailLogRepo.create({
-            codigoLancamento: String(lanc.codigo),
-            tipo,
-            destinatario: resp.email,
-            enviado: false,
-          });
-
-          try {
-            await this.emailService.enviar(resp.email, template.subject, template.html);
-            log.enviado = true;
-            totalEnviados++;
-          } catch (err: any) {
-            log.erro = err.message;
-            totalErros++;
-            this.logger.error(`Erro ao enviar email para ${resp.email}: ${err.message}`);
-          }
-
-          await this.emailLogRepo.save(log);
+        try {
+          await this.emailService.enviar(cliente.emailResponsavel, template.subject, template.html);
+          log.enviado = true;
+          totalEnviados++;
+        } catch (err: any) {
+          log.erro = err.message;
+          totalErros++;
+          this.logger.error(`Erro ao enviar email para ${cliente.emailResponsavel}: ${err.message}`);
         }
+
+        await this.emailLogRepo.save(log);
       } catch (err: any) {
-        this.logger.error(`Erro ao processar aluno ${aluno.codigo}: ${err.message}`);
+        this.logger.error(`Erro ao processar lançamento ${lancamento.id}: ${err.message}`);
       }
     }
 
-    this.logger.log(
-      `=== Job de emails concluído: ${totalEnviados} enviados, ${totalErros} erros ===`,
-    );
+    this.logger.log(`=== Job de emails concluído: ${totalEnviados} enviados, ${totalErros} erros ===`);
   }
 
   async previewComDadosSophia(destinatario: string): Promise<{ aluno: string; tipo: string; lancamento: number }> {
-    const nomeEscola = this.config.get<string>('email.nomeEscola') ?? 'Escola';
-    const emailEscola = this.config.get<string>('email.from') ?? '';
-    const telefoneEscola = this.config.get<string>('email.telefoneEscola') ?? '';
-    const siteUrl = this.config.get<string>('email.siteUrl') || undefined;
-    const instagramUrl = this.config.get<string>('email.instagramUrl') || undefined;
-    const facebookUrl = this.config.get<string>('email.facebookUrl') || undefined;
-    const youtubeUrl = this.config.get<string>('email.youtubeUrl') || undefined;
-    const linkedinUrl = this.config.get<string>('email.linkedinUrl') || undefined;
-    const cnpj = this.config.get<string>('email.cnpj') || undefined;
-    const endereco = this.config.get<string>('email.endereco') || undefined;
-    const diasAntes = this.config.get<number>('email.diasAntes') ?? 3;
-    const diasAposVencimento = this.config.get<number[]>('email.diasAposVencimento') ?? [1, 3, 7];
-
+    const escola = this.dadosEscola();
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
 
-    const alunos = await this.sophia.getAllAlunos();
+    const pendentes = await this.financeiro.getLancamentosPendentes();
+    if (pendentes.length === 0) throw new Error('Nenhum lançamento em aberto encontrado no banco local');
 
-    for (const aluno of alunos) {
-      const responsaveis = await this.sophia.getResponsaveisAluno(aluno.codigo);
-      const resp = responsaveis.find((r) => r.responsavelFinanceiro) ?? responsaveis[0];
-      if (!resp) continue;
-
-      const lancamentos = await this.sophia.getLancamentosAluno(aluno.codigo);
-      const lanc = lancamentos.find((l) => l.recebido === 0);
-      if (!lanc) continue;
-
-      const venc = new Date(lanc.dataVencimento);
-      venc.setHours(0, 0, 0, 0);
-      const diffDias = Math.round((venc.getTime() - hoje.getTime()) / 86_400_000);
-
-      let tipo: EmailTipo;
-      if (diffDias === 0) tipo = 'vencimento_hoje';
-      else if (diffDias < 0) tipo = 'cobranca';
-      else tipo = 'lembrete';
-
-      const emailData = {
-        nomeAluno: aluno.nome,
-        nomeResponsavel: resp.nome,
-        descricao: lanc.descricao ?? 'Mensalidade',
-        valor: `R$ ${lanc.valorPrevisto.toFixed(2).replace('.', ',')}`,
-        vencimento: venc.toLocaleDateString('pt-BR'),
-        diasRestantes: diffDias > 0 ? diffDias : undefined,
-        diasAtraso: diffDias < 0 ? Math.abs(diffDias) : undefined,
-        codigoBarras: lanc.linhaDigitavel,
-        urlBoleto: lanc.urlBoletoDigital,
-        codigoPix: lanc.codigoPix,
-        codigoMatricula: aluno.codigo ? String(aluno.codigo) : undefined,
-        competencia: lanc.competencia ? this.formatarCompetencia(lanc.competencia) : undefined,
-        nomeEscola, emailEscola, telefoneEscola,
-        logoUrl: this.config.get<string>('email.logoUrl') || undefined,
-        siteUrl, instagramUrl, facebookUrl, youtubeUrl, linkedinUrl, cnpj, endereco,
-      };
-
-      let template: { subject: string; html: string };
-      if (tipo === 'lembrete') template = templateLembrete(emailData);
-      else if (tipo === 'vencimento_hoje') template = templateVencimentoHoje(emailData);
-      else template = templateCobranca(emailData);
-
-      await this.emailService.enviar(destinatario, `[PREVIEW] ${template.subject}`, template.html);
-      return { aluno: aluno.nome, tipo, lancamento: lanc.codigo };
-    }
-
-    throw new Error('Nenhum aluno com lançamento em aberto encontrado no SophiA');
-  }
-
-  async previewPorCpf(cpf: string, destinatario: string): Promise<{ aluno: string; tipo: string; lancamento: number }> {
-    const cpfLimpo = cpf.replace(/\D/g, '');
-    const cache = await this.cacheRepo.findOne({ where: { cpf: cpfLimpo } });
-
-    let codigoAluno: number;
-    let nomeAluno: string;
-    let nomeResponsavel: string;
-
-    if (cache) {
-      codigoAluno = cache.codigoAluno;
-      nomeAluno = cache.nomeAluno;
-      nomeResponsavel = cache.nomeResponsavel;
-    } else {
-      this.logger.warn(`CPF ${cpfLimpo} não encontrado na cache, buscando diretamente no Sophia...`);
-      const encontrado = await this.sophia.searchResponsavelByCpf(cpfLimpo);
-      if (!encontrado) throw new Error(`CPF ${cpf} não encontrado no Sophia`);
-      codigoAluno = encontrado.codigoAluno;
-      nomeAluno = encontrado.nomeAluno;
-      nomeResponsavel = encontrado.nomeResponsavel;
-    }
-
-    const nomeEscola = this.config.get<string>('email.nomeEscola') ?? 'Escola';
-    const emailEscola = this.config.get<string>('email.from') ?? '';
-    const telefoneEscola = this.config.get<string>('email.telefoneEscola') ?? '';
-    const siteUrl = this.config.get<string>('email.siteUrl') || undefined;
-    const instagramUrl = this.config.get<string>('email.instagramUrl') || undefined;
-    const facebookUrl = this.config.get<string>('email.facebookUrl') || undefined;
-    const youtubeUrl = this.config.get<string>('email.youtubeUrl') || undefined;
-    const linkedinUrl = this.config.get<string>('email.linkedinUrl') || undefined;
-    const cnpj = this.config.get<string>('email.cnpj') || undefined;
-    const endereco = this.config.get<string>('email.endereco') || undefined;
-
-    const hoje = new Date();
-    hoje.setHours(0, 0, 0, 0);
-
-    const lancamentos = await this.sophia.getLancamentosAluno(codigoAluno);
-    const lanc = lancamentos.find((l) => l.recebido === 0);
-    if (!lanc) throw new Error(`Aluno ${nomeAluno} não possui lançamentos em aberto no SophiA`);
-
-    const venc = new Date(lanc.dataVencimento);
+    const { cliente, lancamento } = pendentes[0];
+    const venc = new Date(lancamento.dataVencimento);
     venc.setHours(0, 0, 0, 0);
     const diffDias = Math.round((venc.getTime() - hoje.getTime()) / 86_400_000);
 
@@ -273,22 +152,20 @@ export class EmailJobService {
     else if (diffDias < 0) tipo = 'cobranca';
     else tipo = 'lembrete';
 
-    const emailData = {
-      nomeAluno,
-      nomeResponsavel,
-      descricao: lanc.descricao ?? 'Mensalidade',
-      valor: `R$ ${lanc.valorPrevisto.toFixed(2).replace('.', ',')}`,
-      vencimento: venc.toLocaleDateString('pt-BR'),
-      diasRestantes: diffDias > 0 ? diffDias : undefined,
-      diasAtraso: diffDias < 0 ? Math.abs(diffDias) : undefined,
-      codigoBarras: lanc.linhaDigitavel,
-      urlBoleto: lanc.urlBoletoDigital,
-      codigoPix: lanc.codigoPix,
-      codigoMatricula: String(codigoAluno),
-      competencia: lanc.competencia ? this.formatarCompetencia(lanc.competencia) : undefined,
-      nomeEscola, emailEscola, telefoneEscola,
-      logoUrl: this.config.get<string>('email.logoUrl') || undefined,
-      siteUrl, instagramUrl, facebookUrl, youtubeUrl, linkedinUrl, cnpj, endereco,
+    const emailData: EmailData = {
+      nomeAluno:       cliente.nomeAluno,
+      nomeResponsavel: cliente.nomeResponsavel ?? cliente.nomeAluno,
+      descricao:       lancamento.descricao ?? 'Mensalidade',
+      valor:           `R$ ${Number(lancamento.valorPrevisto).toFixed(2).replace('.', ',')}`,
+      vencimento:      venc.toLocaleDateString('pt-BR'),
+      diasRestantes:   diffDias > 0 ? diffDias : undefined,
+      diasAtraso:      diffDias < 0 ? Math.abs(diffDias) : undefined,
+      codigoBarras:    lancamento.linhaDigitavel ?? undefined,
+      urlBoleto:       lancamento.urlBoleto ?? undefined,
+      codigoPix:       lancamento.codigoPix ?? undefined,
+      codigoMatricula: String(cliente.codigoSophia ?? cliente.id),
+      competencia:     lancamento.competencia ? this.formatarCompetencia(lancamento.competencia) : undefined,
+      ...escola,
     };
 
     let template: { subject: string; html: string };
@@ -297,6 +174,51 @@ export class EmailJobService {
     else template = templateCobranca(emailData);
 
     await this.emailService.enviar(destinatario, `[PREVIEW] ${template.subject}`, template.html);
-    return { aluno: nomeAluno, tipo, lancamento: lanc.codigo };
+    return { aluno: cliente.nomeAluno, tipo, lancamento: lancamento.id };
+  }
+
+  async previewPorCpf(cpf: string, destinatario: string): Promise<{ aluno: string; tipo: string; lancamento: number }> {
+    const escola = this.dadosEscola();
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+
+    const dados = await this.financeiro.getByCpf(cpf);
+    if (dados.pendencias.length === 0) throw new Error(`${dados.nomeAluno} não possui lançamentos em aberto`);
+
+    dados.pendencias.sort((a, b) => a.vencimento.localeCompare(b.vencimento));
+    const pend = dados.pendencias[0];
+
+    const venc = new Date(pend.vencimento);
+    venc.setHours(0, 0, 0, 0);
+    const diffDias = Math.round((venc.getTime() - hoje.getTime()) / 86_400_000);
+
+    let tipo: EmailTipo;
+    if (diffDias === 0) tipo = 'vencimento_hoje';
+    else if (diffDias < 0) tipo = 'cobranca';
+    else tipo = 'lembrete';
+
+    const emailData: EmailData = {
+      nomeAluno:       dados.nomeAluno,
+      nomeResponsavel: dados.nomeResponsavel,
+      descricao:       pend.descricao,
+      valor:           `R$ ${pend.valor.toFixed(2).replace('.', ',')}`,
+      vencimento:      venc.toLocaleDateString('pt-BR'),
+      diasRestantes:   diffDias > 0 ? diffDias : undefined,
+      diasAtraso:      diffDias < 0 ? Math.abs(diffDias) : undefined,
+      codigoBarras:    pend.linhaDigitavel,
+      urlBoleto:       pend.urlBoleto,
+      codigoPix:       pend.codigoPix,
+      codigoMatricula: String(pend.codigo),
+      competencia:     pend.competencia ? this.formatarCompetencia(pend.competencia) : undefined,
+      ...escola,
+    };
+
+    let template: { subject: string; html: string };
+    if (tipo === 'lembrete') template = templateLembrete(emailData);
+    else if (tipo === 'vencimento_hoje') template = templateVencimentoHoje(emailData);
+    else template = templateCobranca(emailData);
+
+    await this.emailService.enviar(destinatario, `[PREVIEW] ${template.subject}`, template.html);
+    return { aluno: dados.nomeAluno, tipo, lancamento: pend.codigo };
   }
 }

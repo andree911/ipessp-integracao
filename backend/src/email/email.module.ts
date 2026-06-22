@@ -6,11 +6,11 @@ import { LeadEmailService } from './lead-email.service';
 import { EmailController } from './email.controller';
 import { EmailLog } from './entities/email-log.entity';
 import { Lead } from '../leads/entities/lead.entity';
-import { ResponsavelCache } from '../ia/entities/responsavel-cache.entity';
 import { SophiaModule } from '../sophia/sophia.module';
+import { FinanceiroModule } from '../financeiro/financeiro.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([EmailLog, Lead, ResponsavelCache]), SophiaModule],
+  imports: [TypeOrmModule.forFeature([EmailLog, Lead]), SophiaModule, FinanceiroModule],
   controllers: [EmailController],
   providers: [EmailService, EmailJobService, LeadEmailService],
   exports: [EmailService, LeadEmailService],
