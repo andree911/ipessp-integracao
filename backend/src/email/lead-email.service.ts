@@ -102,19 +102,46 @@ export class LeadEmailService {
 
   // ─── Templates ───────────────────────────────────────────────────────────────
 
+  private botaoHtml(url: string, texto: string, cor: string, largura = 200): string {
+    return `
+    <!--[if mso]>
+    <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word"
+      href="${url}" style="height:48px;v-text-anchor:middle;width:${largura}px;" arcsize="8%"
+      strokecolor="${cor}" fillcolor="${cor}">
+      <w:anchorlock/>
+      <center style="color:#ffffff;font-family:Arial,sans-serif;font-size:15px;font-weight:bold;">${texto}</center>
+    </v:roundrect>
+    <![endif]-->
+    <!--[if !mso]><!-->
+    <a href="${url}" target="_blank"
+      style="display:inline-block;background-color:${cor};color:#ffffff;font-size:15px;font-weight:bold;text-decoration:none;padding:14px 32px;border-radius:6px;font-family:Arial,sans-serif;mso-hide:all;">
+      ${texto}
+    </a>
+    <!--<![endif]-->`;
+  }
+
   private cabecalhoHtml(subtitulo?: string): string {
     const logoBlock = this.logoUrl
-      ? `<a href="${SITE_URL}" target="_blank" style="display:inline-block;line-height:0;border:0;text-decoration:none;">
-           <img src="${this.logoUrl}" alt="IPESSP" height="56"
-             style="height:56px;width:auto;display:block;border:0;border-radius:50%;">
-         </a>`
+      ? `<table cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;">
+           <tr>
+             <td align="center" bgcolor="#ffffff"
+               style="background-color:#ffffff;border-radius:10px;padding:8px 18px;line-height:0;
+                      mso-border-top-alt:solid #ffffff 1pt;mso-border-right-alt:solid #ffffff 1pt;
+                      mso-border-bottom-alt:solid #ffffff 1pt;mso-border-left-alt:solid #ffffff 1pt;">
+               <a href="${SITE_URL}" target="_blank" style="display:block;line-height:0;border:0;text-decoration:none;">
+                 <img src="${this.logoUrl}" alt="IPESSP" height="48"
+                   style="height:48px;width:auto;display:block;border:0;">
+               </a>
+             </td>
+           </tr>
+         </table>`
       : `<span style="font-size:24px;font-weight:bold;color:#ffffff;font-family:Arial,sans-serif;">IPESSP</span>`;
 
     return `
   <tr>
-    <td bgcolor="#C8102E" style="background-color:#C8102E;padding:28px 40px;text-align:center;">
+    <td bgcolor="${COR}" style="background-color:${COR};padding:28px 40px;text-align:center;">
       ${logoBlock}
-      ${subtitulo ? `<p style="color:rgba(255,255,255,.85);margin:10px 0 0;font-size:13px;font-family:Arial,sans-serif;">${subtitulo}</p>` : ''}
+      ${subtitulo ? `<p style="color:#ffcccc;margin:10px 0 0;font-size:13px;font-family:Arial,sans-serif;">${subtitulo}</p>` : ''}
     </td>
   </tr>`;
   }
@@ -141,11 +168,20 @@ export class LeadEmailService {
 
   private rodapeHtml(): string {
     const logoBlock = this.logoUrl
-      ? `<a href="${SITE_URL}" target="_blank" style="display:inline-block;line-height:0;border:0;text-decoration:none;margin-bottom:16px;">
-           <img src="${this.logoUrl}" alt="IPESSP" height="40"
-             style="height:40px;width:auto;display:block;border:0;border-radius:50%;">
-         </a>`
-      : `<span style="font-size:16px;font-weight:bold;color:#888;font-family:Arial,sans-serif;display:block;margin-bottom:16px;">IPESSP</span>`;
+      ? `<table cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 16px;">
+           <tr>
+             <td align="center" bgcolor="#ffffff"
+               style="background-color:#ffffff;border-radius:10px;padding:6px 14px;line-height:0;
+                      mso-border-top-alt:solid #ffffff 1pt;mso-border-right-alt:solid #ffffff 1pt;
+                      mso-border-bottom-alt:solid #ffffff 1pt;mso-border-left-alt:solid #ffffff 1pt;">
+               <a href="${SITE_URL}" target="_blank" style="display:block;line-height:0;border:0;text-decoration:none;">
+                 <img src="${this.logoUrl}" alt="IPESSP" height="36"
+                   style="height:36px;width:auto;display:block;border:0;">
+               </a>
+             </td>
+           </tr>
+         </table>`
+      : `<p style="font-size:16px;font-weight:bold;color:#888;font-family:Arial,sans-serif;margin:0 0 16px;">IPESSP</p>`;
 
     return `
   <tr>
@@ -181,17 +217,10 @@ export class LeadEmailService {
   private templateBoasVindas(nome: string, curso?: string): string {
     const cursoTexto = curso ? ` no curso <strong>${curso}</strong>` : '';
     return this.wrapEmail(`
-    <h2 style="color:#1a1a1a;font-size:20px;margin:0 0 16px;font-family:Arial,sans-serif;">Ol&aacute;, ${nome}! &#128075;</h2>
+    <h2 style="color:#1a1a1a;font-size:20px;margin:0 0 16px;font-family:Arial,sans-serif;">Ol&aacute;, ${nome}!</h2>
     <p style="color:#444;line-height:1.7;margin:0 0 16px;font-family:Arial,sans-serif;">Ficamos muito felizes com seu interesse${cursoTexto} no IPESSP. Nossa equipe j&aacute; foi notificada e entrar&aacute; em contato em breve.</p>
     <p style="color:#444;line-height:1.7;margin:0 0 24px;font-family:Arial,sans-serif;">Enquanto isso, que tal conhecer mais sobre nossos cursos e estrutura?</p>
-    <table cellpadding="0" cellspacing="0" border="0">
-      <tr><td bgcolor="#C8102E" style="background-color:#C8102E;border-radius:6px;">
-        <a href="${SITE_URL}" target="_blank"
-          style="display:block;color:#ffffff;text-decoration:none;font-weight:700;font-size:15px;padding:14px 32px;font-family:Arial,sans-serif;">
-          Ver nossos cursos
-        </a>
-      </td></tr>
-    </table>`);
+    ${this.botaoHtml(SITE_URL, 'Ver nossos cursos', COR, 220)}`);
   }
 
   private templateFollowUp(nome: string, curso?: string): string {
@@ -200,14 +229,7 @@ export class LeadEmailService {
     <h2 style="color:#1a1a1a;font-size:19px;margin:0 0 16px;font-family:Arial,sans-serif;">Ainda com d&uacute;vidas, ${nome}?</h2>
     <p style="color:#444;line-height:1.7;margin:0 0 16px;font-family:Arial,sans-serif;">Notamos que voc&ecirc; demonstrou interesse ${cursoTexto}. Nossa equipe est&aacute; pronta para responder todas as suas perguntas sobre processo seletivo, valores e estrutura.</p>
     <p style="color:#444;line-height:1.7;margin:0 0 24px;font-family:Arial,sans-serif;">Fale conosco pelo WhatsApp &mdash; &eacute; r&aacute;pido e sem compromisso!</p>
-    <table cellpadding="0" cellspacing="0" border="0">
-      <tr><td bgcolor="#25D366" style="background-color:#25D366;border-radius:6px;">
-        <a href="https://wa.me/5511976922127" target="_blank"
-          style="display:block;color:#ffffff;text-decoration:none;font-weight:700;font-size:15px;padding:14px 32px;font-family:Arial,sans-serif;">
-          Falar pelo WhatsApp
-        </a>
-      </td></tr>
-    </table>`);
+    ${this.botaoHtml('https://wa.me/5511976922127', 'Falar pelo WhatsApp', '#25D366', 240)}`);
   }
 
   private templateCta(nome: string, curso?: string): string {
@@ -215,15 +237,10 @@ export class LeadEmailService {
     return this.wrapEmail(`
     <h2 style="color:#1a1a1a;font-size:19px;margin:0 0 16px;font-family:Arial,sans-serif;">${nome}, as inscri&ccedil;&otilde;es est&atilde;o abertas!</h2>
     <p style="color:#444;line-height:1.7;margin:0 0 16px;font-family:Arial,sans-serif;">As vagas${cursoTexto} est&atilde;o preenchendo rapidamente. Garanta a sua agora e d&ecirc; o pr&oacute;ximo passo na sua carreira com o suporte de um dos melhores institutos de S&atilde;o Paulo.</p>
-    <table cellpadding="0" cellspacing="0" border="0" style="margin-bottom:16px;">
-      <tr><td bgcolor="#C8102E" style="background-color:#C8102E;border-radius:6px;">
-        <a href="${SITE_URL}/inscricao" target="_blank"
-          style="display:block;color:#ffffff;text-decoration:none;font-weight:700;font-size:15px;padding:14px 32px;font-family:Arial,sans-serif;">
-          Fazer minha inscri&ccedil;&atilde;o agora
-        </a>
-      </td></tr>
-    </table>
+    <p style="margin:0 0 24px;">
+      ${this.botaoHtml(`${SITE_URL}/inscricao`, 'Fazer minha inscri&ccedil;&atilde;o agora', COR, 280)}
+    </p>
     <p style="color:#888;font-size:13px;margin:0;font-family:Arial,sans-serif;">D&uacute;vidas? Responda este e-mail ou fale conosco no WhatsApp.</p>`,
-    '&#9200; Vagas limitadas');
+    'Vagas limitadas');
   }
 }
