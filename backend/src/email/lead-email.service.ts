@@ -8,6 +8,14 @@ import { EmailLog } from './entities/email-log.entity';
 import { Lead } from '../leads/entities/lead.entity';
 
 const SITE_URL = 'https://ipessp.edu.br';
+const COR = '#C8102E';
+
+const REDES = [
+  { letra: 'ig', nome: 'Instagram', url: 'https://www.instagram.com/ipessp/' },
+  { letra: 'in', nome: 'LinkedIn',  url: 'https://www.linkedin.com/company/ipessp---educa-o/' },
+  { letra: 'f',  nome: 'Facebook',  url: 'https://www.facebook.com/ipesspedu/' },
+  { letra: 'yt', nome: 'YouTube',   url: 'https://www.youtube.com/channel/UC7dgP6NBgM9L0m11UbhCyHg' },
+];
 
 @Injectable()
 export class LeadEmailService {
@@ -111,20 +119,42 @@ export class LeadEmailService {
   </tr>`;
   }
 
+  private redesSociaisHtml(): string {
+    return `
+    <table cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 16px;">
+      <tr>
+        ${REDES.map(({ letra, nome, url }) => {
+          const fs = letra.length > 1 ? 11 : 16;
+          const inset = letra.length > 1 ? 11 : 9;
+          return `
+        <td style="padding:0 6px;text-align:center;">
+          <a href="${url}" target="_blank" style="text-decoration:none;">
+            <!--[if mso]><v:oval xmlns:v="urn:schemas-microsoft-com:vml" style="width:36px;height:36px;" fillcolor="${COR}" stroked="false"><v:textbox inset="0,${inset}px,0,0" style="mso-fit-shape-to-text:false;"><center><span style="font-family:Arial;font-size:${fs}px;font-weight:bold;color:#ffffff;">${letra}</span></center></v:textbox></v:oval><![endif]-->
+            <!--[if !mso]><!--><span style="display:inline-block;width:36px;height:36px;background:${COR};border-radius:50%;text-align:center;line-height:36px;font-size:${fs}px;font-weight:bold;color:#ffffff;font-family:Arial,sans-serif;">${letra}</span><!--<![endif]-->
+          </a>
+          <p style="margin:4px 0 0;font-size:9px;color:#aaa;font-family:Arial,sans-serif;">${nome}</p>
+        </td>`;
+        }).join('')}
+      </tr>
+    </table>`;
+  }
+
   private rodapeHtml(): string {
     const logoBlock = this.logoUrl
-      ? `<a href="${SITE_URL}" target="_blank" style="display:inline-block;line-height:0;border:0;text-decoration:none;margin-bottom:12px;">
+      ? `<a href="${SITE_URL}" target="_blank" style="display:inline-block;line-height:0;border:0;text-decoration:none;margin-bottom:16px;">
            <img src="${this.logoUrl}" alt="IPESSP" height="40"
              style="height:40px;width:auto;display:block;border:0;border-radius:50%;">
          </a>`
-      : `<span style="font-size:16px;font-weight:bold;color:#888;font-family:Arial,sans-serif;display:block;margin-bottom:12px;">IPESSP</span>`;
+      : `<span style="font-size:16px;font-weight:bold;color:#888;font-family:Arial,sans-serif;display:block;margin-bottom:16px;">IPESSP</span>`;
 
     return `
   <tr>
-    <td style="background:#f8f8f8;padding:24px 40px;text-align:center;border-top:1px solid #eeeeee;">
+    <td bgcolor="#f8f8f8" style="background-color:#f8f8f8;padding:28px 40px;text-align:center;border-top:1px solid #eeeeee;">
       ${logoBlock}
-      <p style="color:#999;font-size:12px;margin:0;font-family:Arial,sans-serif;">
-        IPESSP &middot; S&atilde;o Paulo, SP &middot; contato@ipessp.edu.br
+      ${this.redesSociaisHtml()}
+      <p style="color:#aaa;font-size:11px;margin:0;font-family:Arial,sans-serif;">
+        IPESSP &middot; S&atilde;o Paulo, SP &middot;
+        <a href="mailto:contato@ipessp.edu.br" style="color:#aaa;text-decoration:none;">contato@ipessp.edu.br</a>
       </p>
     </td>
   </tr>`;
