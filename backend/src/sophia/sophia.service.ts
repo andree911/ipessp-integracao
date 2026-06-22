@@ -182,6 +182,31 @@ export class SophiaService implements OnModuleInit {
     return this.get<AlunoDetalhadoApiModel>(`${this.apiBase}/Alunos/${id}`);
   }
 
+  async searchResponsavelByCpf(cpf: string): Promise<{ codigoAluno: number; nomeAluno: string; codigoResponsavel: number; nomeResponsavel: string; email?: string } | null> {
+    const cpfLimpo = cpf.replace(/\D/g, '');
+    let pagina = 1;
+    const tamanhoPagina = 100;
+    while (true) {
+      const alunos = await this.getAlunos(pagina, tamanhoPagina);
+      for (const aluno of alunos) {
+        const responsaveis = await this.getResponsaveisAluno(aluno.codigo);
+        const resp = responsaveis.find((r) => r.cpf?.replace(/\D/g, '') === cpfLimpo);
+        if (resp) {
+          return {
+            codigoAluno: aluno.codigo,
+            nomeAluno: aluno.nome,
+            codigoResponsavel: resp.codigo,
+            nomeResponsavel: resp.nome,
+            email: resp.email,
+          };
+        }
+      }
+      if (alunos.length < tamanhoPagina) break;
+      pagina++;
+    }
+    return null;
+  }
+
   async searchAlunoByEmail(email: string): Promise<AlunoApiModel | null> {
     // Tenta filtrar por email direto; se não suportado, varre as páginas
     try {

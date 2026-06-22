@@ -228,7 +228,23 @@ export class EmailJobService {
   async previewPorCpf(cpf: string, destinatario: string): Promise<{ aluno: string; tipo: string; lancamento: number }> {
     const cpfLimpo = cpf.replace(/\D/g, '');
     const cache = await this.cacheRepo.findOne({ where: { cpf: cpfLimpo } });
-    if (!cache) throw new Error(`CPF ${cpf} não encontrado na cache. Execute POST /sync/trigger primeiro.`);
+
+    let codigoAluno: number;
+    let nomeAluno: string;
+    let nomeResponsavel: string;
+
+    if (cache) {
+      codigoAluno = cache.codigoAluno;
+      nomeAluno = cache.nomeAluno;
+      nomeResponsavel = cache.nomeResponsavel;
+    } else {
+      this.logger.warn(`CPF ${cpfLimpo} não encontrado na cache, buscando diretamente no Sophia...`);
+      const encontrado = await this.sophia.searchResponsavelByCpf(cpfLimpo);
+      if (!encontrado) throw new Error(`CPF ${cpf} não encontrado no Sophia`);
+      codigoAluno = encontrado.codigoAluno;
+      nomeAluno = encontrado.nomeAluno;
+      nomeResponsavel = encontrado.nomeResponsavel;
+    }
 
     const nomeEscola = this.config.get<string>('email.nomeEscola') ?? 'Escola';
     const emailEscola = this.config.get<string>('email.from') ?? '';
@@ -244,9 +260,9 @@ export class EmailJobService {
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
 
-    const lancamentos = await this.sophia.getLancamentosAluno(cache.codigoAluno);
+    const lancamentos = await this.sophia.getLancamentosAluno(codigoAluno);
     const lanc = lancamentos.find((l) => l.recebido === 0);
-    if (!lanc) throw new Error(`Aluno ${cache.nomeAluno} não possui lançamentos em aberto no SophiA`);
+    if (!lanc) throw new Error(`Aluno ${nomeAluno} não possui lançamentos em aberto no SophiA`);
 
     const venc = new Date(lanc.dataVencimento);
     venc.setHours(0, 0, 0, 0);
@@ -258,8 +274,8 @@ export class EmailJobService {
     else tipo = 'lembrete';
 
     const emailData = {
-      nomeAluno: cache.nomeAluno,
-      nomeResponsavel: cache.nomeResponsavel,
+      nomeAluno,
+      nomeResponsavel,
       descricao: lanc.descricao ?? 'Mensalidade',
       valor: `R$ ${lanc.valorPrevisto.toFixed(2).replace('.', ',')}`,
       vencimento: venc.toLocaleDateString('pt-BR'),
@@ -268,7 +284,7 @@ export class EmailJobService {
       codigoBarras: lanc.linhaDigitavel,
       urlBoleto: lanc.urlBoletoDigital,
       codigoPix: lanc.codigoPix,
-      codigoMatricula: String(cache.codigoAluno),
+      codigoMatricula: String(codigoAluno),
       competencia: lanc.competencia ? this.formatarCompetencia(lanc.competencia) : undefined,
       nomeEscola, emailEscola, telefoneEscola,
       logoUrl: this.config.get<string>('email.logoUrl') || undefined,
@@ -281,6 +297,6 @@ export class EmailJobService {
     else template = templateCobranca(emailData);
 
     await this.emailService.enviar(destinatario, `[PREVIEW] ${template.subject}`, template.html);
-    return { aluno: cache.nomeAluno, tipo, lancamento: lanc.codigo };
+    return { aluno: nomeAluno, tipo, lancamento: lanc.codigo };
   }
 }
