@@ -59,14 +59,14 @@ export class SyncService {
 
             // salva no cache IA
             await this.cacheRepo.upsert(
-              {
+              [{
                 cpf,
                 codigoAluno: aluno.codigo,
                 nomeAluno: aluno.nome,
                 codigoResponsavel: resp.codigo,
                 nomeResponsavel: resp.nome,
                 email: resp.email ?? null,
-              } as ResponsavelCache,
+              }] as ResponsavelCache[],
               ['cpf', 'codigoAluno'],
             );
 
