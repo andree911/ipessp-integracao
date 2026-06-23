@@ -64,7 +64,7 @@ export class SyncService {
               nomeAluno: aluno.nome,
               codigoResponsavel: resp.codigo,
               nomeResponsavel: resp.nome,
-              email: resp.email ?? null,
+              email: resp.email ?? undefined,
             };
             const existente = await this.cacheRepo.findOne({
               where: { cpf, codigoAluno: aluno.codigo },
