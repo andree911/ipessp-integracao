@@ -110,6 +110,12 @@ export class AdminController {
     return this.financeiroService.stats();
   }
 
+  @Get('financeiro/buscar')
+  buscarCliente(@Query('cpf') cpf: string) {
+    if (!cpf) return { erro: 'Informe o parâmetro cpf' };
+    return this.financeiroService.getByCpf(cpf);
+  }
+
   @Post('financeiro/importar/csv')
   @HttpCode(200)
   async importarCsv(@Body('csv') csv: string) {
