@@ -1,6 +1,7 @@
-import { Column, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { Column, Entity, Index, PrimaryGeneratedColumn, Unique, UpdateDateColumn } from 'typeorm';
 
 @Entity('lancamentos_cache')
+@Unique(['codigoSophia', 'codigoCliente'])
 export class LancamentoCache {
   @PrimaryGeneratedColumn()
   id: number;
