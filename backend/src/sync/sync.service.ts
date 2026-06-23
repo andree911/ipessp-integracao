@@ -7,8 +7,6 @@ import { ImportacaoService } from '../financeiro/importacao.service';
 import { ResponsavelCache } from '../ia/entities/responsavel-cache.entity';
 import { Lead } from '../leads/entities/lead.entity';
 
-const PAGINA_SIZE = 20;
-
 @Injectable()
 export class SyncService {
   private readonly logger = new Logger(SyncService.name);
@@ -42,14 +40,12 @@ export class SyncService {
     let totalAlunos = 0;
     let totalClientes = 0;
     let totalLancamentos = 0;
-    let pagina = 1;
 
     try {
-      while (true) {
-        const alunos = await this.sophia.getAlunos(pagina, PAGINA_SIZE);
-        if (alunos.length === 0) break;
+      const alunos = await this.sophia.getAllAlunos();
+      this.logger.log(`${alunos.length} alunos encontrados`);
 
-        for (const aluno of alunos) {
+      for (const aluno of alunos) {
           try {
             const responsaveis = await this.sophia.getResponsaveisAluno(aluno.codigo);
             const resp = responsaveis.find((r) => r.responsavelFinanceiro) ?? responsaveis[0];
@@ -110,13 +106,7 @@ export class SyncService {
           }
         }
 
-        await this.reconciliarLeadsPagina(alunos);
-
-        this.logger.log(`Página ${pagina}: ${alunos.length} alunos processados`);
-
-        if (alunos.length < PAGINA_SIZE) break;
-        pagina++;
-      }
+      await this.reconciliarLeadsPagina(alunos);
 
       this.logger.log(
         `=== Sincronização concluída: ${totalAlunos} alunos, ${totalClientes} clientes, ${totalLancamentos} lançamentos ===`,
