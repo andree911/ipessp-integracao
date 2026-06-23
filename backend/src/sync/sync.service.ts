@@ -81,6 +81,7 @@ export class SyncService {
                 nomeResponsavel: resp.nome,
                 emailResponsavel: resp.email,
                 telefoneResponsavel: resp.celular ?? resp.telefone,
+                ra: aluno.codigoExterno ?? undefined,
                 lancamentos: lancamentos.map((l) => ({
                   codigoSophia: l.codigo,
                   descricao: l.descricao,

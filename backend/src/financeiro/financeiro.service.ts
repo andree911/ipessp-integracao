@@ -20,7 +20,16 @@ export interface FinanceiroCliente {
   nomeAluno: string;
   nomeResponsavel: string;
   emailResponsavel: string;
+  ra?: string;
   pendencias: PendenciaFinanceira[];
+}
+
+function parseDateBR(s: string): Date {
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) {
+    const [d, m, y] = s.split('/');
+    return new Date(+y, +m - 1, +d);
+  }
+  return new Date(s);
 }
 
 @Injectable()
@@ -50,7 +59,7 @@ export class FinanceiroService {
         where: { codigoCliente: cliente.id, recebido: 0 },
       });
       for (const l of lancamentos) {
-        const venc = new Date(l.dataVencimento);
+        const venc = parseDateBR(l.dataVencimento);
         venc.setHours(0, 0, 0, 0);
         const diffDias = Math.round((hoje.getTime() - venc.getTime()) / 86_400_000);
         pendencias.push({
@@ -72,6 +81,7 @@ export class FinanceiroService {
       nomeAluno: primeiro.nomeAluno,
       nomeResponsavel: primeiro.nomeResponsavel ?? primeiro.nomeAluno,
       emailResponsavel: primeiro.emailResponsavel,
+      ra: primeiro.ra ?? String(primeiro.codigoSophia ?? primeiro.id),
       pendencias,
     };
   }

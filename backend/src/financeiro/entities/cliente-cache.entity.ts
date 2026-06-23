@@ -24,6 +24,9 @@ export class ClienteCache {
   @Column({ nullable: true })
   telefoneResponsavel: string;
 
+  @Column({ nullable: true })
+  ra: string;
+
   @UpdateDateColumn()
   atualizadoEm: Date;
 }

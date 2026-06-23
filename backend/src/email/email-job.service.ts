@@ -13,6 +13,15 @@ import {
   type EmailData,
 } from './templates/email.templates';
 
+// Sophia retorna datas em dd/mm/yyyy — new Date() interpreta como MM/DD e erra o mês
+function parseDateBR(s: string): Date {
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) {
+    const [d, m, y] = s.split('/');
+    return new Date(+y, +m - 1, +d);
+  }
+  return new Date(s);
+}
+
 @Injectable()
 export class EmailJobService {
   private readonly logger = new Logger(EmailJobService.name);
@@ -71,7 +80,7 @@ export class EmailJobService {
 
     for (const { cliente, lancamento } of pendentes) {
       try {
-        const venc = new Date(lancamento.dataVencimento);
+        const venc = parseDateBR(lancamento.dataVencimento);
         venc.setHours(0, 0, 0, 0);
         const diffDias = Math.round((venc.getTime() - hoje.getTime()) / 86_400_000);
 
@@ -98,7 +107,7 @@ export class EmailJobService {
           codigoBarras:    lancamento.linhaDigitavel ?? undefined,
           urlBoleto:       lancamento.urlBoleto ?? undefined,
           codigoPix:       lancamento.codigoPix ?? undefined,
-          codigoMatricula: String(cliente.codigoSophia ?? cliente.id),
+          codigoMatricula: cliente.ra ?? String(cliente.codigoSophia ?? cliente.id),
           competencia:     lancamento.competencia ? this.formatarCompetencia(lancamento.competencia) : undefined,
           ...escola,
         };
@@ -143,7 +152,7 @@ export class EmailJobService {
     if (pendentes.length === 0) throw new Error('Nenhum lançamento em aberto encontrado no banco local');
 
     const { cliente, lancamento } = pendentes[0];
-    const venc = new Date(lancamento.dataVencimento);
+    const venc = parseDateBR(lancamento.dataVencimento);
     venc.setHours(0, 0, 0, 0);
     const diffDias = Math.round((venc.getTime() - hoje.getTime()) / 86_400_000);
 
@@ -163,7 +172,7 @@ export class EmailJobService {
       codigoBarras:    lancamento.linhaDigitavel ?? undefined,
       urlBoleto:       lancamento.urlBoleto ?? undefined,
       codigoPix:       lancamento.codigoPix ?? undefined,
-      codigoMatricula: String(cliente.codigoSophia ?? cliente.id),
+      codigoMatricula: cliente.ra ?? String(cliente.codigoSophia ?? cliente.id),
       competencia:     lancamento.competencia ? this.formatarCompetencia(lancamento.competencia) : undefined,
       ...escola,
     };
@@ -188,7 +197,7 @@ export class EmailJobService {
     dados.pendencias.sort((a, b) => a.vencimento.localeCompare(b.vencimento));
     const pend = dados.pendencias[0];
 
-    const venc = new Date(pend.vencimento);
+    const venc = parseDateBR(pend.vencimento);
     venc.setHours(0, 0, 0, 0);
     const diffDias = Math.round((venc.getTime() - hoje.getTime()) / 86_400_000);
 
@@ -208,7 +217,7 @@ export class EmailJobService {
       codigoBarras:    pend.linhaDigitavel,
       urlBoleto:       pend.urlBoleto,
       codigoPix:       pend.codigoPix,
-      codigoMatricula: String(pend.codigo),
+      codigoMatricula: dados.ra ?? String(pend.codigo),
       competencia:     pend.competencia ? this.formatarCompetencia(pend.competencia) : undefined,
       ...escola,
     };

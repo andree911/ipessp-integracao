@@ -30,6 +30,7 @@ export class ImportacaoService {
       nomeResponsavel: string;
       emailResponsavel: string;
       telefoneResponsavel?: string;
+      ra?: string;
       lancamentos: Array<{
         codigoSophia: number;
         descricao?: string;
@@ -56,6 +57,7 @@ export class ImportacaoService {
           nomeResponsavel: reg.nomeResponsavel,
           emailResponsavel: reg.emailResponsavel,
           telefoneResponsavel: reg.telefoneResponsavel,
+          ra: reg.ra,
         });
         clientesImportados++;
 
