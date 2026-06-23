@@ -94,6 +94,9 @@ export class SyncService {
               }]);
               totalClientes += resultado.clientesImportados;
               totalLancamentos += resultado.lancamentosImportados;
+              if (resultado.erros.length > 0) {
+                this.logger.warn(`Aluno ${aluno.codigo}: ${resultado.erros[0]}`);
+              }
             }
 
             totalAlunos++;
