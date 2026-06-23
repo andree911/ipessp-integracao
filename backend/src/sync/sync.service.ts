@@ -58,17 +58,22 @@ export class SyncService {
             const cpf = resp.cpf.replace(/\D/g, '');
 
             // salva no cache IA
-            await this.cacheRepo.upsert(
-              [{
-                cpf,
-                codigoAluno: aluno.codigo,
-                nomeAluno: aluno.nome,
-                codigoResponsavel: resp.codigo,
-                nomeResponsavel: resp.nome,
-                email: resp.email ?? null,
-              }] as ResponsavelCache[],
-              ['cpf', 'codigoAluno'],
-            );
+            const dadosResp = {
+              cpf,
+              codigoAluno: aluno.codigo,
+              nomeAluno: aluno.nome,
+              codigoResponsavel: resp.codigo,
+              nomeResponsavel: resp.nome,
+              email: resp.email ?? null,
+            };
+            const existente = await this.cacheRepo.findOne({
+              where: { cpf, codigoAluno: aluno.codigo },
+            });
+            if (existente) {
+              await this.cacheRepo.update(existente.id, dadosResp);
+            } else {
+              await this.cacheRepo.save(this.cacheRepo.create(dadosResp));
+            }
 
             // salva no cache financeiro (só se tiver email)
             if (resp.email) {
