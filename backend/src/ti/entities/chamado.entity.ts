@@ -23,23 +23,23 @@ export class Chamado {
   @Column({ name: 'criado_por_email' })
   criadoPorEmail: string;
 
-  @Column({ name: 'criado_por_nome', nullable: true })
-  criadoPorNome: string;
+  @Column({ name: 'criado_por_nome', type: 'text', nullable: true })
+  criadoPorNome: string | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   setor: string | null;
 
-  @Column({ name: 'atribuido_para_email', nullable: true })
-  atribuidoParaEmail: string;
+  @Column({ name: 'atribuido_para_email', type: 'text', nullable: true })
+  atribuidoParaEmail: string | null;
 
-  @Column({ name: 'atribuido_para_nome', nullable: true })
-  atribuidoParaNome: string;
+  @Column({ name: 'atribuido_para_nome', type: 'text', nullable: true })
+  atribuidoParaNome: string | null;
 
-  @Column({ nullable: true })
-  resolucao: string;
+  @Column({ type: 'text', nullable: true })
+  resolucao: string | null;
 
-  @Column({ name: 'telefone_solicitante', nullable: true })
-  telefoneSolicitante: string;
+  @Column({ name: 'telefone_solicitante', type: 'text', nullable: true })
+  telefoneSolicitante: string | null;
 
   @Column({ name: 'resolvido_em', type: 'timestamptz', nullable: true })
   resolvidoEm: Date;
