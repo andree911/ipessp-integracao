@@ -280,19 +280,11 @@ export class SophiaService implements OnModuleInit {
   }
 
   async getAllAlunos(): Promise<AlunoApiModel[]> {
-    const results: AlunoApiModel[] = [];
-    let pagina = 1;
-    const tamanhoPagina = 100;
-
-    while (true) {
-      const page = await this.getAlunos(pagina, tamanhoPagina);
-      results.push(...page);
-      if (page.length < tamanhoPagina) break;
-      pagina++;
-    }
-
-    this.logger.log(`SophiA: ${results.length} alunos carregados`);
-    return results;
+    // API ignora TamanhoPagina — retorna todos independente do valor.
+    // Uma única chamada com limite alto traz tudo sem loop infinito.
+    const alunos = await this.getAlunos(1, 9999);
+    this.logger.log(`SophiA: ${alunos.length} alunos carregados`);
+    return alunos;
   }
 
   async criarResponsavelAluno(
