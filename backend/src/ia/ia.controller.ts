@@ -52,4 +52,10 @@ export class IaController {
     if (!telefone) throw new BadRequestException('Parâmetro telefone é obrigatório');
     return this.iaService.getCpfPorTelefone(telefone);
   }
+
+  @Get('secretaria')
+  getSecretaria(@Query('cpf') cpf: string) {
+    if (!cpf) throw new BadRequestException('Parâmetro cpf é obrigatório');
+    return this.iaService.getSecretariaByCpf(cpf);
+  }
 }

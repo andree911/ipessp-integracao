@@ -156,6 +156,27 @@ export class IaService {
     return resultado;
   }
 
+  async getSecretariaByCpf(cpf: string) {
+    const cpfNumeros = cpf.replace(/\D/g, '');
+    const registros = await this.cacheRepo.find({ where: { cpf: cpfNumeros } });
+    if (registros.length === 0) throw new NotFoundException('Aluno não encontrado para este CPF');
+
+    const { codigoAluno, nomeAluno } = registros[0];
+    const matriculas = await this.sophia.getMatriculasAluno(codigoAluno);
+
+    return {
+      nomeAluno,
+      matriculas: matriculas.map((m) => ({
+        codigo: m.codigoMatricula,
+        curso: m.nomeSerie ?? null,
+        turma: m.nomeTurma ?? null,
+        unidade: m.nomeUnidade ?? null,
+        situacao: m.situacao ?? null,
+        dataMatricula: m.dataMatricula ?? null,
+      })),
+    };
+  }
+
   async associarTelefoneCpf(dto: AssociarTelefoneDto) {
     const telefone = dto.telefone.replace(/\D/g, '');
     const cpf = dto.cpf.replace(/\D/g, '');
