@@ -15,6 +15,8 @@ import { AuthModule } from './auth/auth.module';
 import { MeModule } from './me/me.module';
 import { AdminModule } from './admin/admin.module';
 import { FinanceiroModule } from './financeiro/financeiro.module';
+import { TiModule } from './ti/ti.module';
+import { Chamado } from './ti/entities/chamado.entity';
 import { ClienteCache } from './financeiro/entities/cliente-cache.entity';
 import { LancamentoCache } from './financeiro/entities/lancamento-cache.entity';
 import { EmailLog } from './email/entities/email-log.entity';
@@ -48,7 +50,7 @@ import { ResetToken } from './auth/entities/reset-token.entity';
         entities: [
           EmailLog, ResponsavelCache, TelefoneCpfCache, Lead, LeadHistorico, MensagemContato, Manifestacao,
           SolicitacaoEvento, Candidatura, Usuario, Professor, RefreshToken, ResetToken,
-          ClienteCache, LancamentoCache,
+          ClienteCache, LancamentoCache, Chamado,
         ],
         synchronize: true,
         ssl: { rejectUnauthorized: false },
@@ -65,6 +67,7 @@ import { ResetToken } from './auth/entities/reset-token.entity';
     AuthModule,
     MeModule,
     AdminModule,
+    TiModule,
   ],
 })
 export class AppModule {}
