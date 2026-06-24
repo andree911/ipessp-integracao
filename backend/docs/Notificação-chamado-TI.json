@@ -1,0 +1,87 @@
+{
+  "name": "Notificação Chamado TI",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "notificacao-chamado-ti",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [0, 0],
+      "id": "a1b2c3d4-0001-0001-0001-000000000001",
+      "name": "Webhook Supabase",
+      "webhookId": "notificacao-chamado-ti"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 3 },
+          "conditions": [
+            {
+              "id": "cond-001",
+              "leftValue": "={{ $json.body.record.telefone_solicitante }}",
+              "rightValue": "",
+              "operator": { "type": "string", "operation": "exists", "singleValue": true }
+            },
+            {
+              "id": "cond-002",
+              "leftValue": "={{ $json.body.record.status }}",
+              "rightValue": "={{ $json.body.old_record.status }}",
+              "operator": { "type": "string", "operation": "notEquals" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [220, 0],
+      "id": "a1b2c3d4-0002-0002-0002-000000000002",
+      "name": "Validar Notificação"
+    },
+    {
+      "parameters": {
+        "jsCode": "const record = $input.first().json.body.record;\nconst status = record.status;\nconst resolucao = record.resolucao;\nconst titulo = record.titulo;\n\nconst mensagens = {\n  em_andamento: `🔧 *Seu chamado está sendo atendido!*\\n\\n*Assunto:* ${titulo}\\n\\nNossa equipe de TI já está trabalhando nisso. Em breve você terá uma resposta.`,\n  aguardando: `⏳ *O TI precisa de mais informações sobre seu chamado.*\\n\\n*Assunto:* ${titulo}\\n\\nEntre em contato com o suporte: wa.me/NUMERO_TI`,\n  resolvido: `✅ *Seu chamado foi resolvido!*\\n\\n*Assunto:* ${titulo}${resolucao ? `\\n\\n*Solução:* ${resolucao}` : ''}\\n\\nSe ainda tiver dúvidas, é só falar aqui.`,\n  fechado: `✅ *Seu chamado foi encerrado.*\\n\\n*Assunto:* ${titulo}${resolucao ? `\\n\\n*Solução:* ${resolucao}` : ''}`,\n};\n\nconst mensagem = mensagens[status];\nif (!mensagem) return [];\n\nreturn [{ json: { telefone: record.telefone_solicitante, mensagem } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, -80],
+      "id": "a1b2c3d4-0003-0003-0003-000000000003",
+      "name": "Gerar Mensagem"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.z-api.io/instances/INSTANCE_ID/token/INSTANCE_TOKEN/send-text",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Client-Token", "value": "CLIENT_TOKEN" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"phone\": \"{{ $json.telefone }}\",\n  \"message\": \"{{ $json.mensagem }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [660, -80],
+      "id": "a1b2c3d4-0004-0004-0004-000000000004",
+      "name": "Enviar WhatsApp"
+    }
+  ],
+  "connections": {
+    "Webhook Supabase": { "main": [[{ "node": "Validar Notificação", "type": "main", "index": 0 }]] },
+    "Validar Notificação": { "main": [[{ "node": "Gerar Mensagem", "type": "main", "index": 0 }]] },
+    "Gerar Mensagem": { "main": [[{ "node": "Enviar WhatsApp", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "meta": { "templateCredsSetupCompleted": true },
+  "tags": []
+}
