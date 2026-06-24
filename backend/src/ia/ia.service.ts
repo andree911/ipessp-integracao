@@ -161,7 +161,7 @@ export class IaService {
     const cpf = dto.cpf.replace(/\D/g, '');
 
     await this.telefoneCpfRepo.upsert(
-      { telefone, cpf, nomeResponsavel: dto.nomeResponsavel ?? null } as TelefoneCpfCache,
+      { telefone, cpf, nomeResponsavel: dto.nomeResponsavel ?? null, tipo: dto.tipo ?? null } as TelefoneCpfCache,
       ['telefone'],
     );
 
@@ -173,6 +173,6 @@ export class IaService {
     const tel = telefone.replace(/\D/g, '');
     const registro = await this.telefoneCpfRepo.findOne({ where: { telefone: tel } });
     if (!registro) throw new NotFoundException('Nenhum CPF associado a este número de telefone');
-    return { telefone: registro.telefone, cpf: registro.cpf, nomeResponsavel: registro.nomeResponsavel };
+    return { telefone: registro.telefone, cpf: registro.cpf, nomeResponsavel: registro.nomeResponsavel, tipo: registro.tipo ?? null };
   }
 }
