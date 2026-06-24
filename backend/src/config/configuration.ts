@@ -7,7 +7,7 @@ export default () => ({
     tenant: process.env.SOPHIA_TENANT ?? '',
   },
   database: {
-    path: process.env.DATABASE_PATH ?? './data/sync.db',
+    url: process.env.DATABASE_URL ?? '',
   },
   sync: {
     cron: process.env.SYNC_CRON ?? '0 * * * *',

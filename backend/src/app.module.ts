@@ -43,14 +43,15 @@ import { ResetToken } from './auth/entities/reset-token.entity';
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        type: 'better-sqlite3',
-        database: config.get<string>('database.path') ?? './data/sync.db',
+        type: 'postgres',
+        url: config.get<string>('database.url'),
         entities: [
           EmailLog, ResponsavelCache, TelefoneCpfCache, Lead, LeadHistorico, MensagemContato, Manifestacao,
           SolicitacaoEvento, Candidatura, Usuario, Professor, RefreshToken, ResetToken,
           ClienteCache, LancamentoCache,
         ],
         synchronize: true,
+        ssl: { rejectUnauthorized: false },
       }),
     }),
     SophiaModule,
