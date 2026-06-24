@@ -27,7 +27,7 @@ export class Chamado {
   criadoPorNome: string;
 
   @Column({ nullable: true })
-  setor: string;
+  setor: string | null;
 
   @Column({ name: 'atribuido_para_email', nullable: true })
   atribuidoParaEmail: string;

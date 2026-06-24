@@ -26,7 +26,7 @@ export class TiService {
       telefoneSolicitante: telefone,
     });
 
-    const saved = await this.chamadoRepo.save(chamado);
+    const saved = await this.chamadoRepo.save(chamado) as Chamado;
     const ref = `CH-${saved.id.substring(0, 8).toUpperCase()}`;
 
     this.logger.log(`Chamado ${ref} aberto por ${telefone}`);
