@@ -58,4 +58,16 @@ export class IaController {
     if (!cpf) throw new BadRequestException('Parâmetro cpf é obrigatório');
     return this.iaService.getSecretariaByCpf(cpf);
   }
+
+  @Get('secretaria/professor')
+  getProfessor(@Query('email') email: string) {
+    if (!email) throw new BadRequestException('Parâmetro email é obrigatório');
+    return this.iaService.getProfessorByEmail(email);
+  }
+
+  @Get('secretaria/professor/alunos')
+  getAlunosPorLista(@Query('idLista') idLista: string) {
+    if (!idLista) throw new BadRequestException('Parâmetro idLista é obrigatório');
+    return this.iaService.getAlunosPorLista(Number(idLista));
+  }
 }

@@ -177,12 +177,48 @@ export class IaService {
     };
   }
 
+  async getProfessorByEmail(email: string) {
+    const colaboradores = await this.sophia.getColaboradores({ Email: email });
+    if (!colaboradores.length) throw new NotFoundException('Professor não encontrado para este email');
+
+    const professor = colaboradores[0];
+    const hoje = new Date().toISOString().substring(0, 10);
+    const listas = await this.sophia.getListaChamadaProfessor(professor.codigo);
+
+    const proximas = listas
+      .filter(l => l.dataListaChamada >= hoje)
+      .sort((a, b) => a.dataListaChamada.localeCompare(b.dataListaChamada))
+      .slice(0, 20);
+
+    const turmas = [...new Map(listas.map(l => [l.codigoTurma, { codigoTurma: l.codigoTurma, turma: l.turma }])).values()];
+
+    return {
+      nome: professor.nome,
+      email: professor.email ?? email,
+      turmas,
+      cronograma: proximas.map(l => ({
+        idLista: l.codigoLista,
+        turma: l.turma,
+        disciplina: l.disciplina,
+        data: l.dataListaChamada,
+        horaInicio: l.horaInicio,
+        horaFinal: l.horaFinal,
+        status: l.status,
+      })),
+    };
+  }
+
+  async getAlunosPorLista(idLista: number) {
+    const alunos = await this.sophia.getAlunosListaChamada(idLista);
+    return alunos;
+  }
+
   async associarTelefoneCpf(dto: AssociarTelefoneDto) {
     const telefone = dto.telefone.replace(/\D/g, '');
     const cpf = dto.cpf.replace(/\D/g, '');
 
     await this.telefoneCpfRepo.upsert(
-      { telefone, cpf, nomeResponsavel: dto.nomeResponsavel ?? null, tipo: dto.tipo ?? null } as TelefoneCpfCache,
+      { telefone, cpf, nomeResponsavel: dto.nomeResponsavel ?? null, tipo: dto.tipo ?? null, email: dto.email ?? null } as TelefoneCpfCache,
       ['telefone'],
     );
 
@@ -194,6 +230,6 @@ export class IaService {
     const tel = telefone.replace(/\D/g, '');
     const registro = await this.telefoneCpfRepo.findOne({ where: { telefone: tel } });
     if (!registro) throw new NotFoundException('Nenhum CPF associado a este número de telefone');
-    return { telefone: registro.telefone, cpf: registro.cpf, nomeResponsavel: registro.nomeResponsavel, tipo: registro.tipo ?? null };
+    return { telefone: registro.telefone, cpf: registro.cpf, nomeResponsavel: registro.nomeResponsavel, tipo: registro.tipo ?? null, email: registro.email ?? null };
   }
 }

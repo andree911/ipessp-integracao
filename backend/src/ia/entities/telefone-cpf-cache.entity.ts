@@ -18,6 +18,9 @@ export class TelefoneCpfCache {
   @Column({ nullable: true })
   tipo: string; // 'aluno' | 'professor' | 'funcionario'
 
+  @Column({ nullable: true })
+  email: string;
+
   @UpdateDateColumn()
   atualizadoEm: Date;
 }

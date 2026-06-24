@@ -16,4 +16,8 @@ export class AssociarTelefoneDto {
   @IsOptional()
   @IsString()
   tipo?: string;
+
+  @IsOptional()
+  @IsString()
+  email?: string;
 }
