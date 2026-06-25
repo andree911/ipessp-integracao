@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -6,6 +6,8 @@ import { Repository } from 'typeorm';
 import { FinanceiroService } from '../financeiro/financeiro.service';
 import { EmailService } from './email.service';
 import { EmailLog, EmailTipo } from './entities/email-log.entity';
+import { LancamentoCache } from '../financeiro/entities/lancamento-cache.entity';
+import { ClienteCache } from '../financeiro/entities/cliente-cache.entity';
 import {
   templateCobranca,
   templateLembrete,
@@ -32,6 +34,10 @@ export class EmailJobService {
     private readonly config: ConfigService,
     @InjectRepository(EmailLog)
     private readonly emailLogRepo: Repository<EmailLog>,
+    @InjectRepository(LancamentoCache)
+    private readonly lancamentoRepo: Repository<LancamentoCache>,
+    @InjectRepository(ClienteCache)
+    private readonly clienteRepo: Repository<ClienteCache>,
   ) {}
 
   private formatarCompetencia(competencia: string): string {
@@ -230,5 +236,50 @@ export class EmailJobService {
 
     await this.emailService.enviar(destinatario, `[PREVIEW] ${template.subject}`, template.html);
     return { aluno: dados.nomeAluno, tipo, lancamento: pend.codigo };
+  }
+
+  async previewPorLancamento(codigoLancamento: number, destinatario: string): Promise<{ aluno: string; tipo: string; lancamento: number }> {
+    const escola = this.dadosEscola();
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+
+    const lancamento = await this.lancamentoRepo.findOne({ where: { id: codigoLancamento } });
+    if (!lancamento) throw new NotFoundException(`Lançamento ${codigoLancamento} não encontrado`);
+
+    const cliente = await this.clienteRepo.findOne({ where: { id: lancamento.codigoCliente } });
+    if (!cliente) throw new NotFoundException(`Cliente do lançamento ${codigoLancamento} não encontrado`);
+
+    const venc = parseDateBR(lancamento.dataVencimento);
+    venc.setHours(0, 0, 0, 0);
+    const diffDias = Math.round((venc.getTime() - hoje.getTime()) / 86_400_000);
+
+    let tipo: EmailTipo;
+    if (diffDias === 0) tipo = 'vencimento_hoje';
+    else if (diffDias < 0) tipo = 'cobranca';
+    else tipo = 'lembrete';
+
+    const emailData: EmailData = {
+      nomeAluno:       cliente.nomeAluno,
+      nomeResponsavel: cliente.nomeResponsavel ?? cliente.nomeAluno,
+      descricao:       'Mensalidade',
+      valor:           `R$ ${Number(lancamento.valorPrevisto).toFixed(2).replace('.', ',')}`,
+      vencimento:      venc.toLocaleDateString('pt-BR'),
+      diasRestantes:   diffDias > 0 ? diffDias : undefined,
+      diasAtraso:      diffDias < 0 ? Math.abs(diffDias) : undefined,
+      codigoBarras:    lancamento.linhaDigitavel ?? undefined,
+      urlBoleto:       lancamento.urlBoleto ?? undefined,
+      codigoPix:       lancamento.codigoPix ?? undefined,
+      codigoMatricula: cliente.ra ?? String(cliente.codigoSophia ?? cliente.id),
+      competencia:     lancamento.competencia ? this.formatarCompetencia(lancamento.competencia) : undefined,
+      ...escola,
+    };
+
+    let template: { subject: string; html: string };
+    if (tipo === 'lembrete') template = templateLembrete(emailData);
+    else if (tipo === 'vencimento_hoje') template = templateVencimentoHoje(emailData);
+    else template = templateCobranca(emailData);
+
+    await this.emailService.enviar(destinatario, `[PREVIEW] ${template.subject}`, template.html);
+    return { aluno: cliente.nomeAluno, tipo, lancamento: lancamento.id };
   }
 }

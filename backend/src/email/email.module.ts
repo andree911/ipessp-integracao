@@ -9,11 +9,13 @@ import { WhatsAppJobService } from './whatsapp-job.service';
 import { EmailController } from './email.controller';
 import { EmailLog } from './entities/email-log.entity';
 import { Lead } from '../leads/entities/lead.entity';
+import { LancamentoCache } from '../financeiro/entities/lancamento-cache.entity';
+import { ClienteCache } from '../financeiro/entities/cliente-cache.entity';
 import { SophiaModule } from '../sophia/sophia.module';
 import { FinanceiroModule } from '../financeiro/financeiro.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([EmailLog, Lead]), HttpModule, SophiaModule, FinanceiroModule],
+  imports: [TypeOrmModule.forFeature([EmailLog, Lead, LancamentoCache, ClienteCache]), HttpModule, SophiaModule, FinanceiroModule],
   controllers: [EmailController],
   providers: [EmailService, EmailJobService, LeadEmailService, WhatsAppService, WhatsAppJobService],
   exports: [EmailService, LeadEmailService],
