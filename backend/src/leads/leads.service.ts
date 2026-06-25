@@ -1,16 +1,24 @@
 import { Injectable, Logger, NotFoundException, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between, FindOptionsWhere } from 'typeorm';
+import { Repository, Between, FindOptionsWhere, LessThanOrEqual, In } from 'typeorm';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 import { Lead } from './entities/lead.entity';
 import { LeadHistorico } from './entities/lead-historico.entity';
-import { SophiaService } from '../sophia/sophia.service';
 import { CriarLeadDto } from './dto/criar-lead.dto';
 import { AtualizarLeadDto } from './dto/atualizar-lead.dto';
 import { MoverEstagioDto } from './dto/mover-estagio.dto';
 import { LeadEmailService } from '../email/lead-email.service';
+
+// Tempo de espera em ms para cada etapa de nurturing
+const ETAPAS_NURTURING = [
+  5 * 60 * 1000,           // etapa 0 → boas-vindas após 5 min
+  24 * 60 * 60 * 1000,     // etapa 1 → follow-up após 1 dia
+  2 * 24 * 60 * 60 * 1000, // etapa 2 → CTA após 2 dias
+];
+
+const STATUS_ATIVOS: Lead['status'][] = ['novo', 'contatado'];
 
 @Injectable()
 export class LeadsService {
@@ -21,7 +29,6 @@ export class LeadsService {
     private readonly leadRepo: Repository<Lead>,
     @InjectRepository(LeadHistorico)
     private readonly historicoRepo: Repository<LeadHistorico>,
-    private readonly sophia: SophiaService,
     private readonly http: HttpService,
     private readonly config: ConfigService,
     @Optional() private readonly leadEmail?: LeadEmailService,
@@ -35,27 +42,13 @@ export class LeadsService {
       cursoInteresse: dto.cursoInteresse,
       origem: (dto.origem as Lead['origem']) ?? 'site',
       observacao: dto.observacao,
+      etapaNurturing: 0,
+      nurturingPausado: false,
+      proximoContato: dto.telefone ? new Date(Date.now() + ETAPAS_NURTURING[0]) : null,
     });
-
-    // Tenta criar no SophiA como prospecto
-    try {
-      const resultado = await this.sophia.criarCliente({
-        nome: dto.nome,
-        email: dto.email,
-        telefone: dto.telefone,
-        interesse: dto.cursoInteresse,
-        observacao: dto.observacao,
-      });
-      lead.sophiaCodigo = String((resultado as any)?.codigo ?? (resultado as any)?.id ?? '');
-      this.logger.log(`Lead "${dto.nome}" criado no SophiA (${lead.sophiaCodigo})`);
-    } catch (err: any) {
-      lead.sophiaErro = err.message;
-      this.logger.warn(`Lead "${dto.nome}" salvo localmente — erro no SophiA: ${err.message}`);
-    }
 
     const salvo = await this.leadRepo.save(lead);
 
-    // Dispara webhook e email de boas-vindas de forma assíncrona
     void this.dispararWebhook(salvo);
     if (this.leadEmail) void this.leadEmail.enviarBoasVindas(salvo);
 
@@ -65,12 +58,14 @@ export class LeadsService {
   async listar(filtros: {
     status?: string;
     origem?: string;
+    telefone?: string;
     de?: string;
     ate?: string;
   }): Promise<Lead[]> {
     const where: FindOptionsWhere<Lead> = {};
     if (filtros.status) where.status = filtros.status as Lead['status'];
     if (filtros.origem) where.origem = filtros.origem as Lead['origem'];
+    if (filtros.telefone) where.telefone = filtros.telefone;
     if (filtros.de && filtros.ate) {
       where.criadoEm = Between(new Date(filtros.de), new Date(filtros.ate + 'T23:59:59'));
     }
@@ -81,6 +76,13 @@ export class LeadsService {
     const lead = await this.leadRepo.findOneBy({ id });
     if (!lead) throw new NotFoundException(`Lead #${id} não encontrado`);
     return lead;
+  }
+
+  async buscarPorTelefone(telefone: string): Promise<Lead | null> {
+    return this.leadRepo.findOne({
+      where: { telefone },
+      order: { criadoEm: 'DESC' },
+    });
   }
 
   async atualizar(id: number, dto: AtualizarLeadDto): Promise<Lead> {
@@ -97,7 +99,14 @@ export class LeadsService {
     const anterior = lead.status;
     lead.sophiaAlunoId = codigoAluno;
     lead.status = 'matriculado';
-    await this.historicoRepo.save({ leadId: id, estagioAnterior: anterior, estagioNovo: 'matriculado', observacao: `Vinculado ao aluno SophiA #${codigoAluno}` });
+    lead.nurturingPausado = true;
+    lead.proximoContato = null;
+    await this.historicoRepo.save({
+      leadId: id,
+      estagioAnterior: anterior,
+      estagioNovo: 'matriculado',
+      observacao: `Vinculado ao aluno SophiA #${codigoAluno}`,
+    });
     return this.leadRepo.save(lead);
   }
 
@@ -106,7 +115,16 @@ export class LeadsService {
     if (!lead) throw new NotFoundException(`Lead #${id} não encontrado`);
     const anterior = lead.status;
     lead.status = dto.estagio as Lead['status'];
-    await this.historicoRepo.save({ leadId: id, estagioAnterior: anterior, estagioNovo: dto.estagio, observacao: dto.observacao ?? null });
+    if (!STATUS_ATIVOS.includes(lead.status)) {
+      lead.nurturingPausado = true;
+      lead.proximoContato = null;
+    }
+    await this.historicoRepo.save({
+      leadId: id,
+      estagioAnterior: anterior,
+      estagioNovo: dto.estagio,
+      observacao: dto.observacao ?? null,
+    });
     return this.leadRepo.save(lead);
   }
 
@@ -116,14 +134,91 @@ export class LeadsService {
     return this.historicoRepo.find({ where: { leadId: id }, order: { criadoEm: 'ASC' } });
   }
 
+  // Retorna leads aguardando o próximo toque de nurturing
+  async listarProntosParaContato(): Promise<Lead[]> {
+    return this.leadRepo.find({
+      where: {
+        nurturingPausado: false,
+        status: In(STATUS_ATIVOS),
+        proximoContato: LessThanOrEqual(new Date()),
+      },
+      order: { proximoContato: 'ASC' },
+    });
+  }
+
+  // Avança a etapa do nurturing e agenda o próximo contato
+  async avancarNurturing(id: number): Promise<Lead> {
+    const lead = await this.leadRepo.findOneBy({ id });
+    if (!lead) throw new NotFoundException(`Lead #${id} não encontrado`);
+
+    lead.etapaNurturing += 1;
+
+    const proximaEspera = ETAPAS_NURTURING[lead.etapaNurturing];
+    lead.proximoContato = proximaEspera ? new Date(Date.now() + proximaEspera) : null;
+
+    if (lead.status === 'novo') {
+      const anterior = lead.status;
+      lead.status = 'contatado';
+      await this.historicoRepo.save({
+        leadId: id,
+        estagioAnterior: anterior,
+        estagioNovo: 'contatado',
+        observacao: `Contato automático — etapa ${lead.etapaNurturing}`,
+      });
+    }
+
+    return this.leadRepo.save(lead);
+  }
+
+  // Registra interação do bot: pausa nurturing por 48h e atualiza status
+  async registrarInteracaoBot(telefone: string): Promise<{ encontrado: boolean; leadId?: number }> {
+    const lead = await this.buscarPorTelefone(telefone);
+    if (!lead) return { encontrado: false };
+
+    lead.ultimaInteracaoBot = new Date();
+    lead.nurturingPausado = true;
+
+    // Retoma nurturing após 48h a partir da última interação
+    lead.proximoContato = new Date(Date.now() + 48 * 60 * 60 * 1000);
+
+    if (lead.status === 'novo') {
+      await this.historicoRepo.save({
+        leadId: lead.id,
+        estagioAnterior: 'novo',
+        estagioNovo: 'contatado',
+        observacao: 'Interação via chatbot',
+      });
+      lead.status = 'contatado';
+    }
+
+    await this.leadRepo.save(lead);
+    return { encontrado: true, leadId: lead.id };
+  }
+
+  // Reativa nurturing de leads que ficaram em pausa e passaram 48h sem interagir
+  async reativarNurturingPausado(): Promise<number> {
+    const limite = new Date(Date.now() - 48 * 60 * 60 * 1000);
+    const leads = await this.leadRepo.find({
+      where: {
+        nurturingPausado: true,
+        status: In(STATUS_ATIVOS),
+        ultimaInteracaoBot: LessThanOrEqual(limite),
+      },
+    });
+
+    for (const lead of leads) {
+      if (lead.etapaNurturing < ETAPAS_NURTURING.length) {
+        lead.nurturingPausado = false;
+        lead.proximoContato = new Date(Date.now() + ETAPAS_NURTURING[lead.etapaNurturing]);
+        await this.leadRepo.save(lead);
+      }
+    }
+
+    return leads.length;
+  }
+
   async relatorio(): Promise<object> {
     const total = await this.leadRepo.count();
-    const porStatus = await this.leadRepo
-      .createQueryBuilder('l')
-      .select('l.status', 'status')
-      .addSelect('COUNT(*)', 'total')
-      .groupBy('l.status')
-      .getRawMany();
 
     const porOrigem = await this.leadRepo
       .createQueryBuilder('l')
@@ -138,11 +233,6 @@ export class LeadsService {
       where: { criadoEm: Between(inicioMes, hoje) },
     });
 
-    const sincronizadosSophia = await this.leadRepo
-      .createQueryBuilder('l')
-      .where('l.sophiaCodigo IS NOT NULL AND l.sophiaCodigo != ""')
-      .getCount();
-
     const estagios = ['novo', 'contatado', 'agendado', 'inscrito', 'matriculado', 'perdido'];
     const contagemPorEstagio = await this.leadRepo
       .createQueryBuilder('l')
@@ -156,12 +246,38 @@ export class LeadsService {
       total: Number(contagemPorEstagio.find(r => r.estagio === e)?.total ?? 0),
     }));
 
-    const totalAtivos = funil.filter(f => f.estagio !== 'perdido').reduce((s, f) => s + f.total, 0);
+    const totalAtivos = funil
+      .filter(f => f.estagio !== 'perdido')
+      .reduce((s, f) => s + f.total, 0);
+
     const taxaConversao = totalAtivos > 0
       ? ((funil.find(f => f.estagio === 'matriculado')?.total ?? 0) / totalAtivos * 100).toFixed(1) + '%'
       : '0%';
 
-    return { total, noMes, sincronizadosSophia, porStatus, porOrigem, funil, taxaConversao };
+    const emNurturing = await this.leadRepo.count({
+      where: { nurturingPausado: false, status: In(STATUS_ATIVOS) },
+    });
+
+    return { total, noMes, porOrigem, funil, taxaConversao, emNurturing };
+  }
+
+  async relatorioDiario(): Promise<object> {
+    const hoje = new Date();
+    const inicioHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+
+    const novosHoje = await this.leadRepo.count({
+      where: { criadoEm: Between(inicioHoje, hoje) },
+    });
+
+    const interacoesHoje = await this.leadRepo.count({
+      where: { ultimaInteracaoBot: Between(inicioHoje, hoje) },
+    });
+
+    const convertidosHoje = await this.leadRepo.count({
+      where: { status: 'matriculado', atualizadoEm: Between(inicioHoje, hoje) },
+    });
+
+    return { novosHoje, interacoesHoje, convertidosHoje, geradoEm: hoje };
   }
 
   private async dispararWebhook(lead: Lead): Promise<void> {

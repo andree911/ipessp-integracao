@@ -15,6 +15,7 @@ export class Lead {
   @Column({ nullable: true })
   email: string;
 
+  @Index()
   @Column({ nullable: true })
   telefone: string;
 
@@ -30,15 +31,22 @@ export class Lead {
   @Column({ nullable: true, type: 'text' })
   observacao: string;
 
-  @Column({ nullable: true })
-  sophiaCodigo: string;
-
-  // Código do aluno no SophiA após conversão de lead → aluno matriculado
+  // Vinculação ao aluno no SophiA após conversão lead → matrícula
   @Column({ nullable: true, type: 'integer' })
   sophiaAlunoId: number | null;
 
-  @Column({ nullable: true, type: 'text' })
-  sophiaErro: string;
+  // Nurturing
+  @Column({ default: 0 })
+  etapaNurturing: number;
+
+  @Column({ nullable: true, type: 'datetime' })
+  proximoContato: Date | null;
+
+  @Column({ default: false })
+  nurturingPausado: boolean;
+
+  @Column({ nullable: true, type: 'datetime' })
+  ultimaInteracaoBot: Date | null;
 
   @CreateDateColumn()
   criadoEm: Date;

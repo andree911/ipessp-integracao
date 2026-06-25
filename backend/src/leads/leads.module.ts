@@ -5,7 +5,6 @@ import { LeadsController } from './leads.controller';
 import { LeadsService } from './leads.service';
 import { Lead } from './entities/lead.entity';
 import { LeadHistorico } from './entities/lead-historico.entity';
-import { SophiaModule } from '../sophia/sophia.module';
 import { IaBearerGuard } from '../ia/ia.guard';
 import { EmailModule } from '../email/email.module';
 
@@ -13,7 +12,6 @@ import { EmailModule } from '../email/email.module';
   imports: [
     TypeOrmModule.forFeature([Lead, LeadHistorico]),
     HttpModule,
-    SophiaModule,
     forwardRef(() => EmailModule),
   ],
   controllers: [LeadsController],
