@@ -50,6 +50,12 @@ export default () => ({
   n8n: {
     leadsWebhookUrl: process.env.N8N_LEADS_WEBHOOK_URL ?? '',
   },
+  zapi: {
+    instanceId: process.env.ZAPI_INSTANCE_ID ?? '',
+    token: process.env.ZAPI_TOKEN ?? '',
+    clientToken: process.env.ZAPI_CLIENT_TOKEN ?? '',
+    cronHabilitado: process.env.WPP_CRON_HABILITADO ?? 'false',
+  },
   jwt: {
     secret: process.env.JWT_SECRET ?? 'change-me-in-production',
     siteUrl: process.env.SITE_URL ?? 'http://localhost:3000',

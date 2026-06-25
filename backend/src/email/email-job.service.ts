@@ -79,6 +79,7 @@ export class EmailJobService {
     let totalErros = 0;
 
     for (const { cliente, lancamento } of pendentes) {
+      if (!cliente.emailResponsavel) continue;
       try {
         const venc = parseDateBR(lancamento.dataVencimento);
         venc.setHours(0, 0, 0, 0);
@@ -99,7 +100,7 @@ export class EmailJobService {
         const emailData: EmailData = {
           nomeAluno:       cliente.nomeAluno,
           nomeResponsavel: cliente.nomeResponsavel ?? cliente.nomeAluno,
-          descricao:       lancamento.descricao ?? 'Mensalidade',
+          descricao:       'Mensalidade',
           valor:           `R$ ${Number(lancamento.valorPrevisto).toFixed(2).replace('.', ',')}`,
           vencimento:      venc.toLocaleDateString('pt-BR'),
           diasRestantes:   diffDias > 0 ? diffDias : undefined,
@@ -164,7 +165,7 @@ export class EmailJobService {
     const emailData: EmailData = {
       nomeAluno:       cliente.nomeAluno,
       nomeResponsavel: cliente.nomeResponsavel ?? cliente.nomeAluno,
-      descricao:       lancamento.descricao ?? 'Mensalidade',
+      descricao:       'Mensalidade',
       valor:           `R$ ${Number(lancamento.valorPrevisto).toFixed(2).replace('.', ',')}`,
       vencimento:      venc.toLocaleDateString('pt-BR'),
       diasRestantes:   diffDias > 0 ? diffDias : undefined,
@@ -209,7 +210,7 @@ export class EmailJobService {
     const emailData: EmailData = {
       nomeAluno:       dados.nomeAluno,
       nomeResponsavel: dados.nomeResponsavel,
-      descricao:       pend.descricao,
+      descricao:       'Mensalidade',
       valor:           `R$ ${pend.valor.toFixed(2).replace('.', ',')}`,
       vencimento:      venc.toLocaleDateString('pt-BR'),
       diasRestantes:   diffDias > 0 ? diffDias : undefined,

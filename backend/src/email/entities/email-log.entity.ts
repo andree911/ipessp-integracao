@@ -6,7 +6,10 @@ export type EmailTipo =
   | 'cobranca'
   | 'lead_boas_vindas'
   | 'lead_followup'
-  | 'lead_cta';
+  | 'lead_cta'
+  | 'wpp_lembrete'
+  | 'wpp_vencimento_hoje'
+  | 'wpp_cobranca';
 
 @Entity('email_log')
 export class EmailLog {

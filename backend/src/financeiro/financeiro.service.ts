@@ -91,7 +91,7 @@ export class FinanceiroService {
     const resultado: { cliente: ClienteCache; lancamento: LancamentoCache }[] = [];
     for (const lanc of lancamentos) {
       const cliente = await this.clienteRepo.findOne({ where: { id: lanc.codigoCliente } });
-      if (cliente?.emailResponsavel) {
+      if (cliente) {
         resultado.push({ cliente, lancamento: lanc });
       }
     }
