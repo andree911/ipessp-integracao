@@ -84,8 +84,7 @@ export default function FaleConosco() {
           nome: form.nome,
           email: form.email,
           telefone: form.telefone || undefined,
-          cursoInteresse: form.assunto || undefined,
-          observacao: form.mensagem || undefined,
+          observacao: [form.assunto, form.mensagem].filter(Boolean).join(' — ') || undefined,
           origem: 'site',
         }),
       }).catch(() => {});
