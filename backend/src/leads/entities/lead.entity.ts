@@ -39,13 +39,13 @@ export class Lead {
   @Column({ default: 0 })
   etapaNurturing: number;
 
-  @Column({ nullable: true, type: 'datetime' })
+  @Column({ nullable: true, type: 'timestamptz' })
   proximoContato: Date | null;
 
   @Column({ default: false })
   nurturingPausado: boolean;
 
-  @Column({ nullable: true, type: 'datetime' })
+  @Column({ nullable: true, type: 'timestamptz' })
   ultimaInteracaoBot: Date | null;
 
   @CreateDateColumn()
