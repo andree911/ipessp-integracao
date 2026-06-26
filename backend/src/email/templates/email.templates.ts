@@ -83,9 +83,9 @@ function cabecalho(data: EmailData): string {
     <td align="center" bgcolor="${COR}" style="background-color:${COR};padding:20px 32px;">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td valign="middle">${logoHtml}</td>
+          <td valign="middle" class="hdr-logo">${logoHtml}</td>
           ${linhas.length > 0 ? `
-          <td align="right" valign="top" style="padding-top:4px;">
+          <td align="right" valign="top" class="hdr-info" style="padding-top:4px;">
             <table cellpadding="0" cellspacing="0" border="0" align="right">
               ${linhas.join('')}
             </table>
@@ -103,32 +103,35 @@ function cabecalho(data: EmailData): string {
 function cartaoResumo(data: EmailData): string {
   const temMeta = data.codigoMatricula || data.curso || data.competencia;
 
+  const lbl = (txt: string, mt = '0'): string =>
+    `<span class="dm-t3" style="display:block;font-size:10px;color:#888;font-weight:bold;text-transform:uppercase;letter-spacing:0.8px;font-family:Arial,sans-serif;margin-top:${mt};margin-bottom:2px;">${txt}</span>`;
+
   const linhasMeta = temMeta ? `
     <tr>
-      <td style="padding:14px 20px;border-bottom:1px solid #e8e8e8;">
+      <td class="dm-bdr" style="padding:14px 20px;border-bottom:1px solid #e8e8e8;">
         <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
           <td valign="top">
             ${data.codigoMatricula ? `
-              <span style="display:block;font-size:10px;color:#888;font-weight:bold;text-transform:uppercase;letter-spacing:0.8px;font-family:Arial,sans-serif;margin-bottom:2px;">C&#243;digo do Aluno / RA</span>
-              <span style="font-size:14px;color:#222;font-weight:bold;font-family:Arial,sans-serif;">${data.codigoMatricula}</span>
+              ${lbl('C&#243;digo do Aluno / RA')}
+              <span class="dm-t1" style="font-size:14px;color:#222;font-weight:bold;font-family:Arial,sans-serif;">${data.codigoMatricula}</span>
             ` : ''}
             ${data.curso ? `
-              <span style="display:block;font-size:10px;color:#888;font-weight:bold;text-transform:uppercase;letter-spacing:0.8px;font-family:Arial,sans-serif;margin-top:${data.codigoMatricula ? '8px' : '0'};margin-bottom:2px;">Curso</span>
-              <span style="font-size:13px;color:#444;font-family:Arial,sans-serif;">${data.curso}</span>
+              ${lbl('Curso', data.codigoMatricula ? '8px' : '0')}
+              <span class="dm-t2" style="font-size:13px;color:#444;font-family:Arial,sans-serif;">${data.curso}</span>
             ` : ''}
             ${data.competencia && !data.codigoMatricula && !data.curso ? `
-              <span style="display:block;font-size:10px;color:#888;font-weight:bold;text-transform:uppercase;letter-spacing:0.8px;font-family:Arial,sans-serif;margin-bottom:2px;">Compet&#234;ncia</span>
-              <span style="font-size:13px;color:#444;font-family:Arial,sans-serif;">${data.competencia}</span>
+              ${lbl('Compet&#234;ncia')}
+              <span class="dm-t2" style="font-size:13px;color:#444;font-family:Arial,sans-serif;">${data.competencia}</span>
             ` : ''}
           </td>
           ${data.competencia && (data.codigoMatricula || data.curso) ? `
           <td valign="top" align="center" style="padding:0 12px;">
-            <span style="display:block;font-size:10px;color:#888;font-weight:bold;text-transform:uppercase;letter-spacing:0.8px;font-family:Arial,sans-serif;margin-bottom:2px;">Refer&#234;ncia</span>
-            <span style="font-size:13px;color:#444;font-family:Arial,sans-serif;">${data.competencia}</span>
+            ${lbl('Refer&#234;ncia')}
+            <span class="dm-t2" style="font-size:13px;color:#444;font-family:Arial,sans-serif;">${data.competencia}</span>
           </td>` : ''}
           <td valign="top" align="right">
-            <span style="display:block;font-size:10px;color:#888;font-weight:bold;text-transform:uppercase;letter-spacing:0.8px;font-family:Arial,sans-serif;margin-bottom:2px;">Vencimento</span>
-            <span style="font-size:15px;color:#222;font-weight:bold;font-family:Arial,sans-serif;">${data.vencimento}</span>
+            ${lbl('Vencimento')}
+            <span class="dm-t1" style="font-size:15px;color:#222;font-weight:bold;font-family:Arial,sans-serif;">${data.vencimento}</span>
           </td>
         </tr></table>
       </td>
@@ -136,16 +139,16 @@ function cartaoResumo(data: EmailData): string {
 
   const linhaAluno = `
     <tr>
-      <td style="padding:14px 20px;border-bottom:1px solid #e8e8e8;">
+      <td class="dm-bdr" style="padding:14px 20px;border-bottom:1px solid #e8e8e8;">
         <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
           <td>
-            <span style="display:block;font-size:10px;color:#888;font-weight:bold;text-transform:uppercase;letter-spacing:0.8px;font-family:Arial,sans-serif;margin-bottom:2px;">Aluno</span>
-            <span style="font-size:14px;color:#222;font-family:Arial,sans-serif;">${data.nomeAluno}</span>
+            ${lbl('Aluno')}
+            <span class="dm-t1" style="font-size:14px;color:#222;font-family:Arial,sans-serif;">${data.nomeAluno}</span>
           </td>
           ${!temMeta ? `
           <td align="right">
-            <span style="display:block;font-size:10px;color:#888;font-weight:bold;text-transform:uppercase;letter-spacing:0.8px;font-family:Arial,sans-serif;margin-bottom:2px;">Vencimento</span>
-            <span style="font-size:15px;color:#222;font-weight:bold;font-family:Arial,sans-serif;">${data.vencimento}</span>
+            ${lbl('Vencimento')}
+            <span class="dm-t1" style="font-size:15px;color:#222;font-weight:bold;font-family:Arial,sans-serif;">${data.vencimento}</span>
           </td>` : ''}
         </tr></table>
       </td>
@@ -153,9 +156,9 @@ function cartaoResumo(data: EmailData): string {
 
   const linhaDescricao = data.descricao ? `
     <tr>
-      <td style="padding:14px 20px;border-bottom:1px solid #e8e8e8;">
-        <span style="display:block;font-size:10px;color:#888;font-weight:bold;text-transform:uppercase;letter-spacing:0.8px;font-family:Arial,sans-serif;margin-bottom:2px;">Descri&#231;&#227;o</span>
-        <span style="font-size:13px;color:#444;font-family:Arial,sans-serif;">${data.descricao}</span>
+      <td class="dm-bdr" style="padding:14px 20px;border-bottom:1px solid #e8e8e8;">
+        ${lbl('Descri&#231;&#227;o')}
+        <span class="dm-t2" style="font-size:13px;color:#444;font-family:Arial,sans-serif;">${data.descricao}</span>
       </td>
     </tr>` : '';
 
@@ -174,7 +177,7 @@ function cartaoResumo(data: EmailData): string {
     <tr>
       <!-- td vermelho com padding:2px = faux border (funciona no Outlook desktop) -->
       <td bgcolor="${COR}" style="background-color:${COR};padding:2px;border-radius:12px;">
-        <table width="100%" cellpadding="0" cellspacing="0" border="0"
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" class="dm-card"
           bgcolor="#ffffff" style="background-color:#ffffff;border-radius:10px;overflow:hidden;">
           ${linhasMeta}
           ${linhaAluno}
@@ -190,7 +193,7 @@ function cartaoResumo(data: EmailData): string {
 
 function introsPagamento(): string {
   return `
-  <p style="margin:0 0 4px;font-size:14px;color:#444;text-align:center;font-family:Arial,sans-serif;line-height:1.6;">
+  <p class="dm-t2" style="margin:0 0 4px;font-size:14px;color:#444;text-align:center;font-family:Arial,sans-serif;line-height:1.6;">
     &#201; simples efetuar o pagamento desta mensalidade.
   </p>
   <p style="margin:0 0 22px;font-size:14px;color:${COR};font-weight:bold;text-align:center;font-family:Arial,sans-serif;">
@@ -228,11 +231,11 @@ function secaoPix(data: EmailData): string {
         </p>
         <table width="100%" cellpadding="0" cellspacing="0" border="0">
           <tr>
-            <td width="150" valign="top" align="center" style="padding-right:16px;">
+            <td width="150" valign="top" align="center" class="pix-qr" style="padding-right:16px;">
               ${qrBlock}
               <p style="margin:6px 0 0;font-size:9px;color:#ffb3be;font-family:Arial,sans-serif;">QR Code</p>
             </td>
-            <td valign="top">
+            <td valign="top" class="pix-code">
               <table width="100%" cellpadding="0" cellspacing="0" border="0">
                 <tr>
                   <td bgcolor="${COR_DARK}" style="background-color:${COR_DARK};border-radius:8px;padding:14px 16px;">
@@ -300,7 +303,7 @@ function doisCtas(data: EmailData): string {
   const miniCard = (titulo: string, texto: string, url: string): string => `
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
     <tr>
-      <td style="border:1.5px solid #e0e0e0;padding:0;border-radius:12px;
+      <td class="dm-bdr-a" style="border:1.5px solid #e0e0e0;padding:0;border-radius:12px;
                  mso-border-top-alt:solid #e0e0e0 1.5pt;mso-border-right-alt:solid #e0e0e0 1.5pt;
                  mso-border-bottom-alt:solid #e0e0e0 1.5pt;mso-border-left-alt:solid #e0e0e0 1.5pt;">
         <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-radius:10px;overflow:hidden;">
@@ -310,8 +313,8 @@ function doisCtas(data: EmailData): string {
             </td>
           </tr>
           <tr>
-            <td bgcolor="#ffffff" style="background-color:#ffffff;padding:14px 16px 16px;">
-              <p style="margin:0 0 14px;font-size:13px;color:#444;line-height:1.5;font-family:Arial,sans-serif;">${texto}</p>
+            <td bgcolor="#ffffff" class="dm-inset" style="background-color:#ffffff;padding:14px 16px 16px;">
+              <p class="dm-t2" style="margin:0 0 14px;font-size:13px;color:#444;line-height:1.5;font-family:Arial,sans-serif;">${texto}</p>
               ${botaoCta(url)}
             </td>
           </tr>
@@ -350,13 +353,13 @@ function avisoSeguranca(data: EmailData): string {
   return `
   <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 22px;">
     <tr>
-      <td bgcolor="#f5f5f5" style="background-color:#f5f5f5;border-radius:10px;padding:18px 20px;text-align:center;">
-        <p style="margin:0 0 6px;font-size:13px;color:#555;line-height:1.7;font-family:Arial,sans-serif;">
+      <td bgcolor="#f5f5f5" class="dm-inset" style="background-color:#f5f5f5;border-radius:10px;padding:18px 20px;text-align:center;">
+        <p class="dm-t2" style="margin:0 0 6px;font-size:13px;color:#555;line-height:1.7;font-family:Arial,sans-serif;">
           Fique atento: a fatura do ${data.nomeEscola} sempre chegar&#225; pelo remetente<br>
           <a href="mailto:${emailDisplay}"
             style="color:#222;font-weight:bold;text-decoration:none;">${emailDisplay}</a>
         </p>
-        <p style="margin:0;font-size:12px;color:#777;line-height:1.6;font-family:Arial,sans-serif;">
+        <p class="dm-t3" style="margin:0;font-size:12px;color:#777;line-height:1.6;font-family:Arial,sans-serif;">
           Nunca solicitamos dados banc&#225;rios ou senhas por e-mail.
           ${data.siteUrl ? `Acesse <a href="${data.siteUrl}" style="color:${COR};text-decoration:none;font-weight:bold;">${data.siteUrl.replace(/^https?:\/\/(www\.)?/, '')}</a> para confirmar a veracidade.` : ''}
         </p>
@@ -466,29 +469,46 @@ function base(subject: string, introTitulo: string, descParagrafo: string, nota:
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="color-scheme" content="light only">
-  <meta name="supported-color-schemes" content="light only">
+  <meta name="color-scheme" content="light dark">
+  <meta name="supported-color-schemes" content="light dark">
   <!--[if gte mso 9]><xml><o:OfficeDocumentSettings><o:AllowPNG/><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml><![endif]-->
   <title>${subject}</title>
   <style>
-    :root { color-scheme: light only; }
+    :root { color-scheme: light dark; }
     body { margin: 0 !important; padding: 0 !important; background-color: #f0f2f5 !important; }
     table { border-collapse: collapse; }
-    /* Responsivo: empilha colunas abaixo de 480px */
+    /* ── Mobile: empilha colunas abaixo de 480px ──────────────────── */
     @media only screen and (max-width: 480px) {
       .wrapper  { width: 100% !important; }
-      .body-pad { padding: 24px 20px 16px !important; }
+      .body-pad { padding: 24px 16px 16px !important; }
       .col-cta  { display: block !important; width: 100% !important; padding-bottom: 12px !important; }
       .col-gap  { display: none !important; }
+      /* PIX: QR acima, código abaixo */
+      .pix-qr   { display: block !important; width: 100% !important; text-align: center !important; padding: 0 0 16px 0 !important; }
+      .pix-code { display: block !important; width: 100% !important; }
+      /* Header: logo acima, contatos abaixo */
+      .hdr-logo { display: block !important; width: 100% !important; text-align: center !important; padding-bottom: 12px !important; }
+      .hdr-info { display: block !important; width: 100% !important; text-align: center !important; }
+    }
+    /* ── Dark mode ─────────────────────────────────────────────────── */
+    @media (prefers-color-scheme: dark) {
+      .dm-bg    { background-color: #111827 !important; }
+      .dm-card  { background-color: #1f2937 !important; }
+      .dm-inset { background-color: #283447 !important; }
+      .dm-bdr   { border-bottom-color: #374151 !important; }
+      .dm-bdr-a { border-color: #374151 !important; }
+      .dm-t1    { color: #f9fafb !important; }
+      .dm-t2    { color: #d1d5db !important; }
+      .dm-t3    { color: #9ca3af !important; }
     }
   </style>
 </head>
 <body style="margin:0;padding:0;background-color:#f0f2f5;" bgcolor="#f0f2f5">
-<table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f0f2f5"
+<table width="100%" cellpadding="0" cellspacing="0" border="0" class="dm-bg" bgcolor="#f0f2f5"
   style="background-color:#f0f2f5;padding:28px 8px;">
   <tr><td align="center">
 
-    <table width="600" cellpadding="0" cellspacing="0" border="0" class="wrapper"
+    <table width="600" cellpadding="0" cellspacing="0" border="0" class="wrapper dm-card"
       style="max-width:600px;width:100%;background-color:#ffffff;border-radius:16px;overflow:hidden;">
 
       <!-- 1. Cabeçalho -->
@@ -496,12 +516,12 @@ function base(subject: string, introTitulo: string, descParagrafo: string, nota:
 
       <!-- 2–9. Corpo -->
       <tr>
-        <td bgcolor="#ffffff" class="body-pad" style="background-color:#ffffff;padding:32px 40px 20px;">
+        <td bgcolor="#ffffff" class="body-pad dm-card" style="background-color:#ffffff;padding:32px 40px 20px;">
 
           <!-- 2. Saudação -->
-          <p style="margin:0 0 6px;font-size:16px;font-weight:bold;color:#222222;font-family:Arial,sans-serif;">${introTitulo}</p>
+          <p class="dm-t1" style="margin:0 0 6px;font-size:16px;font-weight:bold;color:#222222;font-family:Arial,sans-serif;">${introTitulo}</p>
           <p style="margin:0 0 18px;font-size:17px;font-weight:bold;color:${COR};text-transform:uppercase;font-family:Arial,sans-serif;">${data.nomeResponsavel},</p>
-          <p style="margin:0 0 4px;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">${descParagrafo}</p>
+          <p class="dm-t2" style="margin:0 0 4px;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">${descParagrafo}</p>
 
           <!-- 3. Card de resumo -->
           ${cartaoResumo(data)}
