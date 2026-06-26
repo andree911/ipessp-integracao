@@ -33,53 +33,24 @@ const COR = '#C8102E';
 // necessária porque Outlook não suporta rgba()
 const COR_DARK = '#a40d26';
 
-// ─── Ícones inline (SVG → base64 data URL) ───────────────────────────────────
-// Inline para não depender de CDN externo e não ser bloqueado por email clients.
-// Outlook Desktop (VML) recebe fallback em texto nos conditional comments.
-
-function svgIcon(svg: string): string {
-  return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
-}
-
-const ICO_TEL = svgIcon(
-  `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"><circle cx="9" cy="9" r="9" fill="#fff"/><path d="M6 6.2c0-.3.3-.7.7-.7H7c.3 0 .6.2.7.5l.4 1.8c.1.3-.1.6-.4.7l-.5.3c.4.9 1.1 1.6 2 2l.3-.5c.2-.3.5-.4.7-.3l1.8.4c.3.1.5.4.5.7v.4c0 .4-.3.7-.7.7C8.2 12 6 9.8 6 7.3V6.2z" fill="${COR}"/></svg>`,
-);
-const ICO_EMAIL = svgIcon(
-  `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"><circle cx="9" cy="9" r="9" fill="#fff"/><rect x="3.5" y="5.5" width="11" height="8" rx="1" fill="none" stroke="${COR}" stroke-width="1.2"/><polyline points="3.5,6 9,10 14.5,6" fill="none" stroke="${COR}" stroke-width="1.2"/></svg>`,
-);
-const ICO_SITE = svgIcon(
-  `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"><circle cx="9" cy="9" r="9" fill="#fff"/><circle cx="9" cy="9" r="5.5" fill="none" stroke="${COR}" stroke-width="1.2"/><path d="M9 3.5c-1.8 2.5-1.8 8.5 0 11M9 3.5c1.8 2.5 1.8 8.5 0 11" fill="none" stroke="${COR}" stroke-width="1.2"/><line x1="3.5" y1="9" x2="14.5" y2="9" stroke="${COR}" stroke-width="1.2"/></svg>`,
-);
-
-const ICO_FACEBOOK = svgIcon(
-  `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><circle cx="20" cy="20" r="20" fill="#1877F2"/><path d="M22.5 21H25l.5-3H22.5v-1.5c0-1 .3-1.5 1.5-1.5H26v-2.7a22 22 0 0 0-3-.2c-2.6 0-4.5 1.6-4.5 4.5V18H16v3h2.5v8H22v-8z" fill="#fff"/></svg>`,
-);
-const ICO_INSTAGRAM = svgIcon(
-  `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><circle cx="20" cy="20" r="20" fill="#E1306C"/><rect x="12" y="12" width="16" height="16" rx="4" fill="none" stroke="#fff" stroke-width="1.5"/><circle cx="20" cy="20" r="4.5" fill="none" stroke="#fff" stroke-width="1.5"/><circle cx="25.5" cy="14.5" r="1.2" fill="#fff"/></svg>`,
-);
-const ICO_YOUTUBE = svgIcon(
-  `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><circle cx="20" cy="20" r="20" fill="#FF0000"/><path d="M28.5 15.5c-.3-1.2-1.3-2-2.5-2.2C23.8 13 20 13 20 13s-3.8 0-6 .3c-1.2.2-2.2 1-2.5 2.2-.3 1.3-.5 2.7-.5 4s.2 2.7.5 4c.3 1.2 1.3 2 2.5 2.2 2.2.3 6 .3 6 .3s3.8 0 6-.3c1.2-.2 2.2-1 2.5-2.2.3-1.3.5-2.7.5-4s-.2-2.7-.5-4zm-11 7v-6l6 3-6 3z" fill="#fff"/></svg>`,
-);
-const ICO_LINKEDIN = svgIcon(
-  `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><circle cx="20" cy="20" r="20" fill="#0A66C2"/><rect x="12" y="17" width="3.5" height="10.5" fill="#fff"/><circle cx="13.75" cy="13.5" r="2" fill="#fff"/><path d="M19 17h3.5v1.5c.5-1 1.8-1.8 3.2-1.8 2.8 0 4.3 1.8 4.3 5v6.3h-3.5v-5.5c0-1.5-.5-2.5-1.8-2.5-1.5 0-2.2 1-2.2 2.8v5.2H19z" fill="#fff"/></svg>`,
-);
-
-// ─── 1. Cabeçalho: logo + contatos com ícone + texto ─────────────────────────
+// ─── 1. Cabeçalho: logo + contatos ───────────────────────────────────────────
 
 function cabecalho(data: EmailData): string {
   const tel = (data.telefoneEscola ?? '').replace(/\D/g, '');
 
-  const contatoLinha = (icone: string, fallbackTxt: string, texto: string, url: string): string => `
+  const contatoLinha = (badge: string, texto: string, url: string): string => `
   <tr>
     <td style="padding:4px 0;">
       <a href="${url}" target="_blank" style="text-decoration:none;display:inline-block;">
         <table cellpadding="0" cellspacing="0" border="0">
           <tr>
-            <td align="center" valign="middle" style="padding-right:8px;line-height:0;vertical-align:middle;">
-              <!--[if mso]><table cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="#ffffff" style="background:#ffffff;padding:2px 6px;border-radius:3px;"><span style="font-size:9px;font-weight:bold;color:${COR};font-family:Arial,sans-serif;">${fallbackTxt}</span></td></tr></table><![endif]-->
-              <!--[if !mso]><!--><img src="${icone}" width="18" height="18" alt="${fallbackTxt}" style="display:block;border:0;"><!--<![endif]-->
+            <td align="center" valign="middle" bgcolor="#ffffff"
+              style="background:#ffffff;padding:3px 7px;border-radius:4px;
+                     mso-border-top-alt:solid #ffffff 1pt;mso-border-right-alt:solid #ffffff 1pt;
+                     mso-border-bottom-alt:solid #ffffff 1pt;mso-border-left-alt:solid #ffffff 1pt;">
+              <span style="font-size:10px;font-weight:bold;color:${COR};font-family:Arial,sans-serif;white-space:nowrap;letter-spacing:0.5px;">${badge}</span>
             </td>
-            <td style="vertical-align:middle;">
+            <td style="padding-left:8px;vertical-align:middle;">
               <span style="font-size:12px;color:#ffffff;font-family:Arial,sans-serif;white-space:nowrap;">${texto}</span>
             </td>
           </tr>
@@ -89,21 +60,20 @@ function cabecalho(data: EmailData): string {
   </tr>`;
 
   const linhas: string[] = [];
-  if (data.telefoneEscola) linhas.push(contatoLinha(ICO_TEL,   'TEL',    data.telefoneEscola, `tel:+55${tel}`));
-  if (data.emailEscola)    linhas.push(contatoLinha(ICO_EMAIL,  'E-MAIL', data.emailEscola,    `mailto:${data.emailEscola}`));
-  if (data.siteUrl)        linhas.push(contatoLinha(ICO_SITE,   'SITE',   data.siteUrl.replace(/^https?:\/\/(www\.)?/, ''), data.siteUrl));
+  if (data.telefoneEscola) linhas.push(contatoLinha('TEL',    data.telefoneEscola, `tel:+55${tel}`));
+  if (data.emailEscola)    linhas.push(contatoLinha('E-MAIL', data.emailEscola,    `mailto:${data.emailEscola}`));
+  if (data.siteUrl)        linhas.push(contatoLinha('SITE',   data.siteUrl.replace(/^https?:\/\/(www\.)?/, ''), data.siteUrl));
 
   const logoHtml = data.logoUrl
-    ? `${data.siteUrl ? `<a href="${data.siteUrl}" target="_blank" style="text-decoration:none;display:inline-block;line-height:0;border:0;">` : ''}
-       <table cellpadding="0" cellspacing="0" border="0" style="line-height:0;">
+    ? `<table cellpadding="0" cellspacing="0" border="0">
          <tr>
            <td align="center" style="background:#ffffff;border-radius:10px;padding:8px 16px;line-height:0;">
-             <img src="${data.logoUrl}" alt="${data.nomeEscola}" height="48"
-               style="height:48px;width:auto;display:block;border:0;">
+             ${data.siteUrl
+               ? `<a href="${data.siteUrl}" target="_blank" style="display:block;line-height:0;border:0;text-decoration:none;"><img src="${data.logoUrl}" alt="${data.nomeEscola}" height="48" style="height:48px;width:auto;display:block;border:0;"></a>`
+               : `<img src="${data.logoUrl}" alt="${data.nomeEscola}" height="48" style="height:48px;width:auto;display:block;border:0;">`}
            </td>
          </tr>
-       </table>
-       ${data.siteUrl ? '</a>' : ''}`
+       </table>`
     : data.siteUrl
       ? `<a href="${data.siteUrl}" target="_blank" style="text-decoration:none;"><span style="font-size:22px;font-weight:bold;color:#ffffff;font-family:Arial,sans-serif;">${data.nomeEscola}</span></a>`
       : `<span style="font-size:22px;font-weight:bold;color:#ffffff;font-family:Arial,sans-serif;">${data.nomeEscola}</span>`;
@@ -424,21 +394,22 @@ function botaoPrincipal(url: string): string {
 // ─── 10. Rodapé ───────────────────────────────────────────────────────────────
 
 function redesSociais(data: EmailData): string {
-  const redes: Array<{ icon: string; letra: string; fs: number; inset: number; nome: string; url: string }> = [];
-  if (data.facebookUrl)  redes.push({ icon: ICO_FACEBOOK,  letra: 'f',  fs: 16, inset: 9,  nome: 'Facebook',  url: data.facebookUrl });
-  if (data.instagramUrl) redes.push({ icon: ICO_INSTAGRAM, letra: 'ig', fs: 11, inset: 11, nome: 'Instagram', url: data.instagramUrl });
-  if (data.youtubeUrl)   redes.push({ icon: ICO_YOUTUBE,   letra: 'yt', fs: 11, inset: 11, nome: 'YouTube',   url: data.youtubeUrl });
-  if (data.linkedinUrl)  redes.push({ icon: ICO_LINKEDIN,  letra: 'in', fs: 14, inset: 11, nome: 'LinkedIn',  url: data.linkedinUrl });
+  // Cores oficiais das marcas — círculo colorido via CSS/VML, sem imagens externas
+  const redes: Array<{ cor: string; letra: string; fs: number; inset: number; nome: string; url: string }> = [];
+  if (data.facebookUrl)  redes.push({ cor: '#1877F2', letra: 'f',  fs: 18, inset: 9,  nome: 'Facebook',  url: data.facebookUrl });
+  if (data.instagramUrl) redes.push({ cor: '#E1306C', letra: 'ig', fs: 11, inset: 11, nome: 'Instagram', url: data.instagramUrl });
+  if (data.youtubeUrl)   redes.push({ cor: '#FF0000', letra: 'yt', fs: 11, inset: 11, nome: 'YouTube',   url: data.youtubeUrl });
+  if (data.linkedinUrl)  redes.push({ cor: '#0A66C2', letra: 'in', fs: 14, inset: 11, nome: 'LinkedIn',  url: data.linkedinUrl });
   if (redes.length === 0) return '';
 
   return `
   <table cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 8px;">
     <tr>
-      ${redes.map(({ icon, letra, fs, inset, nome, url }) => `
+      ${redes.map(({ cor, letra, fs, inset, nome, url }) => `
       <td style="padding:0 8px;text-align:center;">
-        <a href="${url}" target="_blank" style="text-decoration:none;display:inline-block;line-height:0;">
-          <!--[if mso]><v:oval xmlns:v="urn:schemas-microsoft-com:vml" style="width:40px;height:40px;" fillcolor="#ffffff" stroked="false"><v:textbox inset="0,${inset}px,0,0" style="mso-fit-shape-to-text:false;"><center><span style="font-family:Arial;font-size:${fs}px;font-weight:bold;color:${COR};">${letra}</span></center></v:textbox></v:oval><![endif]-->
-          <!--[if !mso]><!--><img src="${icon}" width="40" height="40" alt="${nome}" style="display:block;border:0;border-radius:50%;"><!--<![endif]-->
+        <a href="${url}" target="_blank" style="text-decoration:none;">
+          <!--[if mso]><v:oval xmlns:v="urn:schemas-microsoft-com:vml" style="width:40px;height:40px;" fillcolor="${cor}" stroked="false"><v:textbox inset="0,${inset}px,0,0" style="mso-fit-shape-to-text:false;"><center><span style="font-family:Arial;font-size:${fs}px;font-weight:bold;color:#ffffff;">${letra}</span></center></v:textbox></v:oval><![endif]-->
+          <!--[if !mso]><!--><span style="display:inline-block;width:40px;height:40px;background-color:${cor};border-radius:50%;text-align:center;line-height:40px;font-size:${fs}px;font-weight:bold;color:#ffffff;font-family:Arial,sans-serif;">${letra}</span><!--<![endif]-->
         </a>
         <p style="margin:4px 0 0;font-size:9px;color:rgba(255,255,255,0.6);font-family:Arial,sans-serif;">${nome}</p>
       </td>`).join('')}
@@ -454,16 +425,15 @@ function rodape(data: EmailData): string {
   if (data.endereco) infos.push(data.endereco);
 
   const logoRodape = data.logoUrl
-    ? `${data.siteUrl ? `<a href="${data.siteUrl}" target="_blank" style="text-decoration:none;display:inline-block;line-height:0;border:0;">` : ''}
-       <table cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 20px;line-height:0;">
+    ? `<table cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 20px;">
          <tr>
            <td align="center" style="background:#ffffff;border-radius:10px;padding:8px 18px;line-height:0;">
-             <img src="${data.logoUrl}" alt="${data.nomeEscola}" height="40"
-               style="height:40px;width:auto;display:block;border:0;">
+             ${data.siteUrl
+               ? `<a href="${data.siteUrl}" target="_blank" style="display:block;line-height:0;border:0;text-decoration:none;"><img src="${data.logoUrl}" alt="${data.nomeEscola}" height="40" style="height:40px;width:auto;display:block;border:0;"></a>`
+               : `<img src="${data.logoUrl}" alt="${data.nomeEscola}" height="40" style="height:40px;width:auto;display:block;border:0;">`}
            </td>
          </tr>
-       </table>
-       ${data.siteUrl ? '</a>' : ''}`
+       </table>`
     : data.siteUrl
       ? `<a href="${data.siteUrl}" target="_blank" style="text-decoration:none;"><p style="margin:0 0 16px;font-size:20px;font-weight:bold;color:#ffffff;font-family:Arial,sans-serif;">${data.nomeEscola}</p></a>`
       : `<p style="margin:0 0 16px;font-size:20px;font-weight:bold;color:#ffffff;font-family:Arial,sans-serif;">${data.nomeEscola}</p>`;
