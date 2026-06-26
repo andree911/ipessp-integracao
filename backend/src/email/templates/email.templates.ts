@@ -461,7 +461,7 @@ function rodape(data: EmailData): string {
 
 // ─── Base ─────────────────────────────────────────────────────────────────────
 
-function base(subject: string, introTitulo: string, descParagrafo: string, nota: string, data: EmailData): string {
+function base(subject: string, introTitulo: string, descParagrafo: string, nota: string, data: EmailData, preheader = ''): string {
   const portalUrl = data.linkPortalAluno ?? data.siteUrl ?? '#';
 
   return `<!DOCTYPE html>
@@ -504,6 +504,7 @@ function base(subject: string, introTitulo: string, descParagrafo: string, nota:
   </style>
 </head>
 <body style="margin:0;padding:0;background-color:#f0f2f5;" bgcolor="#f0f2f5">
+${preheader ? `<div style="display:none;font-size:1px;color:#f0f2f5;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">${preheader}&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;</div>` : ''}
 <table width="100%" cellpadding="0" cellspacing="0" border="0" class="dm-bg" bgcolor="#f0f2f5"
   style="background-color:#f0f2f5;padding:28px 8px;">
   <tr><td align="center">
@@ -563,7 +564,9 @@ function base(subject: string, introTitulo: string, descParagrafo: string, nota:
 // ─── Templates exportados ─────────────────────────────────────────────────────
 
 export function templateLembrete(data: EmailData): { subject: string; html: string } {
-  const subject = `[${data.nomeEscola}] Sua mensalidade vence em ${data.diasRestantes} dia${data.diasRestantes === 1 ? '' : 's'}`;
+  const primeiroNome = data.nomeAluno.split(' ')[0];
+  const subject = `[${data.nomeEscola}] Mensalidade de ${primeiroNome} — vence em ${data.diasRestantes} dia${data.diasRestantes === 1 ? '' : 's'} (${data.valor})`;
+  const preheader = `Pague até ${data.vencimento} via PIX ou boleto e evite juros e multas.`;
 
   const desc = `Voc&#234; est&#225; recebendo o aviso de que o boleto do(a) aluno(a)
     <strong>${data.nomeAluno}</strong> vence em
@@ -576,11 +579,13 @@ export function templateLembrete(data: EmailData): { subject: string; html: stri
     O sistema pode levar at&#233; 2 dias &#250;teis para processar a compensa&#231;&#227;o.
   </p>`;
 
-  return { subject, html: base(subject, 'Sua mensalidade do IPESSP chegou.', desc, nota, data) };
+  return { subject, html: base(subject, 'Sua mensalidade do IPESSP chegou.', desc, nota, data, preheader) };
 }
 
 export function templateVencimentoHoje(data: EmailData): { subject: string; html: string } {
-  const subject = `[${data.nomeEscola}] Sua mensalidade vence HOJE`;
+  const primeiroNome = data.nomeAluno.split(' ')[0];
+  const subject = `[${data.nomeEscola}] Mensalidade de ${primeiroNome} — vence HOJE (${data.valor})`;
+  const preheader = `Pague até o final de hoje, ${data.vencimento}, e evite juros. PIX e boleto disponíveis.`;
 
   const desc = `Voc&#234; est&#225; recebendo o aviso de que o boleto do(a) aluno(a)
     <strong>${data.nomeAluno}</strong>
@@ -591,11 +596,13 @@ export function templateVencimentoHoje(data: EmailData): { subject: string; html
     * Se j&#225; realizou o pagamento hoje, desconsidere este aviso.
   </p>`;
 
-  return { subject, html: base(subject, 'Sua mensalidade do IPESSP vence hoje.', desc, nota, data) };
+  return { subject, html: base(subject, 'Sua mensalidade do IPESSP vence hoje.', desc, nota, data, preheader) };
 }
 
 export function templateCobranca(data: EmailData): { subject: string; html: string } {
-  const subject = `[${data.nomeEscola}] Mensalidade em atraso &#8212; ${data.diasAtraso} dia${data.diasAtraso === 1 ? '' : 's'}`;
+  const primeiroNome = data.nomeAluno.split(' ')[0];
+  const subject = `[${data.nomeEscola}] Mensalidade de ${primeiroNome} em atraso — ${data.diasAtraso} dia${data.diasAtraso === 1 ? '' : 's'} (${data.valor})`;
+  const preheader = `Venceu em ${data.vencimento}. Regularize agora para evitar maiores encargos. Estamos à disposição.`;
 
   const desc = `Identificamos que o boleto do(a) aluno(a) <strong>${data.nomeAluno}</strong>
     est&#225; em aberto h&#225;
@@ -608,5 +615,5 @@ export function templateCobranca(data: EmailData): { subject: string; html: stri
     Estamos &#224; disposi&#231;&#227;o para encontrar a melhor solu&#231;&#227;o.
   </p>`;
 
-  return { subject, html: base(subject, 'Cobran&#231;a em aberto.', desc, nota, data) };
+  return { subject, html: base(subject, 'Cobran&#231;a em aberto.', desc, nota, data, preheader) };
 }
