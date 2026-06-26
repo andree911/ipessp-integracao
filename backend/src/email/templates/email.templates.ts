@@ -94,17 +94,19 @@ function cabecalho(data: EmailData): string {
   if (data.siteUrl)        linhas.push(contatoLinha(ICO_SITE,   'SITE',   data.siteUrl.replace(/^https?:\/\/(www\.)?/, ''), data.siteUrl));
 
   const logoHtml = data.logoUrl
-    ? `<table cellpadding="0" cellspacing="0" border="0">
+    ? `${data.siteUrl ? `<a href="${data.siteUrl}" target="_blank" style="text-decoration:none;display:inline-block;line-height:0;border:0;">` : ''}
+       <table cellpadding="0" cellspacing="0" border="0" style="line-height:0;">
          <tr>
            <td align="center" style="background:#ffffff;border-radius:10px;padding:8px 16px;line-height:0;">
-             ${data.siteUrl ? `<a href="${data.siteUrl}" target="_blank" style="display:block;line-height:0;border:0;">` : ''}
              <img src="${data.logoUrl}" alt="${data.nomeEscola}" height="48"
                style="height:48px;width:auto;display:block;border:0;">
-             ${data.siteUrl ? '</a>' : ''}
            </td>
          </tr>
-       </table>`
-    : `<span style="font-size:22px;font-weight:bold;color:#ffffff;font-family:Arial,sans-serif;">${data.nomeEscola}</span>`;
+       </table>
+       ${data.siteUrl ? '</a>' : ''}`
+    : data.siteUrl
+      ? `<a href="${data.siteUrl}" target="_blank" style="text-decoration:none;"><span style="font-size:22px;font-weight:bold;color:#ffffff;font-family:Arial,sans-serif;">${data.nomeEscola}</span></a>`
+      : `<span style="font-size:22px;font-weight:bold;color:#ffffff;font-family:Arial,sans-serif;">${data.nomeEscola}</span>`;
 
   return `
   <tr>
@@ -452,17 +454,19 @@ function rodape(data: EmailData): string {
   if (data.endereco) infos.push(data.endereco);
 
   const logoRodape = data.logoUrl
-    ? `<table cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 20px;">
+    ? `${data.siteUrl ? `<a href="${data.siteUrl}" target="_blank" style="text-decoration:none;display:inline-block;line-height:0;border:0;">` : ''}
+       <table cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 20px;line-height:0;">
          <tr>
            <td align="center" style="background:#ffffff;border-radius:10px;padding:8px 18px;line-height:0;">
-             ${data.siteUrl ? `<a href="${data.siteUrl}" target="_blank" style="display:block;line-height:0;border:0;">` : ''}
              <img src="${data.logoUrl}" alt="${data.nomeEscola}" height="40"
                style="height:40px;width:auto;display:block;border:0;">
-             ${data.siteUrl ? '</a>' : ''}
            </td>
          </tr>
-       </table>`
-    : `<p style="margin:0 0 16px;font-size:20px;font-weight:bold;color:#ffffff;font-family:Arial,sans-serif;">${data.nomeEscola}</p>`;
+       </table>
+       ${data.siteUrl ? '</a>' : ''}`
+    : data.siteUrl
+      ? `<a href="${data.siteUrl}" target="_blank" style="text-decoration:none;"><p style="margin:0 0 16px;font-size:20px;font-weight:bold;color:#ffffff;font-family:Arial,sans-serif;">${data.nomeEscola}</p></a>`
+      : `<p style="margin:0 0 16px;font-size:20px;font-weight:bold;color:#ffffff;font-family:Arial,sans-serif;">${data.nomeEscola}</p>`;
 
   return `
   <tr>
