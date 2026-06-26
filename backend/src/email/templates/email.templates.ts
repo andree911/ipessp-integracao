@@ -40,12 +40,12 @@ function cabecalho(data: EmailData): string {
 
   const contatoLinha = (badge: string, texto: string, url: string): string => `
   <tr>
-    <td width="52" align="center" valign="middle" style="padding:3px 0;">
-      <span style="display:inline-block;background:#ffffff;padding:3px 7px;border-radius:4px;font-size:10px;font-weight:bold;color:${COR};font-family:Arial,sans-serif;white-space:nowrap;letter-spacing:0.5px;">${badge}</span>
+    <td width="52" align="center" valign="middle" style="width:52px;min-width:52px;padding:3px 0;">
+      <span style="display:inline-block;background:#ffffff;width:46px;text-align:center;padding:3px 0;border-radius:4px;font-size:9px;font-weight:bold;color:${COR};font-family:Arial,sans-serif;white-space:nowrap;letter-spacing:0.5px;">${badge}</span>
     </td>
-    <td valign="middle" style="padding:3px 0 3px 8px;">
+    <td valign="middle" style="padding:3px 0 3px 6px;text-align:left;">
       <a href="${url}" target="_blank" style="text-decoration:none;">
-        <span style="font-size:12px;color:#ffffff;font-family:Arial,sans-serif;white-space:nowrap;">${texto}</span>
+        <span style="font-size:11px;color:#ffffff;font-family:Arial,sans-serif;white-space:nowrap;">${texto}</span>
       </a>
     </td>
   </tr>`;
@@ -68,9 +68,9 @@ function cabecalho(data: EmailData): string {
     <td align="center" bgcolor="${COR}" style="background-color:${COR};padding:20px 32px;">
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td valign="middle" class="hdr-logo">${logoHtml}</td>
+          <td valign="middle" class="hdr-logo" style="width:1%;">${logoHtml}</td>
           ${linhas.length > 0 ? `
-          <td align="right" valign="top" class="hdr-info" style="padding-top:4px;">
+          <td align="right" valign="middle" class="hdr-info" style="padding-left:20px;">
             <table cellpadding="0" cellspacing="0" border="0" align="right">
               ${linhas.join('')}
             </table>
