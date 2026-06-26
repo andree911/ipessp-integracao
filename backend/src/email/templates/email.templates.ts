@@ -40,21 +40,12 @@ function cabecalho(data: EmailData): string {
 
   const contatoLinha = (badge: string, texto: string, url: string): string => `
   <tr>
-    <td style="padding:4px 0;">
-      <a href="${url}" target="_blank" style="text-decoration:none;display:inline-block;">
-        <table cellpadding="0" cellspacing="0" border="0">
-          <tr>
-            <td align="center" valign="middle" width="52" bgcolor="#ffffff"
-              style="background:#ffffff;width:52px;padding:3px 6px;border-radius:4px;
-                     mso-border-top-alt:solid #ffffff 1pt;mso-border-right-alt:solid #ffffff 1pt;
-                     mso-border-bottom-alt:solid #ffffff 1pt;mso-border-left-alt:solid #ffffff 1pt;">
-              <span style="font-size:10px;font-weight:bold;color:${COR};font-family:Arial,sans-serif;white-space:nowrap;letter-spacing:0.5px;">${badge}</span>
-            </td>
-            <td style="padding-left:8px;vertical-align:middle;">
-              <span style="font-size:12px;color:#ffffff;font-family:Arial,sans-serif;white-space:nowrap;">${texto}</span>
-            </td>
-          </tr>
-        </table>
+    <td width="52" align="center" valign="middle" style="padding:3px 0;">
+      <span style="display:inline-block;background:#ffffff;padding:3px 7px;border-radius:4px;font-size:10px;font-weight:bold;color:${COR};font-family:Arial,sans-serif;white-space:nowrap;letter-spacing:0.5px;">${badge}</span>
+    </td>
+    <td valign="middle" style="padding:3px 0 3px 8px;">
+      <a href="${url}" target="_blank" style="text-decoration:none;">
+        <span style="font-size:12px;color:#ffffff;font-family:Arial,sans-serif;white-space:nowrap;">${texto}</span>
       </a>
     </td>
   </tr>`;
