@@ -392,10 +392,10 @@ function botaoPrincipal(url: string): string {
 
 function redesSociais(data: EmailData): string {
   const redes: Array<{ cor: string; gradient?: string; vmlCor2?: string; letra: string; fs: number; inset: number; nome: string; url: string }> = [];
-  if (data.facebookUrl)  redes.push({ cor: '#c0392b', letra: 'f',  fs: 18, inset: 9,  nome: 'Facebook',  url: data.facebookUrl });
-  if (data.instagramUrl) redes.push({ cor: '#c0392b', letra: 'ig', fs: 11, inset: 11, nome: 'Instagram', url: data.instagramUrl });
-  if (data.youtubeUrl)   redes.push({ cor: '#c0392b', letra: 'yt', fs: 11, inset: 11, nome: 'YouTube',   url: data.youtubeUrl });
-  if (data.linkedinUrl)  redes.push({ cor: '#c0392b', letra: 'in', fs: 14, inset: 11, nome: 'LinkedIn',  url: data.linkedinUrl });
+  if (data.facebookUrl)  redes.push({ cor: '#ffffff', letra: 'f',  fs: 18, inset: 9,  nome: 'Facebook',  url: data.facebookUrl });
+  if (data.instagramUrl) redes.push({ cor: '#ffffff', letra: 'ig', fs: 11, inset: 11, nome: 'Instagram', url: data.instagramUrl });
+  if (data.youtubeUrl)   redes.push({ cor: '#ffffff', letra: 'yt', fs: 11, inset: 11, nome: 'YouTube',   url: data.youtubeUrl });
+  if (data.linkedinUrl)  redes.push({ cor: '#ffffff', letra: 'in', fs: 14, inset: 11, nome: 'LinkedIn',  url: data.linkedinUrl });
   if (redes.length === 0) return '';
 
   return `
@@ -404,8 +404,8 @@ function redesSociais(data: EmailData): string {
       ${redes.map(({ cor, gradient, vmlCor2, letra, fs, inset, nome, url }) => `
       <td style="padding:0 8px;text-align:center;">
         <a href="${url}" target="_blank" style="text-decoration:none;">
-          <!--[if mso]><v:oval xmlns:v="urn:schemas-microsoft-com:vml" style="width:40px;height:40px;" stroked="false"><v:fill type="${gradient ? 'gradient' : 'solid'}" color="${cor}"${gradient ? ` color2="${vmlCor2 ?? cor}" angle="135"` : ''}/><v:textbox inset="0,${inset}px,0,0" style="mso-fit-shape-to-text:false;"><center><span style="font-family:Arial;font-size:${fs}px;font-weight:bold;color:#ffffff;">${letra}</span></center></v:textbox></v:oval><![endif]-->
-          <!--[if !mso]><!--><span style="display:inline-block;width:40px;height:40px;${gradient ? `background:${gradient}` : `background-color:${cor}`};border-radius:50%;text-align:center;line-height:40px;font-size:${fs}px;font-weight:bold;color:#ffffff;font-family:Arial,sans-serif;">${letra}</span><!--<![endif]-->
+          <!--[if mso]><v:oval xmlns:v="urn:schemas-microsoft-com:vml" style="width:40px;height:40px;" stroked="false"><v:fill type="${gradient ? 'gradient' : 'solid'}" color="${cor}"${gradient ? ` color2="${vmlCor2 ?? cor}" angle="135"` : ''}/><v:textbox inset="0,${inset}px,0,0" style="mso-fit-shape-to-text:false;"><center><span style="font-family:Arial;font-size:${fs}px;font-weight:bold;color:#000000;">${letra}</span></center></v:textbox></v:oval><![endif]-->
+          <!--[if !mso]><!--><span style="display:inline-block;width:40px;height:40px;${gradient ? `background:${gradient}` : `background-color:${cor}`};border-radius:50%;text-align:center;line-height:40px;font-size:${fs}px;font-weight:bold;color:#000000;font-family:Arial,sans-serif;">${letra}</span><!--<![endif]-->
         </a>
         <p style="margin:4px 0 0;font-size:9px;color:rgba(255,255,255,0.6);font-family:Arial,sans-serif;">${nome}</p>
       </td>`).join('')}
