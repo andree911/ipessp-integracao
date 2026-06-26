@@ -3,6 +3,7 @@ import { Cron } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import * as QRCode from 'qrcode';
 import { FinanceiroService } from '../financeiro/financeiro.service';
 import { EmailService } from './email.service';
 import { EmailLog, EmailTipo } from './entities/email-log.entity';
@@ -14,6 +15,14 @@ import {
   templateVencimentoHoje,
   type EmailData,
 } from './templates/email.templates';
+
+async function gerarQrCodeDataUrl(texto: string): Promise<string | undefined> {
+  try {
+    return await QRCode.toDataURL(texto, { width: 260, margin: 1 });
+  } catch {
+    return undefined;
+  }
+}
 
 // Sophia retorna datas em dd/mm/yyyy — new Date() interpreta como MM/DD e erra o mês
 function parseDateBR(s: string): Date {
@@ -114,6 +123,7 @@ export class EmailJobService {
           codigoBarras:    lancamento.linhaDigitavel ?? undefined,
           urlBoleto:       lancamento.urlBoleto ?? undefined,
           codigoPix:       lancamento.codigoPix ?? undefined,
+          qrCodeUrl:       lancamento.codigoPix ? await gerarQrCodeDataUrl(lancamento.codigoPix) : undefined,
           codigoMatricula: cliente.ra ?? String(cliente.codigoSophia ?? cliente.id),
           competencia:     lancamento.competencia ? this.formatarCompetencia(lancamento.competencia) : undefined,
           ...escola,
@@ -179,6 +189,7 @@ export class EmailJobService {
       codigoBarras:    lancamento.linhaDigitavel ?? undefined,
       urlBoleto:       lancamento.urlBoleto ?? undefined,
       codigoPix:       lancamento.codigoPix ?? undefined,
+      qrCodeUrl:       lancamento.codigoPix ? await gerarQrCodeDataUrl(lancamento.codigoPix) : undefined,
       codigoMatricula: cliente.ra ?? String(cliente.codigoSophia ?? cliente.id),
       competencia:     lancamento.competencia ? this.formatarCompetencia(lancamento.competencia) : undefined,
       ...escola,
@@ -224,6 +235,7 @@ export class EmailJobService {
       codigoBarras:    pend.linhaDigitavel,
       urlBoleto:       pend.urlBoleto,
       codigoPix:       pend.codigoPix,
+      qrCodeUrl:       pend.codigoPix ? await gerarQrCodeDataUrl(pend.codigoPix) : undefined,
       codigoMatricula: dados.ra ?? String(pend.codigo),
       competencia:     pend.competencia ? this.formatarCompetencia(pend.competencia) : undefined,
       ...escola,
@@ -269,6 +281,7 @@ export class EmailJobService {
       codigoBarras:    lancamento.linhaDigitavel ?? undefined,
       urlBoleto:       lancamento.urlBoleto ?? undefined,
       codigoPix:       lancamento.codigoPix ?? undefined,
+      qrCodeUrl:       lancamento.codigoPix ? await gerarQrCodeDataUrl(lancamento.codigoPix) : undefined,
       codigoMatricula: cliente.ra ?? String(cliente.codigoSophia ?? cliente.id),
       competencia:     lancamento.competencia ? this.formatarCompetencia(lancamento.competencia) : undefined,
       ...escola,
