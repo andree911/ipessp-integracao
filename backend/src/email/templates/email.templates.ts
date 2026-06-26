@@ -65,16 +65,9 @@ function cabecalho(data: EmailData): string {
   if (data.siteUrl)        linhas.push(contatoLinha('SITE',   data.siteUrl.replace(/^https?:\/\/(www\.)?/, ''), data.siteUrl));
 
   const logoHtml = data.logoUrl
-    ? `<table cellpadding="0" cellspacing="0" border="0">
-         <tr>
-           <td align="center" bgcolor="#ffffff" class="logo-box"
-               style="background-color:#ffffff;border-radius:10px;padding:8px 16px;">
-             ${data.siteUrl
-               ? `<a href="${data.siteUrl}" target="_blank" style="text-decoration:none;border:0;display:block;line-height:0;"><img src="${data.logoUrl}" alt="${data.nomeEscola}" height="48" border="0" style="height:48px;width:auto;display:block;border:0;outline:0;"></a>`
-               : `<img src="${data.logoUrl}" alt="${data.nomeEscola}" height="48" border="0" style="height:48px;width:auto;display:block;border:0;outline:0;">`}
-           </td>
-         </tr>
-       </table>`
+    ? (data.siteUrl
+        ? `<a href="${data.siteUrl}" target="_blank" style="text-decoration:none;border:0;display:inline-block;line-height:0;"><img src="${data.logoUrl}" alt="${data.nomeEscola}" height="48" border="0" style="height:48px;width:auto;display:block;border:0;outline:0;"></a>`
+        : `<img src="${data.logoUrl}" alt="${data.nomeEscola}" height="48" border="0" style="height:48px;width:auto;display:block;border:0;outline:0;">`)
     : (data.siteUrl
         ? `<a href="${data.siteUrl}" target="_blank" style="text-decoration:none;"><span style="font-size:22px;font-weight:bold;color:#ffffff;font-family:Arial,sans-serif;">${data.nomeEscola}</span></a>`
         : `<span style="font-size:22px;font-weight:bold;color:#ffffff;font-family:Arial,sans-serif;">${data.nomeEscola}</span>`);
@@ -400,7 +393,7 @@ function botaoPrincipal(url: string): string {
 function redesSociais(data: EmailData): string {
   const redes: Array<{ cor: string; gradient?: string; vmlCor2?: string; letra: string; fs: number; inset: number; nome: string; url: string }> = [];
   if (data.facebookUrl)  redes.push({ cor: '#1877F2', letra: 'f',  fs: 18, inset: 9,  nome: 'Facebook',  url: data.facebookUrl });
-  if (data.instagramUrl) redes.push({ cor: '#F77737', letra: 'ig', fs: 11, inset: 11, nome: 'Instagram', url: data.instagramUrl });
+  if (data.instagramUrl) redes.push({ cor: '#C4510A', letra: 'ig', fs: 11, inset: 11, nome: 'Instagram', url: data.instagramUrl });
   if (data.youtubeUrl)   redes.push({ cor: '#FF0000', letra: 'yt', fs: 11, inset: 11, nome: 'YouTube',   url: data.youtubeUrl });
   if (data.linkedinUrl)  redes.push({ cor: '#0A66C2', letra: 'in', fs: 14, inset: 11, nome: 'LinkedIn',  url: data.linkedinUrl });
   if (redes.length === 0) return '';
@@ -428,16 +421,11 @@ function rodape(data: EmailData): string {
   if (data.endereco) infos.push(data.endereco);
 
   const logoRodape = data.logoUrl
-    ? `<table cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 20px;">
-         <tr>
-           <td align="center" bgcolor="#ffffff" class="logo-box"
-               style="background-color:#ffffff;border-radius:10px;padding:8px 18px;">
-             ${data.siteUrl
-               ? `<a href="${data.siteUrl}" target="_blank" style="text-decoration:none;border:0;display:block;line-height:0;"><img src="${data.logoUrl}" alt="${data.nomeEscola}" height="40" border="0" style="height:40px;width:auto;display:block;border:0;outline:0;"></a>`
-               : `<img src="${data.logoUrl}" alt="${data.nomeEscola}" height="40" border="0" style="height:40px;width:auto;display:block;border:0;outline:0;">`}
-           </td>
-         </tr>
-       </table>`
+    ? `<div style="margin:0 auto 20px;text-align:center;line-height:0;">
+         ${data.siteUrl
+           ? `<a href="${data.siteUrl}" target="_blank" style="text-decoration:none;border:0;display:inline-block;line-height:0;"><img src="${data.logoUrl}" alt="${data.nomeEscola}" height="40" border="0" style="height:40px;width:auto;display:block;border:0;outline:0;"></a>`
+           : `<img src="${data.logoUrl}" alt="${data.nomeEscola}" height="40" border="0" style="height:40px;width:auto;display:block;margin:0 auto;border:0;outline:0;">`}
+       </div>`
     : (data.siteUrl
         ? `<a href="${data.siteUrl}" target="_blank" style="text-decoration:none;"><p style="margin:0 0 16px;font-size:20px;font-weight:bold;color:#ffffff;font-family:Arial,sans-serif;">${data.nomeEscola}</p></a>`
         : `<p style="margin:0 0 16px;font-size:20px;font-weight:bold;color:#ffffff;font-family:Arial,sans-serif;">${data.nomeEscola}</p>`);
