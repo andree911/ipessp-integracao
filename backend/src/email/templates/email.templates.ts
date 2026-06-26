@@ -547,7 +547,7 @@ ${preheader ? `<div style="display:none;font-size:1px;color:#f0f2f5;line-height:
 
 export function templateLembrete(data: EmailData): { subject: string; html: string } {
   const primeiroNome = data.nomeAluno.split(' ')[0];
-  const subject = `[${data.nomeEscola}] Mensalidade de ${primeiroNome} — vence em ${data.diasRestantes} dia${data.diasRestantes === 1 ? '' : 's'} (${data.valor})`;
+  const subject = `Mensalidade de ${primeiroNome} — vence em ${data.diasRestantes} dia${data.diasRestantes === 1 ? '' : 's'}`;
   const preheader = `Pague até ${data.vencimento} via PIX ou boleto e evite juros e multas.`;
 
   const desc = `Voc&#234; est&#225; recebendo o aviso de que o boleto do(a) aluno(a)
@@ -566,7 +566,7 @@ export function templateLembrete(data: EmailData): { subject: string; html: stri
 
 export function templateVencimentoHoje(data: EmailData): { subject: string; html: string } {
   const primeiroNome = data.nomeAluno.split(' ')[0];
-  const subject = `[${data.nomeEscola}] Mensalidade de ${primeiroNome} — vence HOJE (${data.valor})`;
+  const subject = `Mensalidade de ${primeiroNome} — vence HOJE`;
   const preheader = `Pague até o final de hoje, ${data.vencimento}, e evite juros. PIX e boleto disponíveis.`;
 
   const desc = `Voc&#234; est&#225; recebendo o aviso de que o boleto do(a) aluno(a)
@@ -583,7 +583,7 @@ export function templateVencimentoHoje(data: EmailData): { subject: string; html
 
 export function templateCobranca(data: EmailData): { subject: string; html: string } {
   const primeiroNome = data.nomeAluno.split(' ')[0];
-  const subject = `[${data.nomeEscola}] Mensalidade de ${primeiroNome} em atraso — ${data.diasAtraso} dia${data.diasAtraso === 1 ? '' : 's'} (${data.valor})`;
+  const subject = `Mensalidade de ${primeiroNome} em atraso — ${data.diasAtraso} dia${data.diasAtraso === 1 ? '' : 's'}`;
   const preheader = `Venceu em ${data.vencimento}. Regularize agora para evitar maiores encargos. Estamos à disposição.`;
 
   const desc = `Identificamos que o boleto do(a) aluno(a) <strong>${data.nomeAluno}</strong>
