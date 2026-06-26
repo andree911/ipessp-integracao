@@ -64,15 +64,14 @@ function cabecalho(data: EmailData): string {
   if (data.emailEscola)    linhas.push(contatoLinha('E-MAIL', data.emailEscola,    `mailto:${data.emailEscola}`));
   if (data.siteUrl)        linhas.push(contatoLinha('SITE',   data.siteUrl.replace(/^https?:\/\/(www\.)?/, ''), data.siteUrl));
 
-  // <a display:block> fica dentro do <td>, envolvendo só o <img>.
-  // Isso é HTML4 válido e garante que nenhum parser de email feche o link prematuramente.
   const logoHtml = data.logoUrl
     ? `<table cellpadding="0" cellspacing="0" border="0">
          <tr>
-           <td align="center" style="background:#ffffff;border-radius:10px;padding:0;line-height:0;">
+           <td align="center" bgcolor="#ffffff" class="logo-box"
+               style="background-color:#ffffff;border-radius:10px;padding:8px 16px;">
              ${data.siteUrl
-               ? `<a href="${data.siteUrl}" target="_blank" style="display:block;padding:8px 16px;text-decoration:none;border:0;line-height:0;font-size:0;"><img src="${data.logoUrl}" alt="${data.nomeEscola}" height="48" border="0" style="height:48px;width:auto;display:block;border:0;outline:0;"></a>`
-               : `<div style="display:block;padding:8px 16px;line-height:0;font-size:0;"><img src="${data.logoUrl}" alt="${data.nomeEscola}" height="48" border="0" style="height:48px;width:auto;display:block;border:0;outline:0;"></div>`}
+               ? `<a href="${data.siteUrl}" target="_blank" style="text-decoration:none;border:0;display:block;line-height:0;"><img src="${data.logoUrl}" alt="${data.nomeEscola}" height="48" border="0" style="height:48px;width:auto;display:block;border:0;outline:0;"></a>`
+               : `<img src="${data.logoUrl}" alt="${data.nomeEscola}" height="48" border="0" style="height:48px;width:auto;display:block;border:0;outline:0;">`}
            </td>
          </tr>
        </table>`
@@ -210,9 +209,9 @@ function secaoPix(data: EmailData): string {
 
   const qrBlock = data.qrCodeUrl
     ? `<img src="${data.qrCodeUrl}" alt="QR Code PIX" width="130" height="130"
-         style="display:block;border:0;border-radius:8px;background:#ffffff;">`
+         style="display:block;margin:0 auto;border:0;border-radius:8px;background:#ffffff;">`
     : `<table width="130" cellpadding="0" cellspacing="0" border="0"
-         style="height:130px;border-radius:8px;overflow:hidden;">
+         style="height:130px;border-radius:8px;overflow:hidden;margin:0 auto;">
          <tr>
            <td bgcolor="${COR_DARK}" align="center" valign="middle"
              style="background-color:${COR_DARK};border-radius:8px;text-align:center;vertical-align:middle;padding:10px;">
@@ -401,12 +400,7 @@ function botaoPrincipal(url: string): string {
 function redesSociais(data: EmailData): string {
   const redes: Array<{ cor: string; gradient?: string; vmlCor2?: string; letra: string; fs: number; inset: number; nome: string; url: string }> = [];
   if (data.facebookUrl)  redes.push({ cor: '#1877F2', letra: 'f',  fs: 18, inset: 9,  nome: 'Facebook',  url: data.facebookUrl });
-  if (data.instagramUrl) redes.push({
-    cor: '#C13584',
-    gradient: 'linear-gradient(45deg, #405DE6, #5851DB, #833AB4, #C13584, #E1306C, #FD1D1D, #F56040, #F77737, #FCAF45, #FFDC80)',
-    vmlCor2: '#F77737',
-    letra: 'ig', fs: 11, inset: 11, nome: 'Instagram', url: data.instagramUrl,
-  });
+  if (data.instagramUrl) redes.push({ cor: '#F77737', letra: 'ig', fs: 11, inset: 11, nome: 'Instagram', url: data.instagramUrl });
   if (data.youtubeUrl)   redes.push({ cor: '#FF0000', letra: 'yt', fs: 11, inset: 11, nome: 'YouTube',   url: data.youtubeUrl });
   if (data.linkedinUrl)  redes.push({ cor: '#0A66C2', letra: 'in', fs: 14, inset: 11, nome: 'LinkedIn',  url: data.linkedinUrl });
   if (redes.length === 0) return '';
@@ -436,10 +430,11 @@ function rodape(data: EmailData): string {
   const logoRodape = data.logoUrl
     ? `<table cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 20px;">
          <tr>
-           <td align="center" style="background:#ffffff;border-radius:10px;padding:0;line-height:0;">
+           <td align="center" bgcolor="#ffffff" class="logo-box"
+               style="background-color:#ffffff;border-radius:10px;padding:8px 18px;">
              ${data.siteUrl
-               ? `<a href="${data.siteUrl}" target="_blank" style="display:block;padding:8px 18px;text-decoration:none;border:0;line-height:0;font-size:0;"><img src="${data.logoUrl}" alt="${data.nomeEscola}" height="40" border="0" style="height:40px;width:auto;display:block;border:0;outline:0;"></a>`
-               : `<div style="display:block;padding:8px 18px;line-height:0;font-size:0;"><img src="${data.logoUrl}" alt="${data.nomeEscola}" height="40" border="0" style="height:40px;width:auto;display:block;border:0;outline:0;"></div>`}
+               ? `<a href="${data.siteUrl}" target="_blank" style="text-decoration:none;border:0;display:block;line-height:0;"><img src="${data.logoUrl}" alt="${data.nomeEscola}" height="40" border="0" style="height:40px;width:auto;display:block;border:0;outline:0;"></a>`
+               : `<img src="${data.logoUrl}" alt="${data.nomeEscola}" height="40" border="0" style="height:40px;width:auto;display:block;border:0;outline:0;">`}
            </td>
          </tr>
        </table>`
@@ -492,9 +487,9 @@ function base(subject: string, introTitulo: string, descParagrafo: string, nota:
       /* PIX: QR acima, código abaixo */
       .pix-qr   { display: block !important; width: 100% !important; text-align: center !important; padding: 0 0 16px 0 !important; }
       .pix-code { display: block !important; width: 100% !important; }
-      /* Header: logo acima, contatos abaixo */
-      .hdr-logo { display: block !important; width: 100% !important; text-align: center !important; padding-bottom: 12px !important; }
-      .hdr-info { display: block !important; width: 100% !important; text-align: center !important; }
+      /* Header: logo à esquerda, contatos à direita */
+      .hdr-logo { display: block !important; width: 100% !important; text-align: left !important; padding-bottom: 12px !important; }
+      .hdr-info { display: block !important; width: 100% !important; text-align: right !important; }
     }
     /* ── Dark mode ─────────────────────────────────────────────────── */
     @media (prefers-color-scheme: dark) {
@@ -506,6 +501,8 @@ function base(subject: string, introTitulo: string, descParagrafo: string, nota:
       .dm-t1    { color: #f9fafb !important; }
       .dm-t2    { color: #d1d5db !important; }
       .dm-t3    { color: #9ca3af !important; }
+      /* Logo box: mantém fundo branco mesmo no dark mode (é parte do design da marca) */
+      .logo-box { background-color: #ffffff !important; }
     }
   </style>
 </head>
