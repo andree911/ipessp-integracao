@@ -392,10 +392,10 @@ function botaoPrincipal(url: string): string {
 
 function redesSociais(data: EmailData): string {
   const redes: Array<{ cor: string; gradient?: string; vmlCor2?: string; letra: string; fs: number; inset: number; nome: string; url: string }> = [];
-  if (data.facebookUrl)  redes.push({ cor: '#1877F2', letra: 'f',  fs: 18, inset: 9,  nome: 'Facebook',  url: data.facebookUrl });
-  if (data.instagramUrl) redes.push({ cor: '#C4510A', letra: 'ig', fs: 11, inset: 11, nome: 'Instagram', url: data.instagramUrl });
-  if (data.youtubeUrl)   redes.push({ cor: '#FF0000', letra: 'yt', fs: 11, inset: 11, nome: 'YouTube',   url: data.youtubeUrl });
-  if (data.linkedinUrl)  redes.push({ cor: '#0A66C2', letra: 'in', fs: 14, inset: 11, nome: 'LinkedIn',  url: data.linkedinUrl });
+  if (data.facebookUrl)  redes.push({ cor: '#c0392b', letra: 'f',  fs: 18, inset: 9,  nome: 'Facebook',  url: data.facebookUrl });
+  if (data.instagramUrl) redes.push({ cor: '#c0392b', letra: 'ig', fs: 11, inset: 11, nome: 'Instagram', url: data.instagramUrl });
+  if (data.youtubeUrl)   redes.push({ cor: '#c0392b', letra: 'yt', fs: 11, inset: 11, nome: 'YouTube',   url: data.youtubeUrl });
+  if (data.linkedinUrl)  redes.push({ cor: '#c0392b', letra: 'in', fs: 14, inset: 11, nome: 'LinkedIn',  url: data.linkedinUrl });
   if (redes.length === 0) return '';
 
   return `
