@@ -69,7 +69,7 @@ function cabecalho(data: EmailData): string {
          <tr>
            <td align="center" style="background:#ffffff;border-radius:10px;padding:8px 16px;line-height:0;">
              ${data.siteUrl
-               ? `<a href="${data.siteUrl}" target="_blank" style="display:block;line-height:0;border:0;text-decoration:none;"><img src="${data.logoUrl}" alt="${data.nomeEscola}" height="48" style="height:48px;width:auto;display:block;border:0;"></a>`
+               ? `<a href="${data.siteUrl}" target="_blank" style="text-decoration:none;border:0;"><img src="${data.logoUrl}" alt="${data.nomeEscola}" height="48" style="height:48px;width:auto;display:block;border:0;"></a>`
                : `<img src="${data.logoUrl}" alt="${data.nomeEscola}" height="48" style="height:48px;width:auto;display:block;border:0;">`}
            </td>
          </tr>
@@ -397,7 +397,7 @@ function redesSociais(data: EmailData): string {
   // Cores oficiais das marcas — círculo colorido via CSS/VML, sem imagens externas
   const redes: Array<{ cor: string; letra: string; fs: number; inset: number; nome: string; url: string }> = [];
   if (data.facebookUrl)  redes.push({ cor: '#1877F2', letra: 'f',  fs: 18, inset: 9,  nome: 'Facebook',  url: data.facebookUrl });
-  if (data.instagramUrl) redes.push({ cor: '#E1306C', letra: 'ig', fs: 11, inset: 11, nome: 'Instagram', url: data.instagramUrl });
+  if (data.instagramUrl) redes.push({ cor: '#C13584', letra: 'ig', fs: 11, inset: 11, nome: 'Instagram', url: data.instagramUrl });
   if (data.youtubeUrl)   redes.push({ cor: '#FF0000', letra: 'yt', fs: 11, inset: 11, nome: 'YouTube',   url: data.youtubeUrl });
   if (data.linkedinUrl)  redes.push({ cor: '#0A66C2', letra: 'in', fs: 14, inset: 11, nome: 'LinkedIn',  url: data.linkedinUrl });
   if (redes.length === 0) return '';
@@ -429,7 +429,7 @@ function rodape(data: EmailData): string {
          <tr>
            <td align="center" style="background:#ffffff;border-radius:10px;padding:8px 18px;line-height:0;">
              ${data.siteUrl
-               ? `<a href="${data.siteUrl}" target="_blank" style="display:block;line-height:0;border:0;text-decoration:none;"><img src="${data.logoUrl}" alt="${data.nomeEscola}" height="40" style="height:40px;width:auto;display:block;border:0;"></a>`
+               ? `<a href="${data.siteUrl}" target="_blank" style="text-decoration:none;border:0;"><img src="${data.logoUrl}" alt="${data.nomeEscola}" height="40" style="height:40px;width:auto;display:block;border:0;"></a>`
                : `<img src="${data.logoUrl}" alt="${data.nomeEscola}" height="40" style="height:40px;width:auto;display:block;border:0;">`}
            </td>
          </tr>

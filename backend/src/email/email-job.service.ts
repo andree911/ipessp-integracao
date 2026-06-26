@@ -16,9 +16,11 @@ import {
   type EmailData,
 } from './templates/email.templates';
 
-async function gerarQrCodeDataUrl(texto: string): Promise<string | undefined> {
+const QR_CID = 'qrpix@email';
+
+async function gerarQrCode(texto: string): Promise<Buffer | undefined> {
   try {
-    return await QRCode.toDataURL(texto, { width: 260, margin: 1 });
+    return await QRCode.toBuffer(texto, { width: 260, margin: 1, type: 'png' });
   } catch {
     return undefined;
   }
@@ -123,11 +125,13 @@ export class EmailJobService {
           codigoBarras:    lancamento.linhaDigitavel ?? undefined,
           urlBoleto:       lancamento.urlBoleto ?? undefined,
           codigoPix:       lancamento.codigoPix ?? undefined,
-          qrCodeUrl:       lancamento.codigoPix ? await gerarQrCodeDataUrl(lancamento.codigoPix) : undefined,
+          qrCodeUrl:       lancamento.codigoPix ? `cid:${QR_CID}` : undefined,
           codigoMatricula: cliente.ra ?? String(cliente.codigoSophia ?? cliente.id),
           competencia:     lancamento.competencia ? this.formatarCompetencia(lancamento.competencia) : undefined,
           ...escola,
         };
+
+        const qrBuffer = lancamento.codigoPix ? await gerarQrCode(lancamento.codigoPix) : undefined;
 
         let template: { subject: string; html: string };
         if (tipo === 'lembrete') template = templateLembrete(emailData);
@@ -142,7 +146,10 @@ export class EmailJobService {
         });
 
         try {
-          await this.emailService.enviar(cliente.emailResponsavel, template.subject, template.html);
+          await this.emailService.enviar(
+            cliente.emailResponsavel, template.subject, template.html,
+            qrBuffer ? [{ cid: QR_CID, buffer: qrBuffer, nome: 'qrpix.png' }] : undefined,
+          );
           log.enviado = true;
           totalEnviados++;
         } catch (err: any) {
@@ -189,18 +196,23 @@ export class EmailJobService {
       codigoBarras:    lancamento.linhaDigitavel ?? undefined,
       urlBoleto:       lancamento.urlBoleto ?? undefined,
       codigoPix:       lancamento.codigoPix ?? undefined,
-      qrCodeUrl:       lancamento.codigoPix ? await gerarQrCodeDataUrl(lancamento.codigoPix) : undefined,
+      qrCodeUrl:       lancamento.codigoPix ? `cid:${QR_CID}` : undefined,
       codigoMatricula: cliente.ra ?? String(cliente.codigoSophia ?? cliente.id),
       competencia:     lancamento.competencia ? this.formatarCompetencia(lancamento.competencia) : undefined,
       ...escola,
     };
+
+    const qrBuffer = lancamento.codigoPix ? await gerarQrCode(lancamento.codigoPix) : undefined;
 
     let template: { subject: string; html: string };
     if (tipo === 'lembrete') template = templateLembrete(emailData);
     else if (tipo === 'vencimento_hoje') template = templateVencimentoHoje(emailData);
     else template = templateCobranca(emailData);
 
-    await this.emailService.enviar(destinatario, `[PREVIEW] ${template.subject}`, template.html);
+    await this.emailService.enviar(
+      destinatario, `[PREVIEW] ${template.subject}`, template.html,
+      qrBuffer ? [{ cid: QR_CID, buffer: qrBuffer, nome: 'qrpix.png' }] : undefined,
+    );
     return { aluno: cliente.nomeAluno, tipo, lancamento: lancamento.id };
   }
 
@@ -235,18 +247,23 @@ export class EmailJobService {
       codigoBarras:    pend.linhaDigitavel,
       urlBoleto:       pend.urlBoleto,
       codigoPix:       pend.codigoPix,
-      qrCodeUrl:       pend.codigoPix ? await gerarQrCodeDataUrl(pend.codigoPix) : undefined,
+      qrCodeUrl:       pend.codigoPix ? `cid:${QR_CID}` : undefined,
       codigoMatricula: dados.ra ?? String(pend.codigo),
       competencia:     pend.competencia ? this.formatarCompetencia(pend.competencia) : undefined,
       ...escola,
     };
+
+    const qrBuffer = pend.codigoPix ? await gerarQrCode(pend.codigoPix) : undefined;
 
     let template: { subject: string; html: string };
     if (tipo === 'lembrete') template = templateLembrete(emailData);
     else if (tipo === 'vencimento_hoje') template = templateVencimentoHoje(emailData);
     else template = templateCobranca(emailData);
 
-    await this.emailService.enviar(destinatario, `[PREVIEW] ${template.subject}`, template.html);
+    await this.emailService.enviar(
+      destinatario, `[PREVIEW] ${template.subject}`, template.html,
+      qrBuffer ? [{ cid: QR_CID, buffer: qrBuffer, nome: 'qrpix.png' }] : undefined,
+    );
     return { aluno: dados.nomeAluno, tipo, lancamento: pend.codigo };
   }
 
@@ -281,18 +298,23 @@ export class EmailJobService {
       codigoBarras:    lancamento.linhaDigitavel ?? undefined,
       urlBoleto:       lancamento.urlBoleto ?? undefined,
       codigoPix:       lancamento.codigoPix ?? undefined,
-      qrCodeUrl:       lancamento.codigoPix ? await gerarQrCodeDataUrl(lancamento.codigoPix) : undefined,
+      qrCodeUrl:       lancamento.codigoPix ? `cid:${QR_CID}` : undefined,
       codigoMatricula: cliente.ra ?? String(cliente.codigoSophia ?? cliente.id),
       competencia:     lancamento.competencia ? this.formatarCompetencia(lancamento.competencia) : undefined,
       ...escola,
     };
+
+    const qrBuffer = lancamento.codigoPix ? await gerarQrCode(lancamento.codigoPix) : undefined;
 
     let template: { subject: string; html: string };
     if (tipo === 'lembrete') template = templateLembrete(emailData);
     else if (tipo === 'vencimento_hoje') template = templateVencimentoHoje(emailData);
     else template = templateCobranca(emailData);
 
-    await this.emailService.enviar(destinatario, `[PREVIEW] ${template.subject}`, template.html);
+    await this.emailService.enviar(
+      destinatario, `[PREVIEW] ${template.subject}`, template.html,
+      qrBuffer ? [{ cid: QR_CID, buffer: qrBuffer, nome: 'qrpix.png' }] : undefined,
+    );
     return { aluno: cliente.nomeAluno, tipo, lancamento: lancamento.id };
   }
 }

@@ -22,9 +22,20 @@ export class EmailService implements OnModuleInit {
     });
   }
 
-  async enviar(para: string, assunto: string, html: string): Promise<void> {
+  async enviar(
+    para: string,
+    assunto: string,
+    html: string,
+    inline?: Array<{ cid: string; buffer: Buffer; nome: string }>,
+  ): Promise<void> {
     const from = this.config.get<string>('email.from');
-    await this.transporter.sendMail({ from, to: para, subject: assunto, html });
+    const attachments = (inline ?? []).map(a => ({
+      filename: a.nome,
+      content: a.buffer,
+      contentType: 'image/png',
+      cid: a.cid,
+    }));
+    await this.transporter.sendMail({ from, to: para, subject: assunto, html, attachments });
     this.logger.log(`Email enviado → ${para} | ${assunto}`);
   }
 
