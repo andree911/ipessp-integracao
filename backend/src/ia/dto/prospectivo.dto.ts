@@ -23,5 +23,9 @@ export class CriarProspectivoDto {
 
   @IsOptional()
   @IsString()
+  dataNascimento?: string;   // YYYY-MM-DD
+
+  @IsOptional()
+  @IsString()
   observacao?: string;
 }

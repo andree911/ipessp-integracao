@@ -160,11 +160,14 @@ export class SophiaService implements OnModuleInit {
     email?: string;
     telefone?: string;
     sexo?: 'M' | 'F';
+    dataNascimento?: string;   // YYYY-MM-DD
     observacao?: string;
   }): Promise<unknown> {
+    const nascimento = dados.dataNascimento ?? '1990-01-01';
     const body: Record<string, unknown> = {
-      nome:  dados.nome,
-      sexo:  dados.sexo ?? 'M',  // campo obrigatório no Sophia
+      nome:            dados.nome,
+      sexo:            dados.sexo ?? 'M',
+      dataNascimento:  `${nascimento}T00:00:00`,
     };
     if (dados.cpf) body.cpf = dados.cpf;
     if (dados.observacao) body.observacao = dados.observacao;
