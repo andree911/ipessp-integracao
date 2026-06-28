@@ -149,7 +149,7 @@ export class IaService {
   async matricularAluno(dto: MatricularAlunoDto) {
     const resultado = await this.sophia.matricularAluno(dto.codigoAluno, {
       unidade: dto.unidade,
-      turma: dto.turma,
+      curso: dto.curso,
       turno: dto.turno,
       periodoLetivo: dto.periodoLetivo,
       curriculo: dto.curriculo,

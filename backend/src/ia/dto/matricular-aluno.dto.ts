@@ -12,7 +12,7 @@ export class MatricularAlunoDto {
 
   @IsNotEmpty()
   @IsString()
-  turma: string;
+  curso: string;
 
   @IsNotEmpty()
   @IsString()

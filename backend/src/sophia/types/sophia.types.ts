@@ -114,7 +114,7 @@ export interface CriarResponsavelAlunoRetornoApiModel {
 // Payload para POST /alunos/{idAluno}/Matriculas
 export interface MatriculaInclusaoApiModel {
   unidade: string;
-  turma: string;      // código da turma ex: "ADM.III.2026"
+  curso: string;
   turno: string;
   periodoLetivo: string;
   curriculo?: string;
