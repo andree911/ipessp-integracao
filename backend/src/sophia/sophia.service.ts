@@ -321,4 +321,8 @@ export class SophiaService implements OnModuleInit {
   async getCursos(): Promise<unknown> {
     return this.get<unknown>(`${this.apiBase}/Cursos`);
   }
+
+  async getTurmaDetalhada(codigoTurma: number): Promise<unknown> {
+    return this.get<unknown>(`${this.apiBase}/Turmas/detalhada/${codigoTurma}`);
+  }
 }

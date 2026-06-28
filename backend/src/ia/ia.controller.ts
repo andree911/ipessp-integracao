@@ -75,4 +75,10 @@ export class IaController {
   getCursos() {
     return this.iaService.getCursos();
   }
+
+  @Get('turma-detalhada')
+  getTurmaDetalhada(@Query('codigo') codigo: string) {
+    if (!codigo) throw new BadRequestException('Parâmetro codigo é obrigatório');
+    return this.iaService.getTurmaDetalhada(Number(codigo));
+  }
 }

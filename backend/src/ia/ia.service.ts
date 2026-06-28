@@ -223,6 +223,10 @@ export class IaService {
     return this.sophia.getCursos();
   }
 
+  async getTurmaDetalhada(codigoTurma: number) {
+    return this.sophia.getTurmaDetalhada(codigoTurma);
+  }
+
   async associarTelefoneCpf(dto: AssociarTelefoneDto) {
     const telefone = dto.telefone.replace(/\D/g, '');
     const cpf = dto.cpf.replace(/\D/g, '');
