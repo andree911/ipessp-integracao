@@ -3,14 +3,7 @@
   "nodes": [
     {
       "parameters": {
-        "rule": {
-          "interval": [
-            {
-              "field": "minutes",
-              "minutesInterval": 10
-            }
-          ]
-        }
+        "rule": { "interval": [{ "field": "minutes", "minutesInterval": 10 }] }
       },
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
@@ -20,32 +13,22 @@
     },
     {
       "parameters": {
-        "url": "https://integracao-sophia-n8n.onrender.com/health",
+        "url": "={{ $env.CORE_API_URL }}/health",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [220, 0],
       "id": "keep-alive-0002-0002-0002-000000000002",
-      "name": "Ping Backend"
+      "name": "Ping Backend (ipessp-core)"
     }
   ],
   "connections": {
     "A cada 10 minutos": {
-      "main": [
-        [
-          {
-            "node": "Ping Backend",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+      "main": [[{ "node": "Ping Backend (ipessp-core)", "type": "main", "index": 0 }]]
     }
   },
   "active": false,
-  "settings": {
-    "executionOrder": "v1"
-  },
+  "settings": { "executionOrder": "v1" },
   "tags": []
 }

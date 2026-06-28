@@ -28,10 +28,10 @@ export interface EmailData {
   linkSegundaVia?: string;
 }
 
-const COR = '#C8102E';
-// Cor de sobreposição escura equivalente a rgba(0,0,0,0.18) sobre #C8102E
+const COR = '#7C2529';
+// Cor de sobreposição escura equivalente a rgba(0,0,0,0.18) sobre #7C2529
 // necessária porque Outlook não suporta rgba()
-const COR_DARK = '#a40d26';
+const COR_DARK = '#661E22';
 
 // ─── 1. Cabeçalho: logo + contatos ───────────────────────────────────────────
 

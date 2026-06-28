@@ -66,14 +66,14 @@
     {
       "parameters": {
         "toolDescription": "Consulta pendências financeiras pelo CPF do responsável. Use quando o usuário perguntar sobre boletos, mensalidades ou situação financeira.",
-        "url": "https://integracao-sophia-n8n.onrender.com/ia/financeiro",
+        "url": "={{ $env.CORE_API_URL }}/ia/financeiro",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [{ "name": "cpf", "value": "={{ $fromAI('cpf', 'CPF do responsável financeiro, somente números') }}" }]
         },
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "Authorization", "value": "Bearer d381c324adfc9ce74e195fcb7dc024e99b7e8bcf91d4bc86aa26f7c89c368a1c" }]
+          "parameters": [{ "name": "x-admin-key", "value": "={{ $env.CORE_API_KEY }}" }]
         },
         "options": {}
       },
@@ -81,15 +81,15 @@
       "typeVersion": 4.4,
       "position": [576, 112],
       "id": "2e9a0279-64e1-433d-b6d8-4c8b0265e765",
-      "name": "HTTP Request"
+      "name": "Consultar Financeiro"
     },
     {
       "parameters": {
         "toolDescription": "Busca os avisos e comunicados ativos da escola. Use quando o usuário perguntar sobre avisos, comunicados, informações ou novidades da escola.",
-        "url": "https://integracao-sophia-n8n.onrender.com/ia/avisos",
+        "url": "={{ $env.CORE_API_URL }}/ia/avisos",
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "Authorization", "value": "Bearer d381c324adfc9ce74e195fcb7dc024e99b7e8bcf91d4bc86aa26f7c89c368a1c" }]
+          "parameters": [{ "name": "x-admin-key", "value": "={{ $env.CORE_API_KEY }}" }]
         },
         "options": {}
       },
@@ -97,15 +97,15 @@
       "typeVersion": 4.4,
       "position": [672, 208],
       "id": "6bc24b09-19cf-4bcc-8724-1d44ead55e71",
-      "name": "HTTP Request1"
+      "name": "Consultar Avisos"
     },
     {
       "parameters": {
         "toolDescription": "Busca os próximos eventos do calendário escolar. Use quando o usuário perguntar sobre eventos, datas, reuniões, feriados ou agenda da escola.",
-        "url": "https://integracao-sophia-n8n.onrender.com/ia/calendario",
+        "url": "={{ $env.CORE_API_URL }}/ia/calendario",
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "Authorization", "value": "Bearer d381c324adfc9ce74e195fcb7dc024e99b7e8bcf91d4bc86aa26f7c89c368a1c" }]
+          "parameters": [{ "name": "x-admin-key", "value": "={{ $env.CORE_API_KEY }}" }]
         },
         "options": {}
       },
@@ -113,7 +113,7 @@
       "typeVersion": 4.4,
       "position": [768, 304],
       "id": "0e0a9dd1-4a94-4d31-b0dc-6af53db5d1ba",
-      "name": "HTTP Request2"
+      "name": "Consultar Calendário"
     },
     {
       "parameters": {
@@ -139,17 +139,17 @@
       "typeVersion": 4.4,
       "position": [768, -96],
       "id": "12ad979e-126f-48c9-9ba1-681ae611ce17",
-      "name": "HTTP Request3",
+      "name": "Enviar Resposta WhatsApp",
       "disabled": true
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "https://integracao-sophia-n8n.onrender.com/v1/leads/registrar-interacao-bot",
+        "url": "={{ $env.CORE_API_URL }}/crm/leads/registrar-interacao-bot",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Authorization", "value": "Bearer d381c324adfc9ce74e195fcb7dc024e99b7e8bcf91d4bc86aa26f7c89c368a1c" },
+            { "name": "x-admin-key", "value": "={{ $env.CORE_API_KEY }}" },
             { "name": "Content-Type", "value": "application/json" }
           ]
         },
@@ -207,19 +207,19 @@
       "typeVersion": 4.4,
       "position": [752, -272],
       "id": "bf3daa82-2ef0-42a1-8f3f-8bd9f6e4f688",
-      "name": "HTTP Request4",
+      "name": "Responder Mídia Não Suportada",
       "disabled": true
     },
     {
       "parameters": {
         "toolDescription": "Registra um novo lead/prospecto interessado em cursos do IPESSP. Use quando o usuário demonstrar interesse em se matricular, pedir informações sobre cursos ou pedir para ser contatado. Colete nome, email e telefone antes de chamar.",
         "method": "POST",
-        "url": "https://integracao-sophia-n8n.onrender.com/v1/leads",
+        "url": "={{ $env.CORE_API_URL }}/crm/leads",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             { "name": "Content-Type", "value": "application/json" },
-            { "name": "Authorization", "value": "Bearer d381c324adfc9ce74e195fcb7dc024e99b7e8bcf91d4bc86aa26f7c89c368a1c" }
+            { "name": "x-admin-key", "value": "={{ $env.CORE_API_KEY }}" }
           ]
         },
         "sendBody": true,
@@ -231,7 +231,7 @@
       "typeVersion": 4.4,
       "position": [864, 400],
       "id": "dd93ad17-74ca-48ed-9d0e-70f7dd616e71",
-      "name": "HTTP Request5"
+      "name": "Registrar Lead CRM"
     },
     {
       "parameters": {
@@ -294,7 +294,7 @@
       "typeVersion": 4.4,
       "position": [512, -272],
       "id": "15705528-818b-4218-a921-946f1764aef8",
-      "name": "HTTP Request6"
+      "name": "Enviar Menu Inicial"
     },
     {
       "parameters": {
@@ -326,18 +326,18 @@
       "typeVersion": 2,
       "position": [1008, -544],
       "id": "53bbe2c1-a480-4336-bc5e-c41388de4ca9",
-      "name": "Code in JavaScript"
+      "name": "Mapear Seleção do Menu"
     },
     {
       "parameters": {
-        "url": "https://integracao-sophia-n8n.onrender.com/ia/cpf-por-telefone",
+        "url": "={{ $env.CORE_API_URL }}/ia/cpf-por-telefone",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [{ "name": "telefone", "value": "=={{ $('Webhook').item.json.body.phone }}" }]
         },
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "Authorization", "value": "Bearer d381c324adfc9ce74e195fcb7dc024e99b7e8bcf91d4bc86aa26f7c89c368a1c" }]
+          "parameters": [{ "name": "x-admin-key", "value": "={{ $env.CORE_API_KEY }}" }]
         },
         "options": {}
       },
@@ -362,11 +362,11 @@
       "parameters": {
         "toolDescription": "Salva a associação entre o telefone do usuário e o CPF informado, para não pedir o CPF novamente em futuras conversas. Use SEMPRE após uma consulta financeira bem-sucedida onde o usuário informou o CPF.",
         "method": "POST",
-        "url": "https://integracao-sophia-n8n.onrender.com/ia/associar-telefone",
+        "url": "={{ $env.CORE_API_URL }}/ia/associar-telefone",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Authorization", "value": "Bearer d381c324adfc9ce74e195fcb7dc024e99b7e8bcf91d4bc86aa26f7c89c368a1c" },
+            { "name": "x-admin-key", "value": "={{ $env.CORE_API_KEY }}" },
             { "name": "Content-Type", "value": "application/json" }
           ]
         },
@@ -383,12 +383,12 @@
     },
     {
       "parameters": {
-        "toolDescription": "Abre um chamado de suporte TI na tabela compartilhada com o sistema corporativo. Use quando o usuário tiver problema com acesso, senha, email ou sistemas. Colete título e descrição antes de chamar.",
+        "toolDescription": "Abre um chamado de suporte TI. Use quando o usuário tiver problema com acesso, senha, email ou sistemas. Colete título e descrição antes de chamar.",
         "method": "POST",
-        "url": "https://integracao-sophia-n8n.onrender.com/v1/ti/chamados",
+        "url": "={{ $env.CORE_API_URL }}/ti/chamados",
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "Authorization", "value": "Bearer d381c324adfc9ce74e195fcb7dc024e99b7e8bcf91d4bc86aa26f7c89c368a1c" }]
+          "parameters": [{ "name": "x-admin-key", "value": "={{ $env.CORE_API_KEY }}" }]
         },
         "sendBody": true,
         "specifyBody": "json",
@@ -399,19 +399,19 @@
       "typeVersion": 4.4,
       "position": [960, 496],
       "id": "0265ede2-8d01-4067-a909-994474a35ac0",
-      "name": "HTTP Request7"
+      "name": "Abrir Chamado TI"
     },
     {
       "parameters": {
         "toolDescription": "Consulta os chamados de TI abertos pelo usuário. Use quando perguntar sobre status de um chamado.",
-        "url": "https://integracao-sophia-n8n.onrender.com/v1/ti/chamados",
+        "url": "={{ $env.CORE_API_URL }}/ti/chamados",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [{ "name": "telefone", "value": "=={{ $('Webhook').item.json.body.phone }}" }]
         },
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "Authorization", "value": "Bearer d381c324adfc9ce74e195fcb7dc024e99b7e8bcf91d4bc86aa26f7c89c368a1c" }]
+          "parameters": [{ "name": "x-admin-key", "value": "={{ $env.CORE_API_KEY }}" }]
         },
         "options": {}
       },
@@ -419,19 +419,19 @@
       "typeVersion": 4.4,
       "position": [1056, 592],
       "id": "5c5a574a-782e-4406-b0e7-17659206dd06",
-      "name": "HTTP Request8"
+      "name": "Consultar Chamados TI"
     },
     {
       "parameters": {
-        "toolDescription": "Consulta a situação de matrícula do aluno no Sophia. Use quando perguntar sobre matrícula, curso, turma ou situação escolar.",
-        "url": "https://integracao-sophia-n8n.onrender.com/ia/secretaria",
+        "toolDescription": "Consulta a situação de matrícula do aluno. Use quando perguntar sobre matrícula, curso, turma ou situação escolar.",
+        "url": "={{ $env.CORE_API_URL }}/ia/secretaria",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [{ "name": "cpf", "value": "=={{ $fromAI('cpf', 'CPF do aluno ou responsável, somente números') }}" }]
         },
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "Authorization", "value": "Bearer d381c324adfc9ce74e195fcb7dc024e99b7e8bcf91d4bc86aa26f7c89c368a1c" }]
+          "parameters": [{ "name": "x-admin-key", "value": "={{ $env.CORE_API_KEY }}" }]
         },
         "options": {}
       },
@@ -439,19 +439,19 @@
       "typeVersion": 4.4,
       "position": [1152, 496],
       "id": "a72c4c3a-b59c-4b2e-87fd-372a0affbb5d",
-      "name": "HTTP Request9"
+      "name": "Consultar Secretaria"
     },
     {
       "parameters": {
-        "toolDescription": "Consulta o cronograma e turmas do professor no Sophia. Use quando o professor perguntar sobre suas aulas, horários ou turmas.",
-        "url": "https://integracao-sophia-n8n.onrender.com/ia/secretaria/professor",
+        "toolDescription": "Consulta as disciplinas do professor. Use quando o professor perguntar sobre suas aulas, horários ou disciplinas.",
+        "url": "={{ $env.CORE_API_URL }}/ia/secretaria/professor",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [{ "name": "email", "value": "=={{ $fromAI('email', 'Email institucional do professor') }}" }]
         },
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "Authorization", "value": "Bearer d381c324adfc9ce74e195fcb7dc024e99b7e8bcf91d4bc86aa26f7c89c368a1c" }]
+          "parameters": [{ "name": "x-admin-key", "value": "={{ $env.CORE_API_KEY }}" }]
         },
         "options": {}
       },
@@ -459,19 +459,19 @@
       "typeVersion": 4.4,
       "position": [1152, 688],
       "id": "f23b2ff4-07b2-45e4-9c9e-c60932f641aa",
-      "name": "HTTP Request10"
+      "name": "Consultar Professor"
     },
     {
       "parameters": {
-        "toolDescription": "Retorna a lista de alunos de uma aula específica. Use após consultar o cronograma e o professor pedir a lista de alunos de uma turma.",
-        "url": "https://integracao-sophia-n8n.onrender.com/ia/secretaria/professor/alunos",
+        "toolDescription": "Retorna a lista de alunos de uma disciplina específica. Use após consultar as disciplinas do professor e ele pedir a lista de alunos de uma delas.",
+        "url": "={{ $env.CORE_API_URL }}/ia/secretaria/professor/alunos",
         "sendQuery": true,
         "queryParameters": {
-          "parameters": [{ "name": "idLista", "value": "=={{ $fromAI('idLista', 'ID da lista de chamada retornado pelo cronograma do professor') }}" }]
+          "parameters": [{ "name": "disciplinaId", "value": "=={{ $fromAI('disciplinaId', 'ID da disciplina retornado pela consulta do professor') }}" }]
         },
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "Authorization", "value": "Bearer d381c324adfc9ce74e195fcb7dc024e99b7e8bcf91d4bc86aa26f7c89c368a1c" }]
+          "parameters": [{ "name": "x-admin-key", "value": "={{ $env.CORE_API_KEY }}" }]
         },
         "options": {}
       },
@@ -479,19 +479,19 @@
       "typeVersion": 4.4,
       "position": [1248, 624],
       "id": "79c261d9-2391-4ada-8708-0499ab7f9fd5",
-      "name": "HTTP Request11"
+      "name": "Listar Alunos da Disciplina"
     },
     {
       "parameters": {
         "toolDescription": "Verifica se o usuário atual já é um lead no CRM. Use no início do atendimento para personalizar a conversa com o curso de interesse já registrado. Se encontrar, use o cursoInteresse e o status para contextualizar.",
-        "url": "https://integracao-sophia-n8n.onrender.com/v1/leads",
+        "url": "={{ $env.CORE_API_URL }}/crm/leads",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [{ "name": "telefone", "value": "=={{ $('Webhook').item.json.body.phone }}" }]
         },
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "Authorization", "value": "Bearer d381c324adfc9ce74e195fcb7dc024e99b7e8bcf91d4bc86aa26f7c89c368a1c" }]
+          "parameters": [{ "name": "x-admin-key", "value": "={{ $env.CORE_API_KEY }}" }]
         },
         "options": {}
       },
@@ -516,12 +516,8 @@
     ]
   },
   "connections": {
-    "Webhook": {
-      "main": [[{ "node": "If", "type": "main", "index": 0 }]]
-    },
-    "If": {
-      "main": [[{ "node": "If1", "type": "main", "index": 0 }]]
-    },
+    "Webhook": { "main": [[{ "node": "If", "type": "main", "index": 0 }]] },
+    "If": { "main": [[{ "node": "If1", "type": "main", "index": 0 }]] },
     "If1": {
       "main": [
         [{ "node": "If2", "type": "main", "index": 0 }],
@@ -530,82 +526,39 @@
     },
     "If2": {
       "main": [
-        [{ "node": "HTTP Request6", "type": "main", "index": 0 }],
+        [{ "node": "Enviar Menu Inicial", "type": "main", "index": 0 }],
         [{ "node": "Buscar CPF por Telefone", "type": "main", "index": 0 }]
       ]
     },
     "If3": {
       "main": [
-        [{ "node": "Code in JavaScript", "type": "main", "index": 0 }],
-        [{ "node": "HTTP Request4", "type": "main", "index": 0 }]
+        [{ "node": "Mapear Seleção do Menu", "type": "main", "index": 0 }],
+        [{ "node": "Responder Mídia Não Suportada", "type": "main", "index": 0 }]
       ]
     },
-    "Code in JavaScript": {
-      "main": [[{ "node": "AI Agent", "type": "main", "index": 0 }]]
-    },
-    "Buscar CPF por Telefone": {
-      "main": [[{ "node": "Injetar CPF no Contexto", "type": "main", "index": 0 }]]
-    },
-    "Injetar CPF no Contexto": {
-      "main": [[{ "node": "AI Agent", "type": "main", "index": 0 }]]
-    },
-    "AI Agent": {
-      "main": [[{ "node": "HTTP Request3", "type": "main", "index": 0 }]]
-    },
-    "HTTP Request3": {
-      "main": [[{ "node": "Registrar Interação Bot", "type": "main", "index": 0 }]]
-    },
-    "Simple Memory": {
-      "ai_memory": [[{ "node": "AI Agent", "type": "ai_memory", "index": 0 }]]
-    },
-    "OpenAI Chat Model": {
-      "ai_languageModel": [[{ "node": "AI Agent", "type": "ai_languageModel", "index": 0 }]]
-    },
-    "HTTP Request": {
-      "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]]
-    },
-    "HTTP Request1": {
-      "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]]
-    },
-    "HTTP Request2": {
-      "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]]
-    },
-    "HTTP Request5": {
-      "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]]
-    },
-    "Salvar CPF do Telefone": {
-      "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]]
-    },
-    "HTTP Request7": {
-      "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]]
-    },
-    "HTTP Request8": {
-      "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]]
-    },
-    "HTTP Request9": {
-      "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]]
-    },
-    "HTTP Request10": {
-      "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]]
-    },
-    "HTTP Request11": {
-      "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]]
-    },
-    "Verificar Lead CRM": {
-      "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]]
-    }
+    "Mapear Seleção do Menu": { "main": [[{ "node": "AI Agent", "type": "main", "index": 0 }]] },
+    "Buscar CPF por Telefone": { "main": [[{ "node": "Injetar CPF no Contexto", "type": "main", "index": 0 }]] },
+    "Injetar CPF no Contexto": { "main": [[{ "node": "AI Agent", "type": "main", "index": 0 }]] },
+    "AI Agent": { "main": [[{ "node": "Enviar Resposta WhatsApp", "type": "main", "index": 0 }]] },
+    "Enviar Resposta WhatsApp": { "main": [[{ "node": "Registrar Interação Bot", "type": "main", "index": 0 }]] },
+    "Simple Memory": { "ai_memory": [[{ "node": "AI Agent", "type": "ai_memory", "index": 0 }]] },
+    "OpenAI Chat Model": { "ai_languageModel": [[{ "node": "AI Agent", "type": "ai_languageModel", "index": 0 }]] },
+    "Consultar Financeiro": { "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]] },
+    "Consultar Avisos": { "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]] },
+    "Consultar Calendário": { "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]] },
+    "Registrar Lead CRM": { "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]] },
+    "Salvar CPF do Telefone": { "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]] },
+    "Abrir Chamado TI": { "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]] },
+    "Consultar Chamados TI": { "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]] },
+    "Consultar Secretaria": { "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]] },
+    "Consultar Professor": { "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]] },
+    "Listar Alunos da Disciplina": { "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]] },
+    "Verificar Lead CRM": { "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]] }
   },
   "active": true,
-  "settings": {
-    "executionOrder": "v1",
-    "binaryMode": "separate",
-    "availableInMCP": false
-  },
-  "versionId": "c3d4e5f6-a7b8-9012-cdef-f12345678904",
-  "meta": {
-    "templateCredsSetupCompleted": true,
-    "instanceId": "a2c712cc769c66c8367ef5c1897b06d87d72291b660d37ca0117ef217864317c"
-  },
+  "settings": { "executionOrder": "v1", "binaryMode": "separate", "availableInMCP": false },
+  "versionId": "c3d4e5f6-a7b8-9012-cdef-f12345678905",
+  "meta": { "templateCredsSetupCompleted": true },
   "nodeGroups": [],
   "id": "GWBxdNDxtAgrI8vk",
   "tags": []
