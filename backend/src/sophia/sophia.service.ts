@@ -159,12 +159,14 @@ export class SophiaService implements OnModuleInit {
     cpf?: string;
     email?: string;
     telefone?: string;
-    interesse?: string;
+    sexo?: 'M' | 'F';
     observacao?: string;
   }): Promise<unknown> {
-    const body: Record<string, unknown> = { nome: dados.nome };
+    const body: Record<string, unknown> = {
+      nome:  dados.nome,
+      sexo:  dados.sexo ?? 'M',  // campo obrigatório no Sophia
+    };
     if (dados.cpf) body.cpf = dados.cpf;
-    // interesse espera enum ClienteInteresseApiModel — omitido até mapear os valores válidos
     if (dados.observacao) body.observacao = dados.observacao;
     if (dados.email || dados.telefone) {
       const contatos: Array<{ tipo: string; valor: string }> = [];

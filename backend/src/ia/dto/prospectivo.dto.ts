@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsIn, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CriarProspectivoDto {
   @IsNotEmpty()
@@ -18,8 +18,8 @@ export class CriarProspectivoDto {
   telefone?: string;
 
   @IsOptional()
-  @IsString()
-  interesse?: string;
+  @IsIn(['M', 'F'])
+  sexo?: 'M' | 'F';
 
   @IsOptional()
   @IsString()
