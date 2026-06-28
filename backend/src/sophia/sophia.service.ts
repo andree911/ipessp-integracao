@@ -145,6 +145,7 @@ export class SophiaService implements OnModuleInit {
     const data = await this.get<MatriculasWrapperApiModel[]>(
       `${this.apiBase}/alunos/${idAluno}/Matriculas`,
     );
+    this.logger.log(`SophiA getMatriculasAluno raw: ${JSON.stringify(data)}`);
     return data.flatMap((w) => w.matriculas ?? []);
   }
 
