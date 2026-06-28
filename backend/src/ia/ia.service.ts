@@ -219,6 +219,10 @@ export class IaService {
     return alunos;
   }
 
+  async getCursos() {
+    return this.sophia.getCursos();
+  }
+
   async associarTelefoneCpf(dto: AssociarTelefoneDto) {
     const telefone = dto.telefone.replace(/\D/g, '');
     const cpf = dto.cpf.replace(/\D/g, '');

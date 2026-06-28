@@ -70,4 +70,9 @@ export class IaController {
     if (!idLista) throw new BadRequestException('Parâmetro idLista é obrigatório');
     return this.iaService.getAlunosPorLista(Number(idLista));
   }
+
+  @Get('cursos')
+  getCursos() {
+    return this.iaService.getCursos();
+  }
 }

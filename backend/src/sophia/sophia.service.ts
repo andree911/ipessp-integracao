@@ -317,4 +317,8 @@ export class SophiaService implements OnModuleInit {
   async matricularAluno(idAluno: number, dados: MatriculaInclusaoApiModel): Promise<unknown> {
     return this.post<unknown>(`${this.apiBase}/alunos/${idAluno}/Matriculas`, dados);
   }
+
+  async getCursos(): Promise<unknown> {
+    return this.get<unknown>(`${this.apiBase}/Cursos`);
+  }
 }
