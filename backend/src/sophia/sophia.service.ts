@@ -172,10 +172,14 @@ export class SophiaService implements OnModuleInit {
       if (dados.telefone) contatos.push({ tipo: 'celular', valor: dados.telefone });
       body.contatos = contatos;
     }
-    const { data } = await firstValueFrom(
-      this.http.post(`${this.apiBase}/clientes`, body, { headers: this.headers() }),
-    );
-    return data;
+    this.logger.log(`SophiA criarCliente → body: ${JSON.stringify(body)}`);
+    try {
+      return await this.post<unknown>(`${this.apiBase}/clientes`, body);
+    } catch (err: any) {
+      const detail = err?.response?.data ?? err?.response?.status ?? err.message;
+      this.logger.error(`SophiA criarCliente erro: ${JSON.stringify(detail)}`);
+      throw err;
+    }
   }
 
   async getAlunoById(id: number): Promise<AlunoDetalhadoApiModel> {

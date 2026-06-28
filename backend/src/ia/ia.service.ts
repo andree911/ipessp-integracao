@@ -83,7 +83,13 @@ export class IaService {
   }
 
   async criarProspectivo(dto: CriarProspectivoDto) {
-    return this.sophia.criarCliente(dto);
+    try {
+      return await this.sophia.criarCliente(dto);
+    } catch (err: any) {
+      const sophiaError = err?.response?.data ?? err?.response?.status ?? err.message;
+      this.logger.error(`criarProspectivo falhou: ${JSON.stringify(sophiaError)}`);
+      throw { sophiaError, message: 'Sophia recusou a criação do cliente' };
+    }
   }
 
   async criarResponsavel(dto: CriarResponsavelDto) {
