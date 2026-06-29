@@ -63,4 +63,12 @@ export default () => ({
   admin: {
     apiKey: process.env.ADMIN_API_KEY ?? '',
   },
+  mercadopago: {
+    accessToken: process.env.MP_ACCESS_TOKEN ?? '',
+    sandbox: process.env.MP_SANDBOX !== 'false',
+    successUrl: process.env.MP_SUCCESS_URL ?? '',
+    failureUrl: process.env.MP_FAILURE_URL ?? '',
+    pendingUrl: process.env.MP_PENDING_URL ?? '',
+    notificationUrl: process.env.MP_NOTIFICATION_URL ?? '',
+  },
 });

@@ -599,3 +599,160 @@ export function templateCobranca(data: EmailData): { subject: string; html: stri
 
   return { subject, html: base(subject, 'Cobran&#231;a em aberto.', desc, nota, data, preheader) };
 }
+
+// ─── Email interno: relatório de nova matrícula para o financeiro ─────────────
+
+export interface RelatorioMatriculaData {
+  nomeAluno: string;
+  cpfAluno: string;
+  emailAluno?: string;
+  telefoneAluno?: string;
+  nomeResponsavel?: string;
+  cpfResponsavel?: string;
+  emailResponsavel?: string;
+  telefoneResponsavel?: string;
+  curso: string;
+  unidade: string;
+  turno: string;
+  periodoLetivo: string;
+  numeroParcelas: number;
+  valorParcela: number;
+  dataPrimeiraParcela: string;
+  desconto?: string;
+  codigoAluno: number;
+  dataMatricula: string;
+  nomeEscola: string;
+}
+
+export function emailRelatorioMatricula(d: RelatorioMatriculaData): string {
+  const fmt = (v: number) =>
+    v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+  const linha = (label: string, valor: string) =>
+    valor
+      ? `<tr>
+          <td style="padding:6px 12px;font-size:13px;color:#555;font-family:Arial,sans-serif;white-space:nowrap;font-weight:bold;">${label}</td>
+          <td style="padding:6px 12px;font-size:13px;color:#222;font-family:Arial,sans-serif;">${valor}</td>
+        </tr>`
+      : '';
+
+  const secao = (titulo: string, linhas: string) =>
+    `<tr>
+      <td colspan="2" style="padding:14px 12px 4px;font-size:11px;font-weight:bold;text-transform:uppercase;
+        letter-spacing:0.8px;color:${COR};font-family:Arial,sans-serif;border-top:1px solid #e0e0e0;">
+        ${titulo}
+      </td>
+    </tr>
+    ${linhas}`;
+
+  const totalPlano = fmt(d.numeroParcelas * d.valorParcela);
+
+  const blocoResponsavel = d.nomeResponsavel
+    ? secao('Responsável Financeiro',
+        linha('Nome', d.nomeResponsavel) +
+        linha('CPF', d.cpfResponsavel ?? '') +
+        linha('E-mail', d.emailResponsavel ?? '') +
+        linha('Telefone', d.telefoneResponsavel ?? ''))
+    : '';
+
+  return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f4f4f4;">
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f4f4f4;">
+  <tr><td align="center" style="padding:32px 16px;">
+    <table width="600" cellpadding="0" cellspacing="0" border="0"
+      style="max-width:600px;width:100%;background:#ffffff;border-radius:8px;overflow:hidden;
+             box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+
+      <!-- cabeçalho -->
+      <tr>
+        <td colspan="2" bgcolor="${COR}" style="background-color:${COR};padding:24px 32px;">
+          <span style="font-size:20px;font-weight:bold;color:#fff;font-family:Arial,sans-serif;">
+            ${d.nomeEscola}
+          </span><br>
+          <span style="font-size:13px;color:rgba(255,255,255,0.85);font-family:Arial,sans-serif;">
+            Notificação interna — Nova Matrícula
+          </span>
+        </td>
+      </tr>
+
+      <!-- destaque -->
+      <tr>
+        <td colspan="2" style="padding:20px 32px 8px;">
+          <p style="margin:0;font-size:15px;color:#222;font-family:Arial,sans-serif;line-height:1.6;">
+            Uma nova matrícula foi registrada em <strong>${d.dataMatricula}</strong>.
+            Verifique os dados abaixo e providencie o <strong>plano de pagamento</strong>,
+            a <strong>geração do boleto</strong> e a <strong>nota fiscal</strong> no Sophia.
+          </p>
+        </td>
+      </tr>
+
+      <!-- tabela de dados -->
+      <tr>
+        <td colspan="2" style="padding:8px 20px 24px;">
+          <table width="100%" cellpadding="0" cellspacing="0" border="0">
+
+            ${secao('Dados do Aluno',
+              linha('Nome', d.nomeAluno) +
+              linha('CPF', d.cpfAluno) +
+              linha('E-mail', d.emailAluno ?? '') +
+              linha('Telefone', d.telefoneAluno ?? '') +
+              linha('Código Sophia', String(d.codigoAluno)))}
+
+            ${blocoResponsavel}
+
+            ${secao('Curso / Matrícula',
+              linha('Curso', d.curso) +
+              linha('Unidade', d.unidade) +
+              linha('Turno', d.turno) +
+              linha('Período Letivo', d.periodoLetivo))}
+
+            ${secao('Plano de Pagamento',
+              linha('Nº de Parcelas', String(d.numeroParcelas)) +
+              linha('Valor por Parcela', fmt(d.valorParcela)) +
+              linha('1ª Parcela', d.dataPrimeiraParcela) +
+              linha('Desconto', d.desconto ?? '—') +
+              linha('Total do Plano', totalPlano))}
+
+          </table>
+        </td>
+      </tr>
+
+      <!-- checklist financeiro -->
+      <tr>
+        <td colspan="2" style="padding:0 32px 28px;">
+          <table width="100%" cellpadding="0" cellspacing="0" border="0"
+            style="background:#fff8e1;border-left:4px solid #f0a500;border-radius:4px;padding:16px;">
+            <tr>
+              <td style="padding:14px 16px;">
+                <p style="margin:0 0 8px;font-size:13px;font-weight:bold;color:#7a5200;font-family:Arial,sans-serif;">
+                  Ações necessárias no Sophia:
+                </p>
+                <ul style="margin:0;padding-left:18px;font-size:13px;color:#5a3d00;font-family:Arial,sans-serif;line-height:1.9;">
+                  <li>Registrar plano de pagamento (${d.numeroParcelas}x de ${fmt(d.valorParcela)})</li>
+                  <li>Gerar boleto(s) no Sophia</li>
+                  <li>Emitir nota fiscal</li>
+                  ${d.nomeResponsavel ? `<li>Confirmar vínculo do responsável financeiro: ${d.nomeResponsavel}</li>` : ''}
+                </ul>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+
+      <!-- rodapé -->
+      <tr>
+        <td colspan="2" bgcolor="${COR}" style="background-color:${COR};padding:14px 32px;">
+          <span style="font-size:11px;color:rgba(255,255,255,0.7);font-family:Arial,sans-serif;">
+            Email automático gerado pelo sistema de integração — não responder.
+          </span>
+        </td>
+      </tr>
+
+    </table>
+  </td></tr>
+</table>
+</body>
+</html>`;
+}

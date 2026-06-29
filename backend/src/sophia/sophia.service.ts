@@ -180,7 +180,9 @@ export class SophiaService implements OnModuleInit {
     }
     this.logger.log(`SophiA criarCliente → body: ${JSON.stringify(body)}`);
     try {
-      return await this.post<unknown>(`${this.apiBase}/clientes`, body);
+      const resultado = await this.post<unknown>(`${this.apiBase}/clientes`, body);
+      this.logger.log(`SophiA criarCliente ← resposta: ${JSON.stringify(resultado)}`);
+      return resultado;
     } catch (err: any) {
       const detail = err?.response?.data ?? err?.response?.status ?? err.message;
       this.logger.error(`SophiA criarCliente erro: ${JSON.stringify(detail)}`);

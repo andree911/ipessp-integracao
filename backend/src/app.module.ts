@@ -16,6 +16,8 @@ import { MeModule } from './me/me.module';
 import { AdminModule } from './admin/admin.module';
 import { FinanceiroModule } from './financeiro/financeiro.module';
 import { TiModule } from './ti/ti.module';
+import { MatriculasModule } from './matriculas/matriculas.module';
+import { MercadoPagoModule } from './mercadopago/mercadopago.module';
 import { Chamado } from './ti/entities/chamado.entity';
 import { ClienteCache } from './financeiro/entities/cliente-cache.entity';
 import { LancamentoCache } from './financeiro/entities/lancamento-cache.entity';
@@ -68,6 +70,8 @@ import { ResetToken } from './auth/entities/reset-token.entity';
     MeModule,
     AdminModule,
     TiModule,
+    MatriculasModule,
+    MercadoPagoModule,
   ],
 })
 export class AppModule {}
