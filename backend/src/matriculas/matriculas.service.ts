@@ -1,18 +1,25 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { SophiaService } from '../sophia/sophia.service';
 import { EmailService } from '../email/email.service';
+import { WhatsAppService } from '../email/whatsapp.service';
 import { MercadoPagoService } from '../mercadopago/mercadopago.service';
+import { MatriculaCache } from './entities/matricula-cache.entity';
 import { SolicitarMatriculaDto } from './dto/solicitar-matricula.dto';
-import { emailRelatorioMatricula } from '../email/templates/email.templates';
+import { emailRelatorioMatricula, emailConfirmacaoMatricula } from '../email/templates/email.templates';
 
 @Injectable()
 export class MatriculasService {
   private readonly logger = new Logger(MatriculasService.name);
 
   constructor(
+    @InjectRepository(MatriculaCache)
+    private readonly cacheRepo: Repository<MatriculaCache>,
     private readonly sophia: SophiaService,
     private readonly email: EmailService,
+    private readonly whatsapp: WhatsAppService,
     private readonly mp: MercadoPagoService,
     private readonly config: ConfigService,
   ) {}
@@ -70,9 +77,6 @@ export class MatriculasService {
     // 3. Cria matrícula no Sophia
     let matriculaResult: unknown;
     try {
-      // Registra apenas o vínculo acadêmico no Sophia.
-      // O financeiro configura o plano de pagamento manualmente via relatório;
-      // a primeira cobrança é gerada pelo Mercado Pago (próximo passo).
       matriculaResult = await this.sophia.matricularAluno(codigoAluno, {
         unidade: dto.curso.unidade,
         curso: dto.curso.curso,
@@ -125,15 +129,17 @@ export class MatriculasService {
 
     // 5. Gera preferência de pagamento no Mercado Pago (1ª parcela)
     const pagador = dto.responsavel ?? dto.aluno;
+    const externalReference = `matricula-${codigoAluno}-${Date.now()}`;
     let linkPagamento: string | null = null;
     let linkSandbox: string | null = null;
     let preferenceId: string | null = null;
+
     try {
       const mpResult = await this.mp.criarPreferencia({
         titulo: `Matrícula — ${dto.curso.curso} — 1ª Parcela`,
         valorParcela: dto.planoPagamento.valorParcela,
         numeroParcelas: dto.planoPagamento.numeroParcelas,
-        referenciaExterna: `matricula-${codigoAluno}-${Date.now()}`,
+        referenciaExterna: externalReference,
         pagador: {
           nome: pagador.nome,
           email: pagador.email,
@@ -147,6 +153,87 @@ export class MatriculasService {
       this.logger.log(`Preferência MP criada para aluno ${codigoAluno}: ${preferenceId}`);
     } catch (err: any) {
       this.logger.error(`MP criarPreferencia falhou (não-fatal): ${err.message}`);
+    }
+
+    // 6. Persiste dados da matrícula no cache local (para enriquecer o webhook de pagamento)
+    if (linkPagamento) {
+      try {
+        await this.cacheRepo.save(this.cacheRepo.create({
+          externalReference,
+          codigoAluno,
+          nomeAluno: dto.aluno.nome,
+          emailAluno: dto.aluno.email,
+          telefoneAluno: dto.aluno.telefone,
+          nomeResponsavel: dto.responsavel?.nome,
+          emailResponsavel: dto.responsavel?.email,
+          telefoneResponsavel: dto.responsavel?.telefone,
+          curso: dto.curso.curso,
+          unidade: dto.curso.unidade,
+          numeroParcelas: dto.planoPagamento.numeroParcelas,
+          valorParcela: dto.planoPagamento.valorParcela,
+          linkPagamento,
+        }));
+      } catch (err: any) {
+        this.logger.warn(`Falha ao salvar MatriculaCache (não-fatal): ${err.message}`);
+      }
+    }
+
+    // 7. Envia link de pagamento ao aluno/responsável
+    if (linkPagamento) {
+      const nomeEscola = this.config.get<string>('email.nomeEscola') ?? 'IPESSP';
+      const emailEscola = this.config.get<string>('email.emailNotificacoes') ?? '';
+      const siteUrl = this.config.get<string>('mercadopago.successUrl');
+
+      // 7a. WhatsApp para quem paga (responsável ou aluno)
+      const telefonePagador = pagador.telefone;
+      if (telefonePagador) {
+        const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        const msg = [
+          `🎓 *Bem-vindo(a) ao ${nomeEscola}!*`,
+          ``,
+          `Olá, ${pagador.nome.split(' ')[0]}! Sua matrícula no curso de *${dto.curso.curso}* foi registrada.`,
+          ``,
+          `💳 *Pagamento da 1ª parcela:*`,
+          `Valor: ${fmt(dto.planoPagamento.valorParcela)}`,
+          `Plano: ${dto.planoPagamento.numeroParcelas}x de ${fmt(dto.planoPagamento.valorParcela)}`,
+          ``,
+          `🔗 *Link de pagamento (Mercado Pago):*`,
+          linkPagamento,
+          ``,
+          `Você pode pagar com cartão, PIX ou boleto. Qualquer dúvida, estamos à disposição! 😊`,
+        ].join('\n');
+        try {
+          await this.whatsapp.enviarTexto(telefonePagador, msg);
+          this.logger.log(`WhatsApp com link MP enviado para ${telefonePagador}`);
+        } catch (err: any) {
+          this.logger.warn(`WhatsApp para aluno/responsável falhou (não-fatal): ${err.message}`);
+        }
+      }
+
+      // 7b. Email para quem paga (responsável ou aluno)
+      const emailPagador = pagador.email;
+      if (emailPagador) {
+        try {
+          const html = emailConfirmacaoMatricula({
+            nomeAluno: dto.aluno.nome,
+            curso: dto.curso.curso,
+            numeroParcelas: dto.planoPagamento.numeroParcelas,
+            valorParcela: dto.planoPagamento.valorParcela,
+            linkPagamento,
+            nomeEscola,
+            emailEscola,
+            siteUrl,
+          });
+          await this.email.enviar(
+            emailPagador,
+            `Matrícula confirmada — ${dto.curso.curso} | Acesse seu link de pagamento`,
+            html,
+          );
+          this.logger.log(`Email de confirmação com link MP enviado para ${emailPagador}`);
+        } catch (err: any) {
+          this.logger.warn(`Email para aluno/responsável falhou (não-fatal): ${err.message}`);
+        }
+      }
     }
 
     return {

@@ -1,15 +1,20 @@
 import { Body, Controller, Headers, HttpCode, Logger, Post, Query } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { createHmac } from 'crypto';
 import { MercadoPagoService } from './mercadopago.service';
 import { EmailService } from '../email/email.service';
 import { WhatsAppService } from '../email/whatsapp.service';
+import { MatriculaCache } from '../matriculas/entities/matricula-cache.entity';
 
 @Controller('v1/pagamentos')
 export class MercadoPagoController {
   private readonly logger = new Logger(MercadoPagoController.name);
 
   constructor(
+    @InjectRepository(MatriculaCache)
+    private readonly cacheRepo: Repository<MatriculaCache>,
     private readonly mp: MercadoPagoService,
     private readonly email: EmailService,
     private readonly whatsapp: WhatsAppService,
@@ -70,15 +75,25 @@ export class MercadoPagoController {
   }
 
   private async notificarPagamentoAprovado(pagamento: any): Promise<void> {
-    // external_reference segue o padrão "matricula-{codigoAluno}-{timestamp}"
     const ref = String(pagamento.external_reference ?? '');
     const match = ref.match(/^matricula-(\d+)-\d+$/);
     const codigoAluno = match?.[1] ?? 'desconhecido';
 
+    // Busca dados completos da matrícula no cache local
+    const cache = ref ? await this.cacheRepo.findOne({ where: { externalReference: ref } }) : null;
+
     const payer = pagamento.payer ?? {};
     const nomeResponsavel =
-      [payer.first_name, payer.last_name].filter(Boolean).join(' ') || 'N/A';
-    const emailResponsavel = payer.email ?? 'N/A';
+      cache?.nomeResponsavel ||
+      [payer.first_name, payer.last_name].filter(Boolean).join(' ') ||
+      'N/A';
+    const emailResponsavel = cache?.emailResponsavel || payer.email || 'N/A';
+    const nomeAluno = cache?.nomeAluno || `Código ${codigoAluno}`;
+    const curso = cache?.curso || 'N/A';
+    const plano = cache
+      ? `${cache.numeroParcelas}x de R$ ${Number(cache.valorParcela).toFixed(2).replace('.', ',')}`
+      : 'N/A';
+
     const valor =
       pagamento.transaction_amount != null
         ? `R$ ${Number(pagamento.transaction_amount).toFixed(2).replace('.', ',')}`
@@ -89,22 +104,24 @@ export class MercadoPagoController {
     const metodoPagamento = pagamento.payment_type_id ?? 'N/A';
 
     this.logger.log(
-      `Pagamento aprovado: id=${pagamento.id} aluno=${codigoAluno} valor=${valor} responsavel=${nomeResponsavel}`,
+      `Pagamento aprovado: id=${pagamento.id} aluno=${codigoAluno} curso=${curso} valor=${valor}`,
     );
 
+    // Notificação para o financeiro via WhatsApp
     const telefoneFinanceiro = this.config.get<string>('zapi.telefoneFinanceiro');
     if (telefoneFinanceiro) {
       const msg = [
         `✅ *Pagamento aprovado — Mercado Pago*`,
         ``,
-        `*Aluno (Sophia):* Código ${codigoAluno}`,
-        `*Responsável:* ${nomeResponsavel}`,
+        `*Aluno:* ${nomeAluno} (Sophia: ${codigoAluno})`,
+        `*Curso:* ${curso}`,
+        `*Plano:* ${plano}`,
+        `*Responsável/Pagador:* ${nomeResponsavel}`,
         `*Email:* ${emailResponsavel}`,
-        `*Valor:* ${valor}`,
+        `*Valor pago:* ${valor}`,
         `*Forma de pagamento:* ${metodoPagamento}`,
         `*Data aprovação:* ${dataAprovacao}`,
-        `*ID pagamento MP:* ${pagamento.id}`,
-        `*Referência:* ${ref}`,
+        `*ID MP:* ${pagamento.id}`,
         ``,
         `Acesse o Sophia para registrar o plano de pagamento.`,
       ].join('\n');
@@ -115,26 +132,32 @@ export class MercadoPagoController {
       }
     }
 
+    // Notificação para o financeiro via email
     const emailNotificacoes = this.config.get<string>('email.emailNotificacoes');
     if (emailNotificacoes) {
+      const linha = (label: string, valor: string) =>
+        `<tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;background:#f9f9f9">${label}</td><td style="padding:8px;border:1px solid #ddd">${valor}</td></tr>`;
       const html = `
         <h2 style="color:#1f9d55">✅ Pagamento Aprovado — Mercado Pago</h2>
         <table style="border-collapse:collapse;width:100%;font-family:Arial,sans-serif;font-size:14px">
-          <tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;background:#f9f9f9">Cód. Aluno (Sophia)</td><td style="padding:8px;border:1px solid #ddd">${codigoAluno}</td></tr>
-          <tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;background:#f9f9f9">Responsável</td><td style="padding:8px;border:1px solid #ddd">${nomeResponsavel}</td></tr>
-          <tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;background:#f9f9f9">Email</td><td style="padding:8px;border:1px solid #ddd">${emailResponsavel}</td></tr>
-          <tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;background:#f9f9f9">Valor</td><td style="padding:8px;border:1px solid #ddd">${valor}</td></tr>
-          <tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;background:#f9f9f9">Forma de pagamento</td><td style="padding:8px;border:1px solid #ddd">${metodoPagamento}</td></tr>
-          <tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;background:#f9f9f9">Data aprovação</td><td style="padding:8px;border:1px solid #ddd">${dataAprovacao}</td></tr>
-          <tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;background:#f9f9f9">ID pagamento MP</td><td style="padding:8px;border:1px solid #ddd">${pagamento.id}</td></tr>
-          <tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;background:#f9f9f9">Referência</td><td style="padding:8px;border:1px solid #ddd">${ref}</td></tr>
+          ${linha('Aluno', nomeAluno)}
+          ${linha('Cód. Sophia', codigoAluno)}
+          ${linha('Curso', curso)}
+          ${linha('Plano', plano)}
+          ${linha('Responsável/Pagador', nomeResponsavel)}
+          ${linha('Email', emailResponsavel)}
+          ${linha('Valor pago', valor)}
+          ${linha('Forma de pagamento', metodoPagamento)}
+          ${linha('Data aprovação', dataAprovacao)}
+          ${linha('ID pagamento MP', String(pagamento.id))}
+          ${linha('Referência', ref)}
         </table>
         <p style="margin-top:16px;color:#555">Acesse o Sophia para registrar o plano de pagamento deste aluno.</p>
       `;
       try {
         await this.email.enviar(
           emailNotificacoes,
-          `✅ Pagamento Aprovado — Aluno ${codigoAluno} — ${valor}`,
+          `✅ Pagamento Aprovado — ${nomeAluno} | ${curso} — ${valor}`,
           html,
         );
       } catch (err: any) {

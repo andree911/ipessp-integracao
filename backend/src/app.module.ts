@@ -30,6 +30,7 @@ import { MensagemContato } from './formularios/entities/mensagem-contato.entity'
 import { Manifestacao } from './formularios/entities/manifestacao.entity';
 import { SolicitacaoEvento } from './formularios/entities/solicitacao-evento.entity';
 import { Candidatura } from './candidaturas/entities/candidatura.entity';
+import { MatriculaCache } from './matriculas/entities/matricula-cache.entity';
 import { Usuario } from './auth/entities/usuario.entity';
 import { Professor } from './auth/entities/professor.entity';
 import { RefreshToken } from './auth/entities/refresh-token.entity';
@@ -52,7 +53,7 @@ import { ResetToken } from './auth/entities/reset-token.entity';
         entities: [
           EmailLog, ResponsavelCache, TelefoneCpfCache, Lead, LeadHistorico, MensagemContato, Manifestacao,
           SolicitacaoEvento, Candidatura, Usuario, Professor, RefreshToken, ResetToken,
-          ClienteCache, LancamentoCache, Chamado,
+          ClienteCache, LancamentoCache, Chamado, MatriculaCache,
         ],
         synchronize: process.env.NODE_ENV !== 'production',
         ssl: { rejectUnauthorized: false },

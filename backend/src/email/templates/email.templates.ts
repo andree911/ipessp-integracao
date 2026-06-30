@@ -543,6 +543,122 @@ ${preheader ? `<div style="display:none;font-size:1px;color:#f0f2f5;line-height:
 </html>`;
 }
 
+// ─── Email para o aluno: confirmação de matrícula + link de pagamento ────────
+
+export interface ConfirmacaoMatriculaData {
+  nomeAluno: string;
+  curso: string;
+  numeroParcelas: number;
+  valorParcela: number;
+  linkPagamento: string;
+  nomeEscola: string;
+  emailEscola?: string;
+  telefoneEscola?: string;
+  siteUrl?: string;
+}
+
+export function emailConfirmacaoMatricula(d: ConfirmacaoMatriculaData): string {
+  const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const primeiroNome = d.nomeAluno.split(' ')[0];
+
+  return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>body{margin:0;padding:0;background:#f0f2f5;font-family:Arial,sans-serif;}</style>
+</head>
+<body style="margin:0;padding:0;background:#f0f2f5;">
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f0f2f5;padding:28px 8px;">
+  <tr><td align="center">
+    <table width="600" cellpadding="0" cellspacing="0" border="0"
+      style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;">
+
+      <!-- cabeçalho -->
+      <tr>
+        <td bgcolor="${COR}" style="background-color:${COR};padding:28px 32px;">
+          <p style="margin:0;font-size:22px;font-weight:bold;color:#ffffff;">${d.nomeEscola}</p>
+          <p style="margin:4px 0 0;font-size:13px;color:rgba(255,255,255,0.8);">Confirmação de Matrícula</p>
+        </td>
+      </tr>
+
+      <!-- corpo -->
+      <tr>
+        <td style="padding:32px 40px;">
+          <p style="margin:0 0 8px;font-size:16px;font-weight:bold;color:#222;">Olá, ${primeiroNome}! 🎓</p>
+          <p style="margin:0 0 20px;font-size:14px;color:#444;line-height:1.7;">
+            Sua matrícula no curso de <strong>${d.curso}</strong> foi registrada com sucesso.
+            Para concluir o processo, realize o pagamento da <strong>1ª parcela</strong> pelo link abaixo:
+          </p>
+
+          <!-- card de pagamento -->
+          <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 24px;">
+            <tr>
+              <td bgcolor="${COR}" style="background-color:${COR};padding:2px;border-radius:12px;">
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff"
+                  style="background:#ffffff;border-radius:10px;overflow:hidden;">
+                  <tr>
+                    <td style="padding:18px 20px;border-bottom:1px solid #e8e8e8;">
+                      <span style="font-size:11px;font-weight:bold;text-transform:uppercase;color:#888;letter-spacing:0.8px;">Curso</span><br>
+                      <span style="font-size:14px;color:#222;font-weight:bold;">${d.curso}</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:18px 20px;border-bottom:1px solid #e8e8e8;">
+                      <span style="font-size:11px;font-weight:bold;text-transform:uppercase;color:#888;letter-spacing:0.8px;">Plano</span><br>
+                      <span style="font-size:14px;color:#222;">${d.numeroParcelas}x de ${fmt(d.valorParcela)}</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td bgcolor="${COR}" style="background-color:${COR};padding:16px 20px;">
+                      <span style="font-size:13px;color:#ffffff;font-weight:bold;">1ª Parcela</span>
+                      <span style="font-size:24px;font-weight:bold;color:#ffffff;float:right;">${fmt(d.valorParcela)}</span>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+
+          <!-- botão de pagamento -->
+          <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 24px;">
+            <tr>
+              <td align="center">
+                <a href="${d.linkPagamento}" target="_blank"
+                  style="display:inline-block;background-color:${COR};color:#ffffff;font-size:15px;font-weight:bold;text-decoration:none;padding:16px 40px;border-radius:10px;letter-spacing:0.5px;">
+                  PAGAR AGORA
+                </a>
+              </td>
+            </tr>
+          </table>
+
+          <p style="margin:0 0 6px;font-size:13px;color:#555;line-height:1.7;">
+            Você pode pagar com <strong>cartão de crédito, PIX ou boleto</strong> pelo Mercado Pago.
+            O link é seguro e expira em 30 dias.
+          </p>
+
+          ${d.emailEscola || d.telefoneEscola ? `
+          <p style="margin:20px 0 0;font-size:13px;color:#555;line-height:1.7;">
+            Dúvidas? Entre em contato conosco:
+            ${d.telefoneEscola ? `<br><strong>${d.telefoneEscola}</strong>` : ''}
+            ${d.emailEscola ? `<br><a href="mailto:${d.emailEscola}" style="color:${COR};">${d.emailEscola}</a>` : ''}
+          </p>` : ''}
+        </td>
+      </tr>
+
+      <!-- rodapé -->
+      <tr>
+        <td bgcolor="${COR}" style="background-color:${COR};padding:16px 32px;">
+          <p style="margin:0;font-size:11px;color:rgba(255,255,255,0.7);">
+            ${d.nomeEscola}${d.siteUrl ? ` · <a href="${d.siteUrl}" style="color:rgba(255,255,255,0.7);">${d.siteUrl.replace(/^https?:\/\/(www\.)?/, '')}</a>` : ''}
+          </p>
+        </td>
+      </tr>
+
+    </table>
+  </td></tr>
+</table>
+</body></html>`;
+}
+
 // ─── Templates exportados ─────────────────────────────────────────────────────
 
 export function templateLembrete(data: EmailData): { subject: string; html: string } {
