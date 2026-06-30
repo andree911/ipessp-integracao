@@ -96,7 +96,7 @@ export default function Depoimentos() {
                 <path d="m9 18 6-6-6-6"/>
               </svg>
             </button>
-            <a href="#" className="btn btn-outline text-sm py-2 px-4 hidden sm:inline-flex">
+            <a href="/depoimentos" className="btn btn-outline text-sm py-2 px-4 hidden sm:inline-flex">
               Outros Depoimentos
             </a>
           </div>
@@ -158,7 +158,7 @@ export default function Depoimentos() {
         </div>
 
         <div className="text-center mt-8 sm:hidden">
-          <a href="#" className="btn btn-outline text-sm">Outros Depoimentos</a>
+          <a href="/depoimentos" className="btn btn-outline text-sm">Outros Depoimentos</a>
         </div>
       </div>
     </section>

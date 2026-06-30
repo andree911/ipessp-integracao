@@ -353,7 +353,7 @@ export default function CTAFinal() {
 
                   <p className="text-xs text-center" style={{ color: 'var(--ink-300)' }}>
                     Ao enviar, você concorda com nossa{' '}
-                    <a href="#" className="underline" style={{ color: 'var(--ink-500)' }}>
+                    <a href="/politica-privacidade" className="underline" style={{ color: 'var(--ink-500)' }}>
                       Política de Privacidade
                     </a>
                     .

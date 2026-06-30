@@ -1,8 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import WhatsAppFloat from '../components/WhatsAppFloat';
+import { apiFetch } from '../lib/api';
 
 const tiposDiploma = [
   {
@@ -56,6 +58,53 @@ const etapas = [
 ];
 
 export default function Diplomas() {
+  const [form, setForm] = useState({ nome: '', cpf: '', email: '', curso: '', tipo: '', observacoes: '' });
+  const [enviado, setEnviado] = useState(false);
+  const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState('');
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
+    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.nome || !form.email || !form.tipo) {
+      setErro('Preencha nome, e-mail e tipo de documento.');
+      return;
+    }
+    setEnviando(true);
+    setErro('');
+    try {
+      const mensagem = [
+        `CPF: ${form.cpf}`,
+        `Curso: ${form.curso}`,
+        `Tipo: ${form.tipo}`,
+        form.observacoes ? `Observações: ${form.observacoes}` : '',
+      ].filter(Boolean).join('\n');
+
+      const res = await apiFetch('/v1/mensagens-contato', {
+        method: 'POST',
+        body: JSON.stringify({
+          nome: form.nome,
+          email: form.email,
+          assunto: `Solicitação de diploma/certificado: ${form.tipo}`,
+          mensagem,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setErro(data.error ?? 'Erro ao enviar. Tente novamente.');
+        return;
+      }
+      setEnviado(true);
+    } catch {
+      setErro('Erro de conexão. Tente novamente.');
+    } finally {
+      setEnviando(false);
+    }
+  }
+
   return (
     <>
       <Header />
@@ -198,82 +247,114 @@ export default function Diplomas() {
               </h2>
             </div>
 
-            <form style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            {enviado ? (
+              <div style={{ padding: '32px', background: 'var(--brand-50)', borderRadius: 'var(--radius-md)', border: '1px solid var(--brand-200)', textAlign: 'center' }}>
+                <p style={{ color: 'var(--brand-700)', fontWeight: 700, fontSize: 'var(--fs-h3)', marginBottom: '8px' }}>Solicitação enviada!</p>
+                <p style={{ color: 'var(--brand-600)', fontSize: 'var(--fs-sm)' }}>Nossa secretaria entrará em contato em breve pelo e-mail informado.</p>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div>
+                    <label style={{ display: 'block', color: 'var(--ink-700)', fontSize: 'var(--fs-sm)', fontWeight: 600, marginBottom: '8px' }}>
+                      Nome completo *
+                    </label>
+                    <input
+                      type="text"
+                      name="nome"
+                      value={form.nome}
+                      onChange={handleChange}
+                      placeholder="Seu nome completo"
+                      required
+                      style={{ width: '100%', padding: '12px 16px', border: '2px solid var(--line)', borderRadius: 'var(--radius-sm)', fontSize: 'var(--fs-sm)', color: 'var(--ink-900)', background: 'var(--surface)', outline: 'none' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', color: 'var(--ink-700)', fontSize: 'var(--fs-sm)', fontWeight: 600, marginBottom: '8px' }}>
+                      CPF *
+                    </label>
+                    <input
+                      type="text"
+                      name="cpf"
+                      value={form.cpf}
+                      onChange={handleChange}
+                      placeholder="000.000.000-00"
+                      required
+                      style={{ width: '100%', padding: '12px 16px', border: '2px solid var(--line)', borderRadius: 'var(--radius-sm)', fontSize: 'var(--fs-sm)', color: 'var(--ink-900)', background: 'var(--surface)', outline: 'none' }}
+                    />
+                  </div>
+                </div>
                 <div>
                   <label style={{ display: 'block', color: 'var(--ink-700)', fontSize: 'var(--fs-sm)', fontWeight: 600, marginBottom: '8px' }}>
-                    Nome completo *
+                    E-mail *
                   </label>
                   <input
-                    type="text"
-                    placeholder="Seu nome completo"
+                    type="email"
+                    name="email"
+                    value={form.email}
+                    onChange={handleChange}
+                    placeholder="seu@email.com"
+                    required
                     style={{ width: '100%', padding: '12px 16px', border: '2px solid var(--line)', borderRadius: 'var(--radius-sm)', fontSize: 'var(--fs-sm)', color: 'var(--ink-900)', background: 'var(--surface)', outline: 'none' }}
                   />
                 </div>
                 <div>
                   <label style={{ display: 'block', color: 'var(--ink-700)', fontSize: 'var(--fs-sm)', fontWeight: 600, marginBottom: '8px' }}>
-                    CPF *
+                    Curso *
                   </label>
                   <input
                     type="text"
-                    placeholder="000.000.000-00"
+                    name="curso"
+                    value={form.curso}
+                    onChange={handleChange}
+                    placeholder="Nome do curso concluído"
+                    required
                     style={{ width: '100%', padding: '12px 16px', border: '2px solid var(--line)', borderRadius: 'var(--radius-sm)', fontSize: 'var(--fs-sm)', color: 'var(--ink-900)', background: 'var(--surface)', outline: 'none' }}
                   />
                 </div>
-              </div>
-              <div>
-                <label style={{ display: 'block', color: 'var(--ink-700)', fontSize: 'var(--fs-sm)', fontWeight: 600, marginBottom: '8px' }}>
-                  E-mail *
-                </label>
-                <input
-                  type="email"
-                  placeholder="seu@email.com"
-                  style={{ width: '100%', padding: '12px 16px', border: '2px solid var(--line)', borderRadius: 'var(--radius-sm)', fontSize: 'var(--fs-sm)', color: 'var(--ink-900)', background: 'var(--surface)', outline: 'none' }}
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', color: 'var(--ink-700)', fontSize: 'var(--fs-sm)', fontWeight: 600, marginBottom: '8px' }}>
-                  Curso *
-                </label>
-                <input
-                  type="text"
-                  placeholder="Nome do curso concluído"
-                  style={{ width: '100%', padding: '12px 16px', border: '2px solid var(--line)', borderRadius: 'var(--radius-sm)', fontSize: 'var(--fs-sm)', color: 'var(--ink-900)', background: 'var(--surface)', outline: 'none' }}
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', color: 'var(--ink-700)', fontSize: 'var(--fs-sm)', fontWeight: 600, marginBottom: '8px' }}>
-                  Tipo de documento *
-                </label>
-                <select
-                  style={{ width: '100%', padding: '12px 16px', border: '2px solid var(--line)', borderRadius: 'var(--radius-sm)', fontSize: 'var(--fs-sm)', color: 'var(--ink-900)', background: 'var(--surface)', outline: 'none' }}
+                <div>
+                  <label style={{ display: 'block', color: 'var(--ink-700)', fontSize: 'var(--fs-sm)', fontWeight: 600, marginBottom: '8px' }}>
+                    Tipo de documento *
+                  </label>
+                  <select
+                    name="tipo"
+                    value={form.tipo}
+                    onChange={handleChange}
+                    required
+                    style={{ width: '100%', padding: '12px 16px', border: '2px solid var(--line)', borderRadius: 'var(--radius-sm)', fontSize: 'var(--fs-sm)', color: 'var(--ink-900)', background: 'var(--surface)', outline: 'none' }}
+                  >
+                    <option value="">Selecione o tipo</option>
+                    <option value="Diploma de Graduação">Diploma de Graduação</option>
+                    <option value="Certificado de Pós-Graduação">Certificado de Pós-Graduação</option>
+                    <option value="Certificado de Curso Livre">Certificado de Curso Livre</option>
+                    <option value="Histórico Escolar">Histórico Escolar</option>
+                    <option value="Declaração de Matrícula">Declaração de Matrícula</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', color: 'var(--ink-700)', fontSize: 'var(--fs-sm)', fontWeight: 600, marginBottom: '8px' }}>
+                    Observações
+                  </label>
+                  <textarea
+                    name="observacoes"
+                    value={form.observacoes}
+                    onChange={handleChange}
+                    placeholder="Informações adicionais ou dúvidas..."
+                    rows={4}
+                    style={{ width: '100%', padding: '12px 16px', border: '2px solid var(--line)', borderRadius: 'var(--radius-sm)', fontSize: 'var(--fs-sm)', color: 'var(--ink-900)', background: 'var(--surface)', outline: 'none', resize: 'vertical' }}
+                  />
+                </div>
+                {erro && <p style={{ color: '#dc2626', fontSize: 'var(--fs-sm)' }}>{erro}</p>}
+                <button
+                  type="submit"
+                  disabled={enviando}
+                  className="btn btn-primary"
+                  style={{ alignSelf: 'flex-start' }}
                 >
-                  <option value="">Selecione o tipo</option>
-                  <option value="diploma-graduacao">Diploma de Graduação</option>
-                  <option value="certificado-pos">Certificado de Pós-Graduação</option>
-                  <option value="certificado-livre">Certificado de Curso Livre</option>
-                  <option value="historico">Histórico Escolar</option>
-                  <option value="declaracao">Declaração de Matrícula</option>
-                </select>
-              </div>
-              <div>
-                <label style={{ display: 'block', color: 'var(--ink-700)', fontSize: 'var(--fs-sm)', fontWeight: 600, marginBottom: '8px' }}>
-                  Observações
-                </label>
-                <textarea
-                  placeholder="Informações adicionais ou dúvidas..."
-                  rows={4}
-                  style={{ width: '100%', padding: '12px 16px', border: '2px solid var(--line)', borderRadius: 'var(--radius-sm)', fontSize: 'var(--fs-sm)', color: 'var(--ink-900)', background: 'var(--surface)', outline: 'none', resize: 'vertical' }}
-                />
-              </div>
-              <button
-                type="submit"
-                className="btn btn-primary"
-                style={{ alignSelf: 'flex-start' }}
-              >
-                Enviar solicitação
-              </button>
-            </form>
+                  {enviando ? 'Enviando...' : 'Enviar solicitação'}
+                </button>
+              </form>
+            )}
 
             <div style={{ marginTop: '40px', padding: '24px', background: 'var(--surface-alt)', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)' }}>
               <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--fs-h3)', fontWeight: 700, color: 'var(--ink-900)', marginBottom: '12px' }}>

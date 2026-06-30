@@ -30,7 +30,7 @@ const footerLinks = {
     { label: 'Documentos Institucionais', href: '/documentos-institucionais' },
   ],
   'Estudantes': [
-    { label: 'Portal do Aluno', href: '/portal-aluno' },
+    { label: 'Portal do Aluno', href: process.env.NEXT_PUBLIC_SOPHIA_PORTAL_URL ?? '#' },
     { label: 'Biblioteca Virtual', href: '/biblioteca-virtual' },
     { label: 'Revista Científica', href: '/revista-cientifica' },
     { label: 'Blog', href: '/blog' },
