@@ -5,6 +5,7 @@ import { AdminApiKeyGuard } from './guards/admin-api-key.guard';
 import { AuthModule } from '../auth/auth.module';
 import { LeadsModule } from '../leads/leads.module';
 import { FinanceiroModule } from '../financeiro/financeiro.module';
+import { EmailModule } from '../email/email.module';
 import { Lead } from '../leads/entities/lead.entity';
 import { LeadHistorico } from '../leads/entities/lead-historico.entity';
 
@@ -13,6 +14,7 @@ import { LeadHistorico } from '../leads/entities/lead-historico.entity';
     AuthModule,
     LeadsModule,
     FinanceiroModule,
+    EmailModule,
     TypeOrmModule.forFeature([Lead, LeadHistorico]),
   ],
   controllers: [AdminController],

@@ -38,6 +38,17 @@ function parseDateBR(s: string): Date {
 @Injectable()
 export class EmailJobService {
   private readonly logger = new Logger(EmailJobService.name);
+  private runtimeEnabled: boolean | null = null;
+
+  get habilitado(): boolean {
+    if (this.runtimeEnabled !== null) return this.runtimeEnabled;
+    return this.config.get<string>('email.cronHabilitado') === 'true';
+  }
+
+  toggleHabilitado(ativo: boolean): void {
+    this.runtimeEnabled = ativo;
+    this.logger.log(`Job de emails ${ativo ? 'habilitado' : 'desabilitado'} via runtime`);
+  }
 
   constructor(
     private readonly financeiro: FinanceiroService,
@@ -79,7 +90,7 @@ export class EmailJobService {
 
   @Cron('0 8 * * *', { name: 'email_job' })
   async runEmailJob(): Promise<void> {
-    if (this.config.get<string>('email.cronHabilitado') !== 'true') {
+    if (!this.habilitado) {
       this.logger.warn('Job de emails desabilitado (EMAIL_CRON_HABILITADO=false)');
       return;
     }

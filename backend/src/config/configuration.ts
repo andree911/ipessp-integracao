@@ -55,9 +55,10 @@ export default () => ({
     token: process.env.ZAPI_TOKEN ?? '',
     clientToken: process.env.ZAPI_CLIENT_TOKEN ?? '',
     cronHabilitado: process.env.WPP_CRON_HABILITADO ?? 'false',
+    telefoneFinanceiro: process.env.ZAPI_TELEFONE_FINANCEIRO ?? '',
   },
   jwt: {
-    secret: process.env.JWT_SECRET ?? 'change-me-in-production',
+    secret: process.env.JWT_SECRET || (() => { throw new Error('JWT_SECRET env var is required'); })(),
     siteUrl: process.env.SITE_URL ?? 'http://localhost:3000',
   },
   admin: {
@@ -70,5 +71,6 @@ export default () => ({
     failureUrl: process.env.MP_FAILURE_URL ?? '',
     pendingUrl: process.env.MP_PENDING_URL ?? '',
     notificationUrl: process.env.MP_NOTIFICATION_URL ?? '',
+    webhookSecret: process.env.MP_WEBHOOK_SECRET ?? '',
   },
 });

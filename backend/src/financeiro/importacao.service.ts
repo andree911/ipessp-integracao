@@ -7,12 +7,7 @@ export interface ResultadoImportacao {
   erros: string[];
 }
 
-/**
- * Importa clientes e lançamentos a partir de dados exportados do Sophia.
- * O formato exato do CSV/Excel será definido amanhã após verificar o export do Sophia.
- * Por enquanto, expõe métodos para importar via JSON (usado pelo sync de alunos)
- * e uma estrutura preparada para o CSV.
- */
+/** Persiste clientes e lançamentos no cache local. Usado pelo SyncService (hourly cron). */
 @Injectable()
 export class ImportacaoService {
   private readonly logger = new Logger(ImportacaoService.name);
@@ -91,25 +86,4 @@ export class ImportacaoService {
     return { clientesImportados, lancamentosImportados, erros };
   }
 
-  /**
-   * Importa via CSV exportado do Sophia.
-   * TODO: implementar o parser após confirmar o formato do export amanhã.
-   * Colunas esperadas (a confirmar): codigo, cpf, nome, email, telefone,
-   *   cod_lancamento, descricao, valor, vencimento, pago, linha_digitavel, pix
-   */
-  async importarCsv(csvContent: string): Promise<ResultadoImportacao> {
-    const linhas = csvContent.split('\n').filter(l => l.trim());
-    if (linhas.length < 2) {
-      return { clientesImportados: 0, lancamentosImportados: 0, erros: ['CSV vazio ou sem dados'] };
-    }
-
-    // TODO: mapear as colunas reais do export do Sophia
-    // const cabecalho = linhas[0].split(';').map(c => c.trim());
-    this.logger.warn('importarCsv: formato do CSV ainda não mapeado — aguardando export do Sophia');
-    return {
-      clientesImportados: 0,
-      lancamentosImportados: 0,
-      erros: ['Formato do CSV ainda não mapeado. Confirme as colunas do export do Sophia e implemente o parser.'],
-    };
-  }
 }

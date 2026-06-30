@@ -54,7 +54,7 @@ import { ResetToken } from './auth/entities/reset-token.entity';
           SolicitacaoEvento, Candidatura, Usuario, Professor, RefreshToken, ResetToken,
           ClienteCache, LancamentoCache, Chamado,
         ],
-        synchronize: true,
+        synchronize: process.env.NODE_ENV !== 'production',
         ssl: { rejectUnauthorized: false },
       }),
     }),

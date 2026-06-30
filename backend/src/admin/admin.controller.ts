@@ -5,10 +5,10 @@ import { AdminApiKeyGuard } from './guards/admin-api-key.guard';
 import { Usuario } from '../auth/entities/usuario.entity';
 import { Professor } from '../auth/entities/professor.entity';
 import { Lead } from '../leads/entities/lead.entity';
-import { LeadHistorico } from '../leads/entities/lead-historico.entity';
 import { LeadsService } from '../leads/leads.service';
+import { MoverEstagioDto } from '../leads/dto/mover-estagio.dto';
 import { FinanceiroService } from '../financeiro/financeiro.service';
-import { ImportacaoService } from '../financeiro/importacao.service';
+import { EmailJobService } from '../email/email-job.service';
 
 @Controller('v1/admin')
 @UseGuards(AdminApiKeyGuard)
@@ -17,10 +17,9 @@ export class AdminController {
     @InjectRepository(Usuario) private readonly usuarioRepo: Repository<Usuario>,
     @InjectRepository(Professor) private readonly professorRepo: Repository<Professor>,
     @InjectRepository(Lead) private readonly leadRepo: Repository<Lead>,
-    @InjectRepository(LeadHistorico) private readonly historicoRepo: Repository<LeadHistorico>,
     private readonly leadsService: LeadsService,
     private readonly financeiroService: FinanceiroService,
-    private readonly importacaoService: ImportacaoService,
+    private readonly emailJobService: EmailJobService,
   ) {}
 
   // ─── Professores ─────────────────────────────────────────────────────────────
@@ -98,9 +97,9 @@ export class AdminController {
   @Patch('leads/:id/estagio')
   moverEstagioLead(
     @Param('id', ParseIntPipe) id: number,
-    @Body() body: { estagio: string; observacao?: string },
+    @Body() dto: MoverEstagioDto,
   ) {
-    return this.leadsService.moverEstagio(id, body as any);
+    return this.leadsService.moverEstagio(id, dto);
   }
 
   // ─── Financeiro ──────────────────────────────────────────────────────────────
@@ -116,17 +115,24 @@ export class AdminController {
     return this.financeiroService.getByCpf(cpf);
   }
 
-  @Post('financeiro/importar/csv')
-  @HttpCode(200)
-  async importarCsv(@Body('csv') csv: string) {
-    if (!csv) return { erro: 'Envie o conteúdo do CSV no campo "csv"' };
-    return this.importacaoService.importarCsv(csv);
+  // ─── Email Jobs ───────────────────────────────────────────────────────────────
+
+  @Get('email/status')
+  emailStatus() {
+    return { habilitado: this.emailJobService.habilitado };
   }
 
-  @Post('financeiro/importar/json')
+  @Post('email/toggle')
   @HttpCode(200)
-  async importarJson(@Body() body: { registros: Parameters<ImportacaoService['importarClientes']>[0] }) {
-    if (!body?.registros?.length) return { erro: 'Envie os registros no campo "registros"' };
-    return this.importacaoService.importarClientes(body.registros);
+  emailToggle(@Body('ativo') ativo: boolean) {
+    this.emailJobService.toggleHabilitado(ativo);
+    return { ok: true, habilitado: ativo };
+  }
+
+  @Post('email/disparar')
+  @HttpCode(202)
+  emailDisparar() {
+    void this.emailJobService.runEmailJob();
+    return { message: 'Job de emails iniciado manualmente' };
   }
 }
