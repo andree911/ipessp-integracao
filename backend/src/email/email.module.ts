@@ -18,6 +18,6 @@ import { FinanceiroModule } from '../financeiro/financeiro.module';
   imports: [TypeOrmModule.forFeature([EmailLog, Lead, LancamentoCache, ClienteCache]), HttpModule, SophiaModule, FinanceiroModule],
   controllers: [EmailController],
   providers: [EmailService, EmailJobService, LeadEmailService, WhatsAppService, WhatsAppJobService],
-  exports: [EmailService, LeadEmailService, WhatsAppService],
+  exports: [EmailService, EmailJobService, LeadEmailService, WhatsAppService],
 })
 export class EmailModule {}
