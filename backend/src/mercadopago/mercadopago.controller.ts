@@ -76,55 +76,46 @@ export class MercadoPagoController {
 
   private async notificarPagamentoAprovado(pagamento: any): Promise<void> {
     const ref = String(pagamento.external_reference ?? '');
-    const match = ref.match(/^matricula-(\d+)-\d+$/);
-    const codigoAluno = match?.[1] ?? 'desconhecido';
-
-    // Busca dados completos da matrícula no cache local
     const cache = ref ? await this.cacheRepo.findOne({ where: { externalReference: ref } }) : null;
 
     const payer = pagamento.payer ?? {};
-    const nomeResponsavel =
-      cache?.nomeResponsavel ||
-      [payer.first_name, payer.last_name].filter(Boolean).join(' ') ||
-      'N/A';
-    const emailResponsavel = cache?.emailResponsavel || payer.email || 'N/A';
-    const nomeAluno = cache?.nomeAluno || `Código ${codigoAluno}`;
+    const nomeAluno = cache?.nomeAluno || [payer.first_name, payer.last_name].filter(Boolean).join(' ') || 'N/A';
     const curso = cache?.curso || 'N/A';
-    const plano = cache
-      ? `${cache.numeroParcelas}x de R$ ${Number(cache.valorParcela).toFixed(2).replace('.', ',')}`
+    const valor = pagamento.transaction_amount != null
+      ? `R$ ${Number(pagamento.transaction_amount).toFixed(2).replace('.', ',')}`
       : 'N/A';
-
-    const valor =
-      pagamento.transaction_amount != null
-        ? `R$ ${Number(pagamento.transaction_amount).toFixed(2).replace('.', ',')}`
-        : 'N/A';
     const dataAprovacao = pagamento.date_approved
       ? new Date(pagamento.date_approved).toLocaleString('pt-BR')
       : new Date().toLocaleString('pt-BR');
-    const metodoPagamento = pagamento.payment_type_id ?? 'N/A';
 
-    this.logger.log(
-      `Pagamento aprovado: id=${pagamento.id} aluno=${codigoAluno} curso=${curso} valor=${valor}`,
-    );
+    this.logger.log(`Pagamento aprovado: id=${pagamento.id} aluno=${nomeAluno} curso=${curso} valor=${valor}`);
 
-    // Notificação para o financeiro via WhatsApp
+    const fmt = (v?: number | string | null) =>
+      v != null ? `R$ ${Number(v).toFixed(2).replace('.', ',')}` : 'N/A';
+
+    // WhatsApp para o financeiro
     const telefoneFinanceiro = this.config.get<string>('zapi.telefoneFinanceiro');
     if (telefoneFinanceiro) {
       const msg = [
-        `✅ *Pagamento aprovado — Mercado Pago*`,
+        `✅ *Pagamento aprovado — registrar matrícula no Sophia*`,
         ``,
-        `*Aluno:* ${nomeAluno} (Sophia: ${codigoAluno})`,
+        `*Aluno:* ${nomeAluno}`,
+        `*CPF:* ${cache?.cpfAluno || 'N/A'}`,
+        `*Email:* ${cache?.emailAluno || payer.email || 'N/A'}`,
+        `*Telefone:* ${cache?.telefoneAluno || 'N/A'}`,
+        cache?.nomeResponsavel ? `*Responsável:* ${cache.nomeResponsavel} (${cache.cpfResponsavel || 'N/A'})` : null,
+        ``,
         `*Curso:* ${curso}`,
-        `*Plano:* ${plano}`,
-        `*Responsável/Pagador:* ${nomeResponsavel}`,
-        `*Email:* ${emailResponsavel}`,
+        `*Unidade:* ${cache?.unidade || 'N/A'}`,
+        `*Turno:* ${cache?.turno || 'N/A'}`,
+        `*Período letivo:* ${cache?.periodoLetivo || 'N/A'}`,
+        cache?.curriculo ? `*Currículo:* ${cache.curriculo}` : null,
+        ``,
+        `*Plano:* ${cache ? `${cache.numeroParcelas}x de ${fmt(cache.valorParcela)}` : 'N/A'}`,
         `*Valor pago:* ${valor}`,
-        `*Forma de pagamento:* ${metodoPagamento}`,
         `*Data aprovação:* ${dataAprovacao}`,
         `*ID MP:* ${pagamento.id}`,
-        ``,
-        `Acesse o Sophia para registrar o plano de pagamento.`,
-      ].join('\n');
+      ].filter((l) => l !== null).join('\n');
       try {
         await this.whatsapp.enviarTexto(telefoneFinanceiro, msg);
       } catch (err: any) {
@@ -132,32 +123,50 @@ export class MercadoPagoController {
       }
     }
 
-    // Notificação para o financeiro via email
+    // Email para o financeiro com todos os dados para registrar no Sophia
     const emailNotificacoes = this.config.get<string>('email.emailNotificacoes');
     if (emailNotificacoes) {
-      const linha = (label: string, valor: string) =>
-        `<tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;background:#f9f9f9">${label}</td><td style="padding:8px;border:1px solid #ddd">${valor}</td></tr>`;
+      const l = (label: string, v: string) =>
+        `<tr><td style="padding:8px;border:1px solid #ddd;background:#f9f9f9;font-weight:bold;width:200px">${label}</td><td style="padding:8px;border:1px solid #ddd">${v}</td></tr>`;
+      const secao = (titulo: string) =>
+        `<tr><td colspan="2" style="padding:10px 8px 4px;background:#7C2529;color:#fff;font-weight:bold;font-size:13px">${titulo}</td></tr>`;
       const html = `
-        <h2 style="color:#1f9d55">✅ Pagamento Aprovado — Mercado Pago</h2>
-        <table style="border-collapse:collapse;width:100%;font-family:Arial,sans-serif;font-size:14px">
-          ${linha('Aluno', nomeAluno)}
-          ${linha('Cód. Sophia', codigoAluno)}
-          ${linha('Curso', curso)}
-          ${linha('Plano', plano)}
-          ${linha('Responsável/Pagador', nomeResponsavel)}
-          ${linha('Email', emailResponsavel)}
-          ${linha('Valor pago', valor)}
-          ${linha('Forma de pagamento', metodoPagamento)}
-          ${linha('Data aprovação', dataAprovacao)}
-          ${linha('ID pagamento MP', String(pagamento.id))}
-          ${linha('Referência', ref)}
-        </table>
-        <p style="margin-top:16px;color:#555">Acesse o Sophia para registrar o plano de pagamento deste aluno.</p>
+        <div style="font-family:Arial,sans-serif;max-width:680px;margin:0 auto">
+          <h2 style="color:#1f9d55;margin-bottom:4px">✅ Pagamento Aprovado — Registrar Matrícula no Sophia</h2>
+          <p style="color:#555;margin-top:0">Data de aprovação: <strong>${dataAprovacao}</strong> &nbsp;|&nbsp; Valor pago: <strong>${valor}</strong> &nbsp;|&nbsp; ID MP: <strong>${pagamento.id}</strong></p>
+          <table style="border-collapse:collapse;width:100%;font-size:14px">
+            ${secao('Dados do Aluno')}
+            ${l('Nome', cache?.nomeAluno || 'N/A')}
+            ${l('CPF', cache?.cpfAluno || 'N/A')}
+            ${l('Email', cache?.emailAluno || payer.email || 'N/A')}
+            ${l('Telefone', cache?.telefoneAluno || 'N/A')}
+            ${l('Sexo', cache?.sexoAluno || 'N/A')}
+            ${l('Data de nascimento', cache?.dataNascimentoAluno || 'N/A')}
+            ${cache?.nomeResponsavel ? secao('Responsável Financeiro') : ''}
+            ${cache?.nomeResponsavel ? l('Nome', cache.nomeResponsavel) : ''}
+            ${cache?.cpfResponsavel ? l('CPF', cache.cpfResponsavel) : ''}
+            ${cache?.emailResponsavel ? l('Email', cache.emailResponsavel) : ''}
+            ${cache?.telefoneResponsavel ? l('Telefone', cache.telefoneResponsavel) : ''}
+            ${secao('Dados do Curso')}
+            ${l('Curso', cache?.curso || 'N/A')}
+            ${l('Unidade', cache?.unidade || 'N/A')}
+            ${l('Turno', cache?.turno || 'N/A')}
+            ${l('Período letivo', cache?.periodoLetivo || 'N/A')}
+            ${cache?.curriculo ? l('Currículo', cache.curriculo) : ''}
+            ${secao('Plano de Pagamento')}
+            ${l('Parcelas', cache ? `${cache.numeroParcelas}x de ${fmt(cache.valorParcela)}` : 'N/A')}
+            ${l('1ª parcela', cache?.dataPrimeiraParcela || 'N/A')}
+            ${cache?.desconto ? l('Desconto', cache.desconto) : ''}
+            ${l('Valor pago (MP)', valor)}
+            ${l('Forma de pagamento', pagamento.payment_type_id || 'N/A')}
+          </table>
+          <p style="margin-top:16px;color:#555;font-size:13px">Acesse o Sophia e registre a matrícula com os dados acima.</p>
+        </div>
       `;
       try {
         await this.email.enviar(
           emailNotificacoes,
-          `✅ Pagamento Aprovado — ${nomeAluno} | ${curso} — ${valor}`,
+          `✅ Registrar Matrícula — ${nomeAluno} | ${curso} — ${valor}`,
           html,
         );
       } catch (err: any) {

@@ -8,11 +8,12 @@ export class MatriculaCache {
   @Column({ unique: true })
   externalReference: string;
 
-  @Column()
-  codigoAluno: number;
-
+  // Aluno
   @Column({ nullable: true })
   nomeAluno: string;
+
+  @Column({ nullable: true })
+  cpfAluno: string;
 
   @Column({ nullable: true })
   emailAluno: string;
@@ -21,7 +22,17 @@ export class MatriculaCache {
   telefoneAluno: string;
 
   @Column({ nullable: true })
+  sexoAluno: string;
+
+  @Column({ nullable: true })
+  dataNascimentoAluno: string;
+
+  // Responsável financeiro (opcional)
+  @Column({ nullable: true })
   nomeResponsavel: string;
+
+  @Column({ nullable: true })
+  cpfResponsavel: string;
 
   @Column({ nullable: true })
   emailResponsavel: string;
@@ -29,20 +40,41 @@ export class MatriculaCache {
   @Column({ nullable: true })
   telefoneResponsavel: string;
 
-  @Column()
-  curso: string;
-
+  // Curso
   @Column({ nullable: true })
   unidade: string;
 
-  @Column()
+  @Column({ nullable: true })
+  curso: string;
+
+  @Column({ nullable: true })
+  turno: string;
+
+  @Column({ nullable: true })
+  periodoLetivo: string;
+
+  @Column({ nullable: true })
+  curriculo: string;
+
+  // Plano de pagamento
+  @Column({ nullable: true })
   numeroParcelas: number;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
   valorParcela: number;
 
   @Column({ nullable: true })
+  dataPrimeiraParcela: string;
+
+  @Column({ nullable: true })
+  desconto: string;
+
+  // Pagamento
+  @Column({ nullable: true })
   linkPagamento: string;
+
+  @Column({ nullable: true })
+  preferenceId: string;
 
   @CreateDateColumn()
   criadoEm: Date;
