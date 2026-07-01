@@ -396,7 +396,7 @@ function redesSociais(data: EmailData): string {
       <td style="padding:0 8px;text-align:center;">
         <a href="${url}" target="_blank" style="text-decoration:none;">
           <!--[if mso]><v:oval xmlns:v="urn:schemas-microsoft-com:vml" style="width:40px;height:40px;" stroked="false"><v:fill type="solid" color="${COR}"/><v:textbox inset="0,${inset}px,0,0" style="mso-fit-shape-to-text:false;"><center><span style="font-family:Arial;font-size:${fs}px;font-weight:bold;color:#ffffff;">${letra}</span></center></v:textbox></v:oval><![endif]-->
-          <!--[if !mso]><!--><span style="display:inline-block;width:40px;height:40px;${gradient ? `background:${gradient}` : `background-color:${cor}`};border-radius:50%;text-align:center;line-height:40px;font-size:${fs}px;font-weight:bold;color:#000000;font-family:Arial,sans-serif;">${letra}</span><!--<![endif]-->
+          <!--[if !mso]><!--><span style="display:inline-block;width:40px;height:40px;${gradient ? `background:${gradient}` : `background-color:${cor}`};border-radius:50%;text-align:center;line-height:40px;font-size:${fs}px;font-weight:bold;color:${COR};font-family:Arial,sans-serif;">${letra}</span><!--<![endif]-->
         </a>
         <p style="margin:4px 0 0;font-size:9px;color:rgba(255,255,255,0.6);font-family:Arial,sans-serif;">${nome}</p>
       </td>`).join('')}
@@ -449,8 +449,8 @@ function base(subject: string, introTitulo: string, descParagrafo: string, nota:
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="color-scheme" content="light dark">
-  <meta name="supported-color-schemes" content="light dark">
+  <meta name="color-scheme" content="light">
+  <meta name="supported-color-schemes" content="light">
   <!--[if gte mso 9]><xml><o:OfficeDocumentSettings><o:AllowPNG/><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml><![endif]-->
   <title>${subject}</title>
   <style>
