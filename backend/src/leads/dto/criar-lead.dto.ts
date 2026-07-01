@@ -1,8 +1,9 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsString, IsIn } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, IsString, IsIn, Matches, MaxLength } from 'class-validator';
 
 export class CriarLeadDto {
   @IsNotEmpty()
   @IsString()
+  @MaxLength(200)
   nome: string;
 
   @IsOptional()
@@ -11,10 +12,13 @@ export class CriarLeadDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(20)
+  @Matches(/^\+?[\d\s()\-]{10,20}$/, { message: 'Telefone inválido' })
   telefone?: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(300)
   cursoInteresse?: string;
 
   @IsOptional()
@@ -23,5 +27,6 @@ export class CriarLeadDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(2000)
   observacao?: string;
 }

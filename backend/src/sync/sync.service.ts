@@ -6,6 +6,9 @@ import { SophiaService } from '../sophia/sophia.service';
 import { ImportacaoService } from '../financeiro/importacao.service';
 import { ResponsavelCache } from '../ia/entities/responsavel-cache.entity';
 import { Lead } from '../leads/entities/lead.entity';
+import { AlunoApiModel } from '../sophia/types/sophia.types';
+
+const SYNC_BATCH_SIZE = 5;
 
 @Injectable()
 export class SyncService {
@@ -45,67 +48,20 @@ export class SyncService {
       const alunos = await this.sophia.getAllAlunos();
       this.logger.log(`${alunos.length} alunos encontrados`);
 
-      for (const aluno of alunos) {
-          try {
-            const responsaveis = await this.sophia.getResponsaveisAluno(aluno.codigo);
-            const resp = responsaveis.find((r) => r.responsavelFinanceiro) ?? responsaveis[0];
-            if (!resp?.cpf) continue;
-
-            const cpf = resp.cpf.replace(/\D/g, '');
-
-            // salva no cache IA
-            const dadosResp = {
-              cpf,
-              codigoAluno: aluno.codigo,
-              nomeAluno: aluno.nome,
-              codigoResponsavel: resp.codigo,
-              nomeResponsavel: resp.nome,
-              email: resp.email ?? undefined,
-            };
-            const existente = await this.cacheRepo.findOne({
-              where: { cpf, codigoAluno: aluno.codigo },
-            });
-            if (existente) {
-              await this.cacheRepo.update(existente.id, dadosResp);
-            } else {
-              await this.cacheRepo.save(this.cacheRepo.create(dadosResp));
-            }
-
-            // salva no cache financeiro (só se tiver email)
-            if (resp.email) {
-              const lancamentos = await this.sophia.getLancamentosAluno(aluno.codigo);
-              const resultado = await this.importacao.importarClientes([{
-                codigoSophia: aluno.codigo,
-                cpf,
-                nomeAluno: aluno.nome,
-                nomeResponsavel: resp.nome,
-                emailResponsavel: resp.email,
-                telefoneResponsavel: resp.celular ?? resp.telefone,
-                ra: aluno.codigoExterno ?? undefined,
-                lancamentos: lancamentos.map((l) => ({
-                  codigoSophia: l.codigo,
-                  descricao: l.descricao,
-                  valorPrevisto: l.valorPrevisto,
-                  dataVencimento: l.dataVencimento,
-                  recebido: l.recebido,
-                  linhaDigitavel: l.linhaDigitavel,
-                  urlBoleto: l.urlBoletoDigital,
-                  codigoPix: l.codigoPix,
-                  competencia: l.competencia,
-                })),
-              }]);
-              totalClientes += resultado.clientesImportados;
-              totalLancamentos += resultado.lancamentosImportados;
-              if (resultado.erros.length > 0) {
-                this.logger.warn(`Aluno ${aluno.codigo}: ${resultado.erros[0]}`);
-              }
-            }
-
-            totalAlunos++;
-          } catch (err: any) {
-            this.logger.error(`Erro ao processar aluno ${aluno.codigo}: ${err.message}`);
+      for (let i = 0; i < alunos.length; i += SYNC_BATCH_SIZE) {
+        const batch = alunos.slice(i, i + SYNC_BATCH_SIZE);
+        const resultados = await Promise.allSettled(batch.map((a) => this.processarAluno(a)));
+        for (let j = 0; j < resultados.length; j++) {
+          const r = resultados[j];
+          if (r.status === 'fulfilled') {
+            if (r.value.processado) totalAlunos++;
+            totalClientes += r.value.clientes;
+            totalLancamentos += r.value.lancamentos;
+          } else {
+            this.logger.error(`Erro ao processar aluno ${batch[j].codigo}: ${r.reason?.message}`);
           }
         }
+      }
 
       await this.reconciliarLeadsPagina(alunos);
 
@@ -117,6 +73,64 @@ export class SyncService {
     } finally {
       this.running = false;
     }
+  }
+
+  private async processarAluno(
+    aluno: AlunoApiModel,
+  ): Promise<{ processado: boolean; clientes: number; lancamentos: number }> {
+    const responsaveis = await this.sophia.getResponsaveisAluno(aluno.codigo);
+    const resp = responsaveis.find((r) => r.responsavelFinanceiro) ?? responsaveis[0];
+    if (!resp?.cpf) return { processado: false, clientes: 0, lancamentos: 0 };
+
+    const cpf = resp.cpf.replace(/\D/g, '');
+
+    const dadosResp = {
+      cpf,
+      codigoAluno: aluno.codigo,
+      nomeAluno: aluno.nome,
+      codigoResponsavel: resp.codigo,
+      nomeResponsavel: resp.nome,
+      email: resp.email ?? undefined,
+    };
+    const existente = await this.cacheRepo.findOne({ where: { cpf, codigoAluno: aluno.codigo } });
+    if (existente) {
+      await this.cacheRepo.update(existente.id, dadosResp);
+    } else {
+      await this.cacheRepo.save(this.cacheRepo.create(dadosResp));
+    }
+
+    let clientes = 0;
+    let lancamentos = 0;
+    if (resp.email) {
+      const lancamentosAluno = await this.sophia.getLancamentosAluno(aluno.codigo);
+      const resultado = await this.importacao.importarClientes([{
+        codigoSophia: aluno.codigo,
+        cpf,
+        nomeAluno: aluno.nome,
+        nomeResponsavel: resp.nome,
+        emailResponsavel: resp.email,
+        telefoneResponsavel: resp.celular ?? resp.telefone,
+        ra: aluno.codigoExterno ?? undefined,
+        lancamentos: lancamentosAluno.map((l) => ({
+          codigoSophia: l.codigo,
+          descricao: l.descricao,
+          valorPrevisto: l.valorPrevisto,
+          dataVencimento: l.dataVencimento,
+          recebido: l.recebido,
+          linhaDigitavel: l.linhaDigitavel,
+          urlBoleto: l.urlBoletoDigital,
+          codigoPix: l.codigoPix,
+          competencia: l.competencia,
+        })),
+      }]);
+      clientes = resultado.clientesImportados;
+      lancamentos = resultado.lancamentosImportados;
+      if (resultado.erros.length > 0) {
+        this.logger.warn(`Aluno ${aluno.codigo}: ${resultado.erros[0]}`);
+      }
+    }
+
+    return { processado: true, clientes, lancamentos };
   }
 
   private async reconciliarLeadsPagina(

@@ -6,14 +6,7 @@ import { Repository } from 'typeorm';
 import { FinanceiroService } from '../financeiro/financeiro.service';
 import { WhatsAppService } from './whatsapp.service';
 import { EmailLog } from './entities/email-log.entity';
-
-function parseDateBR(s: string): Date {
-  if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) {
-    const [d, m, y] = s.split('/');
-    return new Date(+y, +m - 1, +d);
-  }
-  return new Date(s);
-}
+import { parseDateBR } from '../common/date.util';
 
 type WppTipo = 'wpp_lembrete' | 'wpp_vencimento_hoje' | 'wpp_cobranca';
 type TipoBase = 'lembrete' | 'vencimento_hoje' | 'cobranca';

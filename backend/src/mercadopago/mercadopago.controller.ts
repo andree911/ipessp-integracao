@@ -35,23 +35,25 @@ export class MercadoPagoController {
     const paymentId = String(id ?? (body?.data as Record<string, unknown>)?.id ?? '');
 
     const secret = this.config.get<string>('mercadopago.webhookSecret');
-    if (secret) {
-      if (!xSignature) {
-        this.logger.warn('MP webhook recebido sem header x-signature — ignorado');
-        return { ok: true };
-      }
-      const ts = xSignature.match(/ts=(\d+)/)?.[1];
-      const v1 = xSignature.match(/v1=([a-f0-9]+)/)?.[1];
-      if (!ts || !v1) {
-        this.logger.warn('MP webhook com x-signature malformado — ignorado');
-        return { ok: true };
-      }
-      const template = `id:${paymentId};request-id:${xRequestId ?? ''};ts:${ts}`;
-      const hash = createHmac('sha256', secret).update(template).digest('hex');
-      if (hash !== v1) {
-        this.logger.warn('MP webhook: assinatura inválida — ignorado');
-        return { ok: true };
-      }
+    if (!secret) {
+      this.logger.warn('MP webhook recebido mas MP_WEBHOOK_SECRET não configurado — rejeitado');
+      return { ok: true };
+    }
+    if (!xSignature) {
+      this.logger.warn('MP webhook recebido sem header x-signature — ignorado');
+      return { ok: true };
+    }
+    const ts = xSignature.match(/ts=(\d+)/)?.[1];
+    const v1 = xSignature.match(/v1=([a-f0-9]+)/)?.[1];
+    if (!ts || !v1) {
+      this.logger.warn('MP webhook com x-signature malformado — ignorado');
+      return { ok: true };
+    }
+    const template = `id:${paymentId};request-id:${xRequestId ?? ''};ts:${ts}`;
+    const hash = createHmac('sha256', secret).update(template).digest('hex');
+    if (hash !== v1) {
+      this.logger.warn('MP webhook: assinatura inválida — ignorado');
+      return { ok: true };
     }
 
     if (!paymentId || (topic !== 'payment' && body?.type !== 'payment')) {

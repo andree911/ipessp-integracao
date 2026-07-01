@@ -1,6 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
+import { Cron } from '@nestjs/schedule';
 import { firstValueFrom } from 'rxjs';
 import { AxiosRequestConfig } from 'axios';
 import {
@@ -9,8 +10,6 @@ import {
   ColaboradorApiModel,
   LancamentoAlunoApiModel,
   ListaChamadaItem,
-  AtaNotaItem,
-  NotaAlunoItem,
   MatriculaAlunoApiModel,
   MatriculasWrapperApiModel,
   ResponsavelAlunoApiModel,
@@ -43,6 +42,15 @@ export class SophiaService implements OnModuleInit {
       await this.autenticar();
     } catch (err: any) {
       this.logger.error(`SophiA: falha na autenticação inicial — ${err.message}`);
+    }
+  }
+
+  @Cron('0 * * * *')
+  private async refreshToken(): Promise<void> {
+    try {
+      await this.autenticar();
+    } catch (err: any) {
+      this.logger.warn(`SophiA: falha no refresh periódico do token — ${err.message}`);
     }
   }
 
@@ -194,31 +202,6 @@ export class SophiaService implements OnModuleInit {
     return this.get<AlunoDetalhadoApiModel>(`${this.apiBase}/Alunos/${id}`);
   }
 
-  async searchResponsavelByCpf(cpf: string): Promise<{ codigoAluno: number; nomeAluno: string; codigoResponsavel: number; nomeResponsavel: string; email?: string } | null> {
-    const cpfLimpo = cpf.replace(/\D/g, '');
-    let pagina = 1;
-    const tamanhoPagina = 100;
-    while (true) {
-      const alunos = await this.getAlunos(pagina, tamanhoPagina);
-      for (const aluno of alunos) {
-        const responsaveis = await this.getResponsaveisAluno(aluno.codigo);
-        const resp = responsaveis.find((r) => r.cpf?.replace(/\D/g, '') === cpfLimpo);
-        if (resp) {
-          return {
-            codigoAluno: aluno.codigo,
-            nomeAluno: aluno.nome,
-            codigoResponsavel: resp.codigo,
-            nomeResponsavel: resp.nome,
-            email: resp.email,
-          };
-        }
-      }
-      if (alunos.length < tamanhoPagina) break;
-      pagina++;
-    }
-    return null;
-  }
-
   async searchAlunoByEmail(email: string): Promise<AlunoApiModel | null> {
     // Tenta filtrar por email direto; se não suportado, varre as páginas
     try {
@@ -250,22 +233,6 @@ export class SophiaService implements OnModuleInit {
     return Buffer.from(b64, 'base64');
   }
 
-  async getNotas(idMatricula: number, params?: Record<string, string>): Promise<unknown> {
-    return this.get<unknown>(`${this.apiBase}/alunos/Matriculas/${idMatricula}/NotasAvaliacoes`, params);
-  }
-
-  async getNotasCompleto(idMatricula: number, params?: Record<string, string>): Promise<unknown> {
-    return this.get<unknown>(`${this.apiBase}/alunos/Matriculas/${idMatricula}/NotasAvaliacoesCompleto`, params);
-  }
-
-  async getFrequencia(idMatricula: number, params?: Record<string, string>): Promise<unknown> {
-    return this.get<unknown>(`${this.apiBase}/alunos/Matriculas/${idMatricula}/FrequenciaCompleto`, params);
-  }
-
-  async getHorarios(idAluno: number): Promise<unknown> {
-    return this.get<unknown>(`${this.apiBase}/alunos/${idAluno}/QuadrosHorarios`);
-  }
-
   async getColaboradores(params?: { Email?: string; Nome?: string; Pagina?: number; TamanhoPagina?: number }): Promise<ColaboradorApiModel[]> {
     const p: Record<string, unknown> = {};
     if (params?.Email)         p['Email']         = params.Email;
@@ -283,19 +250,14 @@ export class SophiaService implements OnModuleInit {
     return this.get<unknown[]>(`${this.apiBase}/ListaChamada/Alunos/${idLista}`);
   }
 
-  async getAtaNotas(params?: Record<string, string>): Promise<AtaNotaItem[]> {
-    return this.get<AtaNotaItem[]>(`${this.apiBase}/AtaNota`, params);
-  }
-
-  async getNotasAlunos(idAta: number): Promise<NotaAlunoItem[]> {
-    return this.get<NotaAlunoItem[]>(`${this.apiBase}/AtaNota/${idAta}/NotaAlunos`);
-  }
-
   async getAllAlunos(): Promise<AlunoApiModel[]> {
-    // API ignora TamanhoPagina — retorna todos independente do valor.
-    // Uma única chamada com limite alto traz tudo sem loop infinito.
+    // A API Sophia ignora TamanhoPagina e retorna todos os registros em uma única resposta.
+    // Paginação real não é suportada — limitação conhecida da API externa.
     const alunos = await this.getAlunos(1, 9999);
     this.logger.log(`SophiA: ${alunos.length} alunos carregados`);
+    if (alunos.length > 5000) {
+      this.logger.warn(`Volume alto (${alunos.length} alunos) — monitorar uso de memória no sync`);
+    }
     return alunos;
   }
 

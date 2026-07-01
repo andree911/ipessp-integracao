@@ -1,12 +1,14 @@
-import { IsIn, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsIn, IsNotEmpty, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
 
 export class CriarChamadoDto {
   @IsNotEmpty()
   @IsString()
+  @MaxLength(300)
   titulo: string;
 
   @IsNotEmpty()
   @IsString()
+  @MaxLength(5000)
   descricao: string;
 
   @IsOptional()
@@ -21,13 +23,17 @@ export class CriarChamadoDto {
 
   @IsNotEmpty()
   @IsString()
+  @MaxLength(20)
+  @Matches(/^\+?[\d\s()\-]{10,20}$/, { message: 'Telefone inválido' })
   telefoneSolicitante: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(200)
   criadoPorNome?: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(100)
   setor?: string;
 }

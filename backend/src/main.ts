@@ -4,6 +4,10 @@ import { AppModule } from './app.module';
 import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
+  if (!process.env.DATABASE_URL) {
+    throw new Error('DATABASE_URL não configurada — aplicação não pode iniciar');
+  }
+
   const app = await NestFactory.create(AppModule);
   const logger = new Logger('Bootstrap');
 
@@ -13,7 +17,7 @@ async function bootstrap() {
     .filter(Boolean);
 
   app.enableCors({
-    origin: origensPermitidas.length > 0 ? origensPermitidas : true,
+    origin: origensPermitidas.length > 0 ? origensPermitidas : false,
     methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,

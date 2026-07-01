@@ -1,8 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { ClienteCache } from './entities/cliente-cache.entity';
 import { LancamentoCache } from './entities/lancamento-cache.entity';
+import { parseDateBR } from '../common/date.util';
 
 export interface PendenciaFinanceira {
   codigo: number;
@@ -22,14 +23,6 @@ export interface FinanceiroCliente {
   emailResponsavel: string;
   ra?: string;
   pendencias: PendenciaFinanceira[];
-}
-
-function parseDateBR(s: string): Date {
-  if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) {
-    const [d, m, y] = s.split('/');
-    return new Date(+y, +m - 1, +d);
-  }
-  return new Date(s);
 }
 
 @Injectable()
@@ -88,14 +81,13 @@ export class FinanceiroService {
 
   async getLancamentosPendentes(): Promise<{ cliente: ClienteCache; lancamento: LancamentoCache }[]> {
     const lancamentos = await this.lancamentoRepo.find({ where: { recebido: 0 } });
-    const resultado: { cliente: ClienteCache; lancamento: LancamentoCache }[] = [];
-    for (const lanc of lancamentos) {
-      const cliente = await this.clienteRepo.findOne({ where: { id: lanc.codigoCliente } });
-      if (cliente) {
-        resultado.push({ cliente, lancamento: lanc });
-      }
-    }
-    return resultado;
+    if (lancamentos.length === 0) return [];
+    const ids = [...new Set(lancamentos.map(l => l.codigoCliente))];
+    const clientes = await this.clienteRepo.findBy({ id: In(ids) });
+    const mapaClientes = new Map(clientes.map(c => [c.id, c]));
+    return lancamentos
+      .map(lancamento => ({ cliente: mapaClientes.get(lancamento.codigoCliente), lancamento }))
+      .filter((r): r is { cliente: ClienteCache; lancamento: LancamentoCache } => r.cliente !== undefined);
   }
 
   async upsertCliente(dados: Partial<ClienteCache>): Promise<ClienteCache> {

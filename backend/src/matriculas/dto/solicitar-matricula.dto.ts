@@ -6,6 +6,8 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  Matches,
+  MaxLength,
   Min,
   ValidateNested,
 } from 'class-validator';
@@ -13,10 +15,12 @@ import {
 export class AlunoDto {
   @IsNotEmpty()
   @IsString()
+  @MaxLength(200)
   nome: string;
 
   @IsNotEmpty()
   @IsString()
+  @Matches(/^\d{11}$|^(\d{3}\.){2}\d{3}-\d{2}$/, { message: 'CPF inválido' })
   cpf: string;
 
   @IsOptional()
@@ -25,6 +29,8 @@ export class AlunoDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(20)
+  @Matches(/^\+?[\d\s()\-]{10,20}$/, { message: 'Telefone inválido' })
   telefone?: string;
 
   @IsOptional()
@@ -40,10 +46,12 @@ export class AlunoDto {
 export class ResponsavelDto {
   @IsNotEmpty()
   @IsString()
+  @MaxLength(200)
   nome: string;
 
   @IsNotEmpty()
   @IsString()
+  @Matches(/^\d{11}$|^(\d{3}\.){2}\d{3}-\d{2}$/, { message: 'CPF inválido' })
   cpf: string;
 
   @IsOptional()
@@ -52,6 +60,8 @@ export class ResponsavelDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(20)
+  @Matches(/^\+?[\d\s()\-]{10,20}$/, { message: 'Telefone inválido' })
   telefone?: string;
 
   // 1=Mãe, 2=Pai, 3=Outros

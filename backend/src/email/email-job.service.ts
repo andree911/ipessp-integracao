@@ -15,6 +15,7 @@ import {
   templateVencimentoHoje,
   type EmailData,
 } from './templates/email.templates';
+import { parseDateBR } from '../common/date.util';
 
 const QR_CID = 'qrpix@email';
 
@@ -24,15 +25,6 @@ async function gerarQrCode(texto: string): Promise<Buffer | undefined> {
   } catch {
     return undefined;
   }
-}
-
-// Sophia retorna datas em dd/mm/yyyy — new Date() interpreta como MM/DD e erra o mês
-function parseDateBR(s: string): Date {
-  if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) {
-    const [d, m, y] = s.split('/');
-    return new Date(+y, +m - 1, +d);
-  }
-  return new Date(s);
 }
 
 @Injectable()
@@ -102,7 +94,8 @@ export class EmailJobService {
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
 
-    const pendentes = await this.financeiro.getLancamentosPendentes();
+    const BATCH_LIMIT = 500;
+    const pendentes = (await this.financeiro.getLancamentosPendentes()).slice(0, BATCH_LIMIT);
     let totalEnviados = 0;
     let totalErros = 0;
 

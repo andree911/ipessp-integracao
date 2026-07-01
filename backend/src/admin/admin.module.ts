@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AdminController } from './admin.controller';
 import { AdminApiKeyGuard } from './guards/admin-api-key.guard';
-import { AuthModule } from '../auth/auth.module';
 import { LeadsModule } from '../leads/leads.module';
 import { FinanceiroModule } from '../financeiro/financeiro.module';
 import { EmailModule } from '../email/email.module';
@@ -11,7 +10,6 @@ import { LeadHistorico } from '../leads/entities/lead-historico.entity';
 
 @Module({
   imports: [
-    AuthModule,
     LeadsModule,
     FinanceiroModule,
     EmailModule,

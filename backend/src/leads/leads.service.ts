@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException, Optional } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between, FindOptionsWhere, LessThanOrEqual, In } from 'typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { DataSource, Repository, Between, FindOptionsWhere, LessThanOrEqual, In } from 'typeorm';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
@@ -31,6 +31,7 @@ export class LeadsService {
     private readonly historicoRepo: Repository<LeadHistorico>,
     private readonly http: HttpService,
     private readonly config: ConfigService,
+    @InjectDataSource() private readonly dataSource: DataSource,
     @Optional() private readonly leadEmail?: LeadEmailService,
   ) {}
 
@@ -61,7 +62,11 @@ export class LeadsService {
     telefone?: string;
     de?: string;
     ate?: string;
-  }): Promise<Lead[]> {
+    page?: number;
+    limit?: number;
+  }): Promise<{ data: Lead[]; total: number; page: number; pages: number }> {
+    const page = Math.max(1, filtros.page ?? 1);
+    const limit = Math.min(200, Math.max(1, filtros.limit ?? 50));
     const where: FindOptionsWhere<Lead> = {};
     if (filtros.status) where.status = filtros.status as Lead['status'];
     if (filtros.origem) where.origem = filtros.origem as Lead['origem'];
@@ -69,7 +74,13 @@ export class LeadsService {
     if (filtros.de && filtros.ate) {
       where.criadoEm = Between(new Date(filtros.de), new Date(filtros.ate + 'T23:59:59'));
     }
-    return this.leadRepo.find({ where, order: { criadoEm: 'DESC' } });
+    const [data, total] = await this.leadRepo.findAndCount({
+      where,
+      order: { criadoEm: 'DESC' },
+      take: limit,
+      skip: (page - 1) * limit,
+    });
+    return { data, total, page, pages: Math.ceil(total / limit) };
   }
 
   async buscarPorId(id: number): Promise<Lead> {
@@ -94,20 +105,22 @@ export class LeadsService {
   }
 
   async vincularAluno(id: number, codigoAluno: number): Promise<Lead> {
-    const lead = await this.leadRepo.findOneBy({ id });
-    if (!lead) throw new NotFoundException(`Lead #${id} não encontrado`);
-    const anterior = lead.status;
-    lead.sophiaAlunoId = codigoAluno;
-    lead.status = 'matriculado';
-    lead.nurturingPausado = true;
-    lead.proximoContato = null;
-    await this.historicoRepo.save({
-      leadId: id,
-      estagioAnterior: anterior,
-      estagioNovo: 'matriculado',
-      observacao: `Vinculado ao aluno SophiA #${codigoAluno}`,
+    return this.dataSource.transaction(async (em) => {
+      const lead = await em.findOneBy(Lead, { id });
+      if (!lead) throw new NotFoundException(`Lead #${id} não encontrado`);
+      const anterior = lead.status;
+      lead.sophiaAlunoId = codigoAluno;
+      lead.status = 'matriculado';
+      lead.nurturingPausado = true;
+      lead.proximoContato = null;
+      await em.save(LeadHistorico, {
+        leadId: id,
+        estagioAnterior: anterior,
+        estagioNovo: 'matriculado',
+        observacao: `Vinculado ao aluno SophiA #${codigoAluno}`,
+      });
+      return em.save(Lead, lead);
     });
-    return this.leadRepo.save(lead);
   }
 
   async moverEstagio(id: number, dto: MoverEstagioDto): Promise<Lead> {
@@ -283,11 +296,19 @@ export class LeadsService {
   private async dispararWebhook(lead: Lead): Promise<void> {
     const url = this.config.get<string>('n8n.leadsWebhookUrl');
     if (!url) return;
-    try {
-      await firstValueFrom(this.http.post(url, lead));
-      this.logger.log(`Webhook n8n disparado para lead #${lead.id}`);
-    } catch (err: any) {
-      this.logger.warn(`Falha no webhook n8n para lead #${lead.id}: ${err.message}`);
+    const MAX_TENTATIVAS = 3;
+    for (let tentativa = 1; tentativa <= MAX_TENTATIVAS; tentativa++) {
+      try {
+        await firstValueFrom(this.http.post(url, lead));
+        this.logger.log(`Webhook n8n disparado para lead #${lead.id}`);
+        return;
+      } catch (err: any) {
+        if (tentativa === MAX_TENTATIVAS) {
+          this.logger.warn(`Falha no webhook n8n para lead #${lead.id} após ${MAX_TENTATIVAS} tentativas: ${err.message}`);
+        } else {
+          await new Promise((r) => setTimeout(r, tentativa * 1000));
+        }
+      }
     }
   }
 }

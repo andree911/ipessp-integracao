@@ -48,8 +48,14 @@ export class LeadsController {
     @Query('telefone') telefone?: string,
     @Query('de') de?: string,
     @Query('ate') ate?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
-    return this.leadsService.listar({ status, origem, telefone, de, ate });
+    return this.leadsService.listar({
+      status, origem, telefone, de, ate,
+      page: page ? Number(page) : undefined,
+      limit: limit ? Number(limit) : undefined,
+    });
   }
 
   @Get(':id')

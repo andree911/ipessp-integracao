@@ -15,6 +15,9 @@ const AREA_LABEL: Record<string, string> = {
   outro: 'Outro',
 };
 
+const esc = (s: string) =>
+  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+
 @Injectable()
 export class CandidaturasService {
   private readonly logger = new Logger(CandidaturasService.name);
@@ -74,10 +77,10 @@ export class CandidaturasService {
     const assunto = `[${nomeEscola}] Nova candidatura — ${areaLabel}`;
     const html = `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;padding:24px;color:#333;">
       <h2 style="color:#C8102E;">${assunto}</h2>
-      <p><strong>Nome:</strong> ${dto.nome}</p>
-      <p><strong>E-mail:</strong> ${dto.email}</p>
+      <p><strong>Nome:</strong> ${esc(dto.nome)}</p>
+      <p><strong>E-mail:</strong> ${esc(dto.email)}</p>
       <p><strong>Área:</strong> ${areaLabel}</p>
-      ${dto.mensagem ? `<p><strong>Mensagem:</strong></p><p>${dto.mensagem.replace(/\n/g, '<br>')}</p>` : ''}
+      ${dto.mensagem ? `<p><strong>Mensagem:</strong></p><p>${esc(dto.mensagem)}</p>` : ''}
       <hr style="margin-top:24px;border:none;border-top:1px solid #eee;">
       <p style="font-size:11px;color:#999;">Enviado automaticamente pelo sistema ${nomeEscola}</p>
     </body></html>`;

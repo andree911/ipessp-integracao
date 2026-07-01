@@ -17,6 +17,9 @@ const TIPO_LABEL: Record<string, string> = {
   outro: 'Outro',
 };
 
+const esc = (s: string) =>
+  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+
 @Injectable()
 export class FormulariosService {
   private readonly logger = new Logger(FormulariosService.name);
@@ -50,12 +53,12 @@ export class FormulariosService {
     void this.notificar(
       `[${this.nomeEscola}] Novo contato: ${dto.assunto ?? 'sem assunto'}`,
       `
-        <p><strong>Nome:</strong> ${dto.nome}</p>
-        <p><strong>E-mail:</strong> ${dto.email}</p>
-        ${dto.telefone ? `<p><strong>Telefone:</strong> ${dto.telefone}</p>` : ''}
-        ${dto.assunto ? `<p><strong>Assunto:</strong> ${dto.assunto}</p>` : ''}
+        <p><strong>Nome:</strong> ${esc(dto.nome)}</p>
+        <p><strong>E-mail:</strong> ${esc(dto.email)}</p>
+        ${dto.telefone ? `<p><strong>Telefone:</strong> ${esc(dto.telefone)}</p>` : ''}
+        ${dto.assunto ? `<p><strong>Assunto:</strong> ${esc(dto.assunto)}</p>` : ''}
         <p><strong>Mensagem:</strong></p>
-        <p>${dto.mensagem.replace(/\n/g, '<br>')}</p>
+        <p>${esc(dto.mensagem)}</p>
       `,
     );
 
@@ -70,11 +73,11 @@ export class FormulariosService {
     void this.notificar(
       `[${this.nomeEscola}] Ouvidoria — ${TIPO_LABEL[dto.tipo] ?? dto.tipo}`,
       `
-        <p><strong>Tipo:</strong> ${TIPO_LABEL[dto.tipo] ?? dto.tipo}</p>
-        <p><strong>Nome:</strong> ${dto.nome}</p>
-        <p><strong>E-mail:</strong> ${dto.email}</p>
+        <p><strong>Tipo:</strong> ${TIPO_LABEL[dto.tipo] ?? esc(dto.tipo)}</p>
+        <p><strong>Nome:</strong> ${esc(dto.nome)}</p>
+        <p><strong>E-mail:</strong> ${esc(dto.email)}</p>
         <p><strong>Mensagem:</strong></p>
-        <p>${dto.mensagem.replace(/\n/g, '<br>')}</p>
+        <p>${esc(dto.mensagem)}</p>
       `,
     );
 
@@ -87,14 +90,14 @@ export class FormulariosService {
     void this.notificar(
       `[${this.nomeEscola}] Solicitação de espaço para evento`,
       `
-        <p><strong>Nome:</strong> ${dto.nome}</p>
-        <p><strong>E-mail:</strong> ${dto.email}</p>
-        ${dto.telefone ? `<p><strong>Telefone:</strong> ${dto.telefone}</p>` : ''}
-        ${dto.organizacao ? `<p><strong>Organização:</strong> ${dto.organizacao}</p>` : ''}
-        ${dto.tipoEvento ? `<p><strong>Tipo de evento:</strong> ${dto.tipoEvento}</p>` : ''}
-        ${dto.dataEvento ? `<p><strong>Data do evento:</strong> ${dto.dataEvento}</p>` : ''}
+        <p><strong>Nome:</strong> ${esc(dto.nome)}</p>
+        <p><strong>E-mail:</strong> ${esc(dto.email)}</p>
+        ${dto.telefone ? `<p><strong>Telefone:</strong> ${esc(dto.telefone)}</p>` : ''}
+        ${dto.organizacao ? `<p><strong>Organização:</strong> ${esc(dto.organizacao)}</p>` : ''}
+        ${dto.tipoEvento ? `<p><strong>Tipo de evento:</strong> ${esc(dto.tipoEvento)}</p>` : ''}
+        ${dto.dataEvento ? `<p><strong>Data do evento:</strong> ${esc(dto.dataEvento)}</p>` : ''}
         <p><strong>Descrição:</strong></p>
-        <p>${dto.descricao.replace(/\n/g, '<br>')}</p>
+        <p>${esc(dto.descricao)}</p>
       `,
     );
 

@@ -3,6 +3,7 @@ import { AppController } from './app.controller';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ThrottlerModule } from '@nestjs/throttler';
 import configuration from './config/configuration';
 import { SophiaModule } from './sophia/sophia.module';
 import { SyncModule } from './sync/sync.module';
@@ -11,8 +12,6 @@ import { IaModule } from './ia/ia.module';
 import { LeadsModule } from './leads/leads.module';
 import { FormulariosModule } from './formularios/formularios.module';
 import { CandidaturasModule } from './candidaturas/candidaturas.module';
-import { AuthModule } from './auth/auth.module';
-import { MeModule } from './me/me.module';
 import { AdminModule } from './admin/admin.module';
 import { FinanceiroModule } from './financeiro/financeiro.module';
 import { TiModule } from './ti/ti.module';
@@ -31,10 +30,6 @@ import { Manifestacao } from './formularios/entities/manifestacao.entity';
 import { SolicitacaoEvento } from './formularios/entities/solicitacao-evento.entity';
 import { Candidatura } from './candidaturas/entities/candidatura.entity';
 import { MatriculaCache } from './matriculas/entities/matricula-cache.entity';
-import { Usuario } from './auth/entities/usuario.entity';
-import { Professor } from './auth/entities/professor.entity';
-import { RefreshToken } from './auth/entities/refresh-token.entity';
-import { ResetToken } from './auth/entities/reset-token.entity';
 
 @Module({
   controllers: [AppController],
@@ -44,6 +39,7 @@ import { ResetToken } from './auth/entities/reset-token.entity';
       load: [configuration],
       envFilePath: '.env',
     }),
+    ThrottlerModule.forRoot([{ ttl: 60000, limit: 60 }]),
     ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
@@ -52,10 +48,9 @@ import { ResetToken } from './auth/entities/reset-token.entity';
         url: config.get<string>('database.url'),
         entities: [
           EmailLog, ResponsavelCache, TelefoneCpfCache, Lead, LeadHistorico, MensagemContato, Manifestacao,
-          SolicitacaoEvento, Candidatura, Usuario, Professor, RefreshToken, ResetToken,
-          ClienteCache, LancamentoCache, Chamado, MatriculaCache,
+          SolicitacaoEvento, Candidatura, ClienteCache, LancamentoCache, Chamado, MatriculaCache,
         ],
-        synchronize: process.env.NODE_ENV !== 'production',
+        synchronize: false,
         ssl: { rejectUnauthorized: false },
       }),
     }),
@@ -67,8 +62,6 @@ import { ResetToken } from './auth/entities/reset-token.entity';
     LeadsModule,
     FormulariosModule,
     CandidaturasModule,
-    AuthModule,
-    MeModule,
     AdminModule,
     TiModule,
     MatriculasModule,
