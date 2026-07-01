@@ -7,6 +7,7 @@ import { ImportacaoService } from '../financeiro/importacao.service';
 import { ResponsavelCache } from '../ia/entities/responsavel-cache.entity';
 import { Lead } from '../leads/entities/lead.entity';
 import { AlunoApiModel } from '../sophia/types/sophia.types';
+import { errMsg, errStack } from '../common/err.util';
 
 const SYNC_BATCH_SIZE = 5;
 
@@ -68,8 +69,8 @@ export class SyncService {
       this.logger.log(
         `=== Sincronização concluída: ${totalAlunos} alunos, ${totalClientes} clientes, ${totalLancamentos} lançamentos ===`,
       );
-    } catch (err: any) {
-      this.logger.error(`Erro no ciclo de sync: ${err.message}`, err.stack);
+    } catch (err: unknown) {
+      this.logger.error(`Erro no ciclo de sync: ${errMsg(err)}`, errStack(err));
     } finally {
       this.running = false;
     }

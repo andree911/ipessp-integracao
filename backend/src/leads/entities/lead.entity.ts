@@ -31,7 +31,8 @@ export class Lead {
   @Column({ nullable: true, type: 'text' })
   observacao: string;
 
-  // Vinculação ao aluno no SophiA após conversão lead → matrícula
+  // Vinculação ao aluno no SophiA após conversão lead → matrícula (ID externo, sem FK)
+  @Index()
   @Column({ nullable: true, type: 'integer' })
   sophiaAlunoId: number | null;
 

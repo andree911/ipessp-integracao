@@ -3,6 +3,7 @@ import { Cron } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { errMsg } from '../common/err.util';
 import { FinanceiroService } from '../financeiro/financeiro.service';
 import { WhatsAppService } from './whatsapp.service';
 import { EmailLog } from './entities/email-log.entity';
@@ -138,15 +139,15 @@ export class WhatsAppJobService {
           await this.whatsapp.enviarTexto(cliente.telefoneResponsavel, mensagem);
           log.enviado = true;
           totalEnviados++;
-        } catch (err: any) {
-          log.erro = err.message;
+        } catch (err: unknown) {
+          log.erro = errMsg(err);
           totalErros++;
-          this.logger.error(`Erro WhatsApp ${cliente.telefoneResponsavel}: ${err.message}`);
+          this.logger.error(`Erro WhatsApp ${cliente.telefoneResponsavel}: ${errMsg(err)}`);
         }
 
         await this.logRepo.save(log);
-      } catch (err: any) {
-        this.logger.error(`Erro ao processar lançamento ${lancamento.id}: ${err.message}`);
+      } catch (err: unknown) {
+        this.logger.error(`Erro ao processar lançamento ${lancamento.id}: ${errMsg(err)}`);
       }
     }
 

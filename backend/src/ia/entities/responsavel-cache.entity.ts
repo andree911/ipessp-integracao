@@ -23,7 +23,7 @@ export class ResponsavelCache {
   nomeResponsavel: string;
 
   @Column({ nullable: true })
-  email: string;
+  email: string | null;
 
   @UpdateDateColumn()
   atualizadoEm: Date;

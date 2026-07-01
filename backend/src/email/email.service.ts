@@ -2,6 +2,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 import { Transporter } from 'nodemailer';
+import { errMsg } from '../common/err.util';
 
 @Injectable()
 export class EmailService implements OnModuleInit {
@@ -61,8 +62,8 @@ export class EmailService implements OnModuleInit {
       await this.transporter.verify();
       this.logger.log('Conexão SMTP verificada com sucesso');
       return true;
-    } catch (err: any) {
-      this.logger.error(`Falha na conexão SMTP: ${err.message}`);
+    } catch (err: unknown) {
+      this.logger.error(`Falha na conexão SMTP: ${errMsg(err)}`);
       return false;
     }
   }

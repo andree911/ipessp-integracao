@@ -7,6 +7,17 @@ import { MercadoPagoService } from './mercadopago.service';
 import { EmailService } from '../email/email.service';
 import { WhatsAppService } from '../email/whatsapp.service';
 import { MatriculaCache } from '../matriculas/entities/matricula-cache.entity';
+import { errMsg } from '../common/err.util';
+
+interface MpPayment {
+  id?: string | number | null;
+  status?: string | null;
+  external_reference?: string | null;
+  transaction_amount?: number | null;
+  date_approved?: string | null;
+  payment_type_id?: string | null;
+  payer?: { first_name?: string; last_name?: string; email?: string };
+}
 
 @Controller('v1/pagamentos')
 export class MercadoPagoController {
@@ -69,14 +80,14 @@ export class MercadoPagoController {
       if (pagamento.status === 'approved') {
         await this.notificarPagamentoAprovado(pagamento);
       }
-    } catch (err: any) {
-      this.logger.error(`Erro ao processar webhook MP: ${err.message}`);
+    } catch (err: unknown) {
+      this.logger.error(`Erro ao processar webhook MP: ${errMsg(err)}`);
     }
 
     return { ok: true };
   }
 
-  private async notificarPagamentoAprovado(pagamento: any): Promise<void> {
+  private async notificarPagamentoAprovado(pagamento: MpPayment): Promise<void> {
     const ref = String(pagamento.external_reference ?? '');
     const cache = ref ? await this.cacheRepo.findOne({ where: { externalReference: ref } }) : null;
 
@@ -120,8 +131,8 @@ export class MercadoPagoController {
       ].filter((l) => l !== null).join('\n');
       try {
         await this.whatsapp.enviarTexto(telefoneFinanceiro, msg);
-      } catch (err: any) {
-        this.logger.warn(`WhatsApp financeiro falhou: ${err.message}`);
+      } catch (err: unknown) {
+        this.logger.warn(`WhatsApp financeiro falhou: ${errMsg(err)}`);
       }
     }
 
@@ -171,8 +182,8 @@ export class MercadoPagoController {
           `✅ Registrar Matrícula — ${nomeAluno} | ${curso} — ${valor}`,
           html,
         );
-      } catch (err: any) {
-        this.logger.warn(`Email financeiro falhou: ${err.message}`);
+      } catch (err: unknown) {
+        this.logger.warn(`Email financeiro falhou: ${errMsg(err)}`);
       }
     }
   }

@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { Cron } from '@nestjs/schedule';
 import { firstValueFrom } from 'rxjs';
 import { AxiosRequestConfig } from 'axios';
+import { errMsg, isAxios401, axiosDetail } from '../common/err.util';
 import {
   AlunoApiModel,
   AlunoDetalhadoApiModel,
@@ -40,8 +41,8 @@ export class SophiaService implements OnModuleInit {
   async onModuleInit() {
     try {
       await this.autenticar();
-    } catch (err: any) {
-      this.logger.error(`SophiA: falha na autenticação inicial — ${err.message}`);
+    } catch (err: unknown) {
+      this.logger.error(`SophiA: falha na autenticação inicial — ${errMsg(err)}`);
     }
   }
 
@@ -49,8 +50,8 @@ export class SophiaService implements OnModuleInit {
   private async refreshToken(): Promise<void> {
     try {
       await this.autenticar();
-    } catch (err: any) {
-      this.logger.warn(`SophiA: falha no refresh periódico do token — ${err.message}`);
+    } catch (err: unknown) {
+      this.logger.warn(`SophiA: falha no refresh periódico do token — ${errMsg(err)}`);
     }
   }
 
@@ -85,8 +86,8 @@ export class SophiaService implements OnModuleInit {
         this.http.post<T>(url, body, { headers: this.headers() }),
       );
       return data;
-    } catch (err: any) {
-      if (err?.response?.status === 401) {
+    } catch (err: unknown) {
+      if (isAxios401(err)) {
         this.logger.warn('SophiA: token expirado, reautenticando...');
         await this.autenticar();
         const { data } = await firstValueFrom(
@@ -104,8 +105,8 @@ export class SophiaService implements OnModuleInit {
         this.http.put<T>(url, body, { headers: this.headers() }),
       );
       return data;
-    } catch (err: any) {
-      if (err?.response?.status === 401) {
+    } catch (err: unknown) {
+      if (isAxios401(err)) {
         this.logger.warn('SophiA: token expirado, reautenticando...');
         await this.autenticar();
         const { data } = await firstValueFrom(
@@ -123,8 +124,8 @@ export class SophiaService implements OnModuleInit {
         this.http.get<T>(url, { headers: this.headers(), params }),
       );
       return data;
-    } catch (err: any) {
-      if (err?.response?.status === 401) {
+    } catch (err: unknown) {
+      if (isAxios401(err)) {
         this.logger.warn('SophiA: token expirado, reautenticando...');
         await this.autenticar();
         const { data } = await firstValueFrom(
@@ -191,8 +192,8 @@ export class SophiaService implements OnModuleInit {
       const resultado = await this.post<unknown>(`${this.apiBase}/clientes`, body);
       this.logger.log(`SophiA criarCliente ← resposta: ${JSON.stringify(resultado)}`);
       return resultado;
-    } catch (err: any) {
-      const detail = err?.response?.data ?? err?.response?.status ?? err.message;
+    } catch (err: unknown) {
+      const detail = axiosDetail(err);
       this.logger.error(`SophiA criarCliente erro: ${JSON.stringify(detail)}`);
       throw err;
     }

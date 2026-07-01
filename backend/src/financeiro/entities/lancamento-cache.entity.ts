@@ -7,14 +7,14 @@ export class LancamentoCache {
   id: number;
 
   @Column({ nullable: true })
-  codigoSophia: number;
+  codigoSophia: number | null;
 
   @Index()
   @Column()
   codigoCliente: number;
 
   @Column({ nullable: true })
-  descricao: string;
+  descricao: string | null;
 
   @Column('decimal', { precision: 10, scale: 2 })
   valorPrevisto: number;
@@ -22,20 +22,24 @@ export class LancamentoCache {
   @Column()
   dataVencimento: string;
 
-  @Column({ default: 0 })
-  recebido: number;
+  @Column({
+    type: 'int',
+    default: 0,
+    transformer: { to: (v: boolean) => (v ? 1 : 0), from: (v: number) => v === 1 },
+  })
+  recebido: boolean;
 
   @Column({ nullable: true })
-  linhaDigitavel: string;
+  linhaDigitavel: string | null;
 
   @Column({ nullable: true })
-  urlBoleto: string;
+  urlBoleto: string | null;
 
   @Column({ nullable: true })
-  codigoPix: string;
+  codigoPix: string | null;
 
   @Column({ nullable: true })
-  competencia: string;
+  competencia: string | null;
 
   @UpdateDateColumn()
   atualizadoEm: Date;

@@ -8,6 +8,7 @@ import { TelefoneCpfCache } from './entities/telefone-cpf-cache.entity';
 import { SupabaseService } from './supabase.service';
 import { CriarProspectivoDto } from './dto/prospectivo.dto';
 import { CriarResponsavelDto } from './dto/criar-responsavel.dto';
+import { axiosDetail } from '../common/err.util';
 import { MatricularAlunoDto } from './dto/matricular-aluno.dto';
 import { AssociarTelefoneDto } from './dto/associar-telefone.dto';
 
@@ -85,8 +86,8 @@ export class IaService {
   async criarProspectivo(dto: CriarProspectivoDto) {
     try {
       return await this.sophia.criarCliente(dto);
-    } catch (err: any) {
-      const sophiaError = err?.response?.data ?? err?.response?.status ?? err.message;
+    } catch (err: unknown) {
+      const sophiaError = axiosDetail(err);
       this.logger.error(`criarProspectivo falhou: ${JSON.stringify(sophiaError)}`);
       throw { sophiaError, message: 'Sophia recusou a criação do cliente' };
     }

@@ -3,6 +3,7 @@ import { Cron } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { errMsg } from '../common/err.util';
 import * as QRCode from 'qrcode';
 import { FinanceiroService } from '../financeiro/financeiro.service';
 import { EmailService } from './email.service';
@@ -156,15 +157,15 @@ export class EmailJobService {
           );
           log.enviado = true;
           totalEnviados++;
-        } catch (err: any) {
-          log.erro = err.message;
+        } catch (err: unknown) {
+          log.erro = errMsg(err);
           totalErros++;
-          this.logger.error(`Erro ao enviar email para ${cliente.emailResponsavel}: ${err.message}`);
+          this.logger.error(`Erro ao enviar email para ${cliente.emailResponsavel}: ${errMsg(err)}`);
         }
 
         await this.emailLogRepo.save(log);
-      } catch (err: any) {
-        this.logger.error(`Erro ao processar lançamento ${lancamento.id}: ${err.message}`);
+      } catch (err: unknown) {
+        this.logger.error(`Erro ao processar lançamento ${lancamento.id}: ${errMsg(err)}`);
       }
     }
 

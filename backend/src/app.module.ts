@@ -52,6 +52,7 @@ import { MatriculaCache } from './matriculas/entities/matricula-cache.entity';
         ],
         synchronize: false,
         ssl: { rejectUnauthorized: false },
+        extra: { max: 10, idleTimeoutMillis: 30000, connectionTimeoutMillis: 5000 },
       }),
     }),
     SophiaModule,

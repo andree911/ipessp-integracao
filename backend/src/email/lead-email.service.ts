@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Cron } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
+import { errMsg } from '../common/err.util';
 import { EmailService } from './email.service';
 import { EmailLog } from './entities/email-log.entity';
 import { Lead } from '../leads/entities/lead.entity';
@@ -41,9 +42,9 @@ export class LeadEmailService {
       await this.emailService.enviar(lead.email, 'Bem-vindo(a) ao IPESSP — seu futuro começa aqui!', html);
       await this.logRepo.save({ codigoLancamento: '', leadId: lead.id, tipo: 'lead_boas_vindas', destinatario: lead.email, enviado: true });
       this.logger.log(`Boas-vindas enviado para lead #${lead.id} (${lead.email})`);
-    } catch (err: any) {
-      await this.logRepo.save({ codigoLancamento: '', leadId: lead.id, tipo: 'lead_boas_vindas', destinatario: lead.email, enviado: false, erro: err.message });
-      this.logger.warn(`Erro ao enviar boas-vindas para lead #${lead.id}: ${err.message}`);
+    } catch (err: unknown) {
+      await this.logRepo.save({ codigoLancamento: '', leadId: lead.id, tipo: 'lead_boas_vindas', destinatario: lead.email, enviado: false, erro: errMsg(err) });
+      this.logger.warn(`Erro ao enviar boas-vindas para lead #${lead.id}: ${errMsg(err)}`);
     }
   }
 
@@ -70,8 +71,8 @@ export class LeadEmailService {
         await this.emailService.enviar(lead.email!, 'Ainda pensando? Podemos ajudar — IPESSP', html);
         await this.logRepo.save({ codigoLancamento: '', leadId: lead.id, tipo: 'lead_followup', destinatario: lead.email!, enviado: true });
         this.logger.log(`Follow-up enviado para lead #${lead.id}`);
-      } catch (err: any) {
-        await this.logRepo.save({ codigoLancamento: '', leadId: lead.id, tipo: 'lead_followup', destinatario: lead.email!, enviado: false, erro: err.message });
+      } catch (err: unknown) {
+        await this.logRepo.save({ codigoLancamento: '', leadId: lead.id, tipo: 'lead_followup', destinatario: lead.email!, enviado: false, erro: errMsg(err) });
       }
     }
 
@@ -94,8 +95,8 @@ export class LeadEmailService {
         await this.emailService.enviar(lead.email!, 'Última chamada: inscrições abertas no IPESSP', html);
         await this.logRepo.save({ codigoLancamento: '', leadId: lead.id, tipo: 'lead_cta', destinatario: lead.email!, enviado: true });
         this.logger.log(`CTA enviado para lead #${lead.id}`);
-      } catch (err: any) {
-        await this.logRepo.save({ codigoLancamento: '', leadId: lead.id, tipo: 'lead_cta', destinatario: lead.email!, enviado: false, erro: err.message });
+      } catch (err: unknown) {
+        await this.logRepo.save({ codigoLancamento: '', leadId: lead.id, tipo: 'lead_cta', destinatario: lead.email!, enviado: false, erro: errMsg(err) });
       }
     }
   }

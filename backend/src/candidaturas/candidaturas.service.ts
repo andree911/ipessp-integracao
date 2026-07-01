@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { createClient } from '@supabase/supabase-js';
+import { errMsg } from '../common/err.util';
 import { EmailService } from '../email/email.service';
 import { Candidatura } from './entities/candidatura.entity';
 import { CandidaturaDto } from './dto/candidatura.dto';
@@ -95,8 +96,8 @@ export class CandidaturasService {
       } else {
         await this.emailService.enviar(para, assunto, html);
       }
-    } catch (err: any) {
-      this.logger.warn(`Falha ao notificar candidatura: ${err.message}`);
+    } catch (err: unknown) {
+      this.logger.warn(`Falha ao notificar candidatura: ${errMsg(err)}`);
     }
   }
 }

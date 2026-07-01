@@ -20,7 +20,7 @@ export interface PendenciaFinanceira {
 export interface FinanceiroCliente {
   nomeAluno: string;
   nomeResponsavel: string;
-  emailResponsavel: string;
+  emailResponsavel: string | null;
   ra?: string;
   pendencias: PendenciaFinanceira[];
 }
@@ -49,7 +49,7 @@ export class FinanceiroService {
     const pendencias: PendenciaFinanceira[] = [];
     for (const cliente of clientes) {
       const lancamentos = await this.lancamentoRepo.find({
-        where: { codigoCliente: cliente.id, recebido: 0 },
+        where: { codigoCliente: cliente.id, recebido: false },
       });
       for (const l of lancamentos) {
         const venc = parseDateBR(l.dataVencimento);
@@ -80,7 +80,7 @@ export class FinanceiroService {
   }
 
   async getLancamentosPendentes(): Promise<{ cliente: ClienteCache; lancamento: LancamentoCache }[]> {
-    const lancamentos = await this.lancamentoRepo.find({ where: { recebido: 0 } });
+    const lancamentos = await this.lancamentoRepo.find({ where: { recebido: false } });
     if (lancamentos.length === 0) return [];
     const ids = [...new Set(lancamentos.map(l => l.codigoCliente))];
     const clientes = await this.clienteRepo.findBy({ id: In(ids) });
@@ -114,14 +114,14 @@ export class FinanceiroService {
   async marcarRecebido(codigoSophia: number, codigoCliente: number): Promise<void> {
     await this.lancamentoRepo.update(
       { codigoSophia, codigoCliente },
-      { recebido: 1 },
+      { recebido: true },
     );
   }
 
   async stats(): Promise<{ clientes: number; lancamentosPendentes: number; lancamentosTotal: number }> {
     const [clientes, lancamentosPendentes, lancamentosTotal] = await Promise.all([
       this.clienteRepo.count(),
-      this.lancamentoRepo.count({ where: { recebido: 0 } }),
+      this.lancamentoRepo.count({ where: { recebido: false } }),
       this.lancamentoRepo.count(),
     ]);
     return { clientes, lancamentosPendentes, lancamentosTotal };

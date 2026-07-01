@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { EmailService } from '../email/email.service';
+import { errMsg } from '../common/err.util';
 import { MensagemContato } from './entities/mensagem-contato.entity';
 import { Manifestacao } from './entities/manifestacao.entity';
 import { SolicitacaoEvento } from './entities/solicitacao-evento.entity';
@@ -118,8 +119,8 @@ export class FormulariosService {
           <p style="font-size:11px;color:#999;">Enviado automaticamente pelo sistema ${this.nomeEscola}</p>
         </body></html>`,
       );
-    } catch (err: any) {
-      this.logger.warn(`Falha ao notificar por email (${assunto}): ${err.message}`);
+    } catch (err: unknown) {
+      this.logger.warn(`Falha ao notificar por email (${assunto}): ${errMsg(err)}`);
     }
   }
 }

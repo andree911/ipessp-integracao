@@ -6,6 +6,7 @@ import { EmailJobService } from './email-job.service';
 import { EmailService } from './email.service';
 import { EmailLog } from './entities/email-log.entity';
 import { templateLembrete } from './templates/email.templates';
+import { errMsg } from '../common/err.util';
 
 @Controller('email')
 export class EmailController {
@@ -59,10 +60,11 @@ export class EmailController {
     try {
       const resultado = await this.jobService.previewPorCpf(cpf, para);
       return { ok: true, ...resultado };
-    } catch (err: any) {
-      if (err.message?.includes('não encontrado na cache')) throw new NotFoundException(err.message);
-      if (err.message?.includes('não possui lançamentos')) throw new NotFoundException(err.message);
-      throw new InternalServerErrorException(err.message);
+    } catch (err: unknown) {
+      const msg = errMsg(err);
+      if (msg.includes('não encontrado na cache')) throw new NotFoundException(msg);
+      if (msg.includes('não possui lançamentos')) throw new NotFoundException(msg);
+      throw new InternalServerErrorException(msg);
     }
   }
 
@@ -76,9 +78,9 @@ export class EmailController {
     try {
       const resultado = await this.jobService.previewPorLancamento(codigoLancamento, para);
       return { ok: true, ...resultado };
-    } catch (err: any) {
-      if (err.status === 404) throw err;
-      throw new InternalServerErrorException(err.message);
+    } catch (err: unknown) {
+      if ((err as { status?: number }).status === 404) throw err;
+      throw new InternalServerErrorException(errMsg(err));
     }
   }
 

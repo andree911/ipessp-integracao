@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { FinanceiroService } from './financeiro.service';
+import { errMsg } from '../common/err.util';
 
 export interface ResultadoImportacao {
   clientesImportados: number;
@@ -64,19 +65,19 @@ export class ImportacaoService {
               descricao: lanc.descricao,
               valorPrevisto: lanc.valorPrevisto,
               dataVencimento: lanc.dataVencimento.substring(0, 10),
-              recebido: lanc.recebido,
+              recebido: lanc.recebido > 0,
               linhaDigitavel: lanc.linhaDigitavel,
               urlBoleto: lanc.urlBoleto,
               codigoPix: lanc.codigoPix,
               competencia: lanc.competencia,
             });
             lancamentosImportados++;
-          } catch (err: any) {
-            erros.push(`Lançamento ${lanc.codigoSophia} do cliente ${reg.codigoSophia}: ${err.message}`);
+          } catch (err: unknown) {
+            erros.push(`Lançamento ${lanc.codigoSophia} do cliente ${reg.codigoSophia}: ${errMsg(err)}`);
           }
         }
-      } catch (err: any) {
-        erros.push(`Cliente ${reg.codigoSophia}: ${err.message}`);
+      } catch (err: unknown) {
+        erros.push(`Cliente ${reg.codigoSophia}: ${errMsg(err)}`);
       }
     }
 

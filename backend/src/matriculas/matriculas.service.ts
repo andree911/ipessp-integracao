@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { EmailService } from '../email/email.service';
+import { errMsg } from '../common/err.util';
 import { WhatsAppService } from '../email/whatsapp.service';
 import { MercadoPagoService } from '../mercadopago/mercadopago.service';
 import { MatriculaCache } from './entities/matricula-cache.entity';
@@ -48,8 +49,8 @@ export class MatriculasService {
       linkSandbox = mpResult.linkSandbox;
       preferenceId = mpResult.preferenceId;
       this.logger.log(`Preferência MP criada: ${preferenceId} ref=${externalReference}`);
-    } catch (err: any) {
-      this.logger.error(`MP criarPreferencia falhou: ${err.message}`);
+    } catch (err: unknown) {
+      this.logger.error(`MP criarPreferencia falhou: ${errMsg(err)}`);
       throw new BadRequestException('Não foi possível gerar o link de pagamento. Tente novamente.');
     }
 
@@ -79,8 +80,8 @@ export class MatriculasService {
         desconto: dto.planoPagamento.desconto,
         linkPagamento,
       }));
-    } catch (err: any) {
-      this.logger.warn(`Falha ao salvar MatriculaCache (não-fatal): ${err.message}`);
+    } catch (err: unknown) {
+      this.logger.warn(`Falha ao salvar MatriculaCache (não-fatal): ${errMsg(err)}`);
     }
 
     // 3. Envia link de pagamento ao aluno/responsável via WhatsApp
@@ -103,8 +104,8 @@ export class MatriculasService {
       try {
         await this.whatsapp.enviarTexto(pagador.telefone, msg);
         this.logger.log(`WhatsApp com link MP enviado para ${pagador.telefone}`);
-      } catch (err: any) {
-        this.logger.warn(`WhatsApp para aluno/responsável falhou (não-fatal): ${err.message}`);
+      } catch (err: unknown) {
+        this.logger.warn(`WhatsApp para aluno/responsável falhou (não-fatal): ${errMsg(err)}`);
       }
     }
 
@@ -130,8 +131,8 @@ export class MatriculasService {
           html,
         );
         this.logger.log(`Email com link MP enviado para ${pagador.email}`);
-      } catch (err: any) {
-        this.logger.warn(`Email para aluno/responsável falhou (não-fatal): ${err.message}`);
+      } catch (err: unknown) {
+        this.logger.warn(`Email para aluno/responsável falhou (não-fatal): ${errMsg(err)}`);
       }
     }
 

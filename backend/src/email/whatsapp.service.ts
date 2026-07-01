@@ -25,10 +25,14 @@ export class WhatsAppService {
     const url = `https://api.z-api.io/instances/${instanceId}/token/${token}/send-text`;
     const phone = telefone.replace(/\D/g, '');
 
-    await firstValueFrom(
-      this.http.post(url, { phone, message: mensagem }, {
-        headers: { 'Client-Token': clientToken ?? '' },
-      }),
-    );
+    try {
+      await firstValueFrom(
+        this.http.post(url, { phone, message: mensagem }, {
+          headers: { 'Client-Token': clientToken ?? '' },
+        }),
+      );
+    } catch (err) {
+      this.logger.warn(`WhatsApp: falha ao enviar para ${phone} — ${(err as Error).message}`);
+    }
   }
 }

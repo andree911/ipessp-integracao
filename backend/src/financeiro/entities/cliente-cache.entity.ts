@@ -6,26 +6,26 @@ export class ClienteCache {
   id: number;
 
   @Column({ nullable: true })
-  codigoSophia: number;
+  codigoSophia: number | null;
 
   @Index()
   @Column({ nullable: true })
-  cpf: string;
+  cpf: string | null;
 
   @Column()
   nomeAluno: string;
 
   @Column({ nullable: true })
-  nomeResponsavel: string;
+  nomeResponsavel: string | null;
 
   @Column({ nullable: true })
-  emailResponsavel: string;
+  emailResponsavel: string | null;
 
   @Column({ nullable: true })
-  telefoneResponsavel: string;
+  telefoneResponsavel: string | null;
 
   @Column({ nullable: true })
-  ra: string;
+  ra: string | null;
 
   @UpdateDateColumn()
   atualizadoEm: Date;

@@ -3,6 +3,7 @@ import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository, Between, FindOptionsWhere, LessThanOrEqual, In } from 'typeorm';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
+import { errMsg } from '../common/err.util';
 import { firstValueFrom } from 'rxjs';
 import { Lead } from './entities/lead.entity';
 import { LeadHistorico } from './entities/lead-historico.entity';
@@ -302,9 +303,9 @@ export class LeadsService {
         await firstValueFrom(this.http.post(url, lead));
         this.logger.log(`Webhook n8n disparado para lead #${lead.id}`);
         return;
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (tentativa === MAX_TENTATIVAS) {
-          this.logger.warn(`Falha no webhook n8n para lead #${lead.id} após ${MAX_TENTATIVAS} tentativas: ${err.message}`);
+          this.logger.warn(`Falha no webhook n8n para lead #${lead.id} após ${MAX_TENTATIVAS} tentativas: ${errMsg(err)}`);
         } else {
           await new Promise((r) => setTimeout(r, tentativa * 1000));
         }
