@@ -6,7 +6,7 @@ export class LancamentoCache {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, type: 'integer' })
   codigoSophia: number | null;
 
   @Index()
