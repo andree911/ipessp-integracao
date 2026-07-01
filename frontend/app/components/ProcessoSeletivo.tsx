@@ -26,7 +26,9 @@ export default function ProcessoSeletivo() {
         </div>
 
         <a
-          href="#"
+          href={process.env.NEXT_PUBLIC_EDITAL_URL ?? '#pre-inscricao'}
+          target="_blank"
+          rel="noopener noreferrer"
           className="btn btn-white flex-shrink-0 text-sm py-2.5 px-6"
           style={{ color: 'var(--brand-700)' }}
         >

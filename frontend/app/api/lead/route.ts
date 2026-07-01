@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const BACKEND = process.env.API_URL ?? 'http://localhost:3001';
-const TOKEN = process.env.LEADS_API_KEY ?? '';
 
 export async function POST(req: NextRequest) {
+  const token = process.env.LEADS_API_KEY;
+  if (!token) {
+    return NextResponse.json({ erro: 'Serviço indisponível' }, { status: 503 });
+  }
   const body = await req.json();
   const res = await fetch(`${BACKEND}/v1/leads`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${TOKEN}`,
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(body),
   });

@@ -9,28 +9,28 @@ const categories = [
     tag: 'Graduação',
     description: 'Diagnóstico clínico e laboratorial de excelência',
     image: 'https://images.unsplash.com/photo-1579154204601-01588f351e67?auto=format&fit=crop&w=800&q=90',
-    href: '#pre-inscricao',
+    href: '/graduacao',
   },
   {
     label: 'Pós-Graduação & MBA',
     tag: '54 cursos disponíveis',
     description: 'Cardiologia, Estética, Enfermagem, Farmácia e muito mais',
     image: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=800&q=90',
-    href: '#pre-inscricao',
+    href: '/pos-graduacao',
   },
   {
     label: 'Estética e Cosmética',
     tag: 'Graduação',
     description: 'Harmonização Orofacial, Biomedicina Estética e Enfermagem Estética',
     image: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=800&q=90',
-    href: '#pre-inscricao',
+    href: '/graduacao',
   },
   {
     label: 'Cursos Livres & EAD',
     tag: 'Capacitação · Atualização',
     description: 'Modalidades presenciais, online ao vivo e 40% EAD',
     image: 'https://images.unsplash.com/photo-1587825140708-dfaf72ae4b04?auto=format&fit=crop&w=800&q=90',
-    href: '#pre-inscricao',
+    href: '/cursos-livres',
   },
 ];
 

@@ -3,6 +3,31 @@
 import { useState } from 'react';
 import Link from 'next/link';
 
+// ── utilitários CPF ─────────────────────────────────────────────────────────
+
+function maskCPF(raw: string): string {
+  const d = raw.replace(/\D/g, '').slice(0, 11);
+  if (d.length > 9) return `${d.slice(0,3)}.${d.slice(3,6)}.${d.slice(6,9)}-${d.slice(9)}`;
+  if (d.length > 6) return `${d.slice(0,3)}.${d.slice(3,6)}.${d.slice(6)}`;
+  if (d.length > 3) return `${d.slice(0,3)}.${d.slice(3)}`;
+  return d;
+}
+
+function validarCPF(cpf: string): boolean {
+  const d = cpf.replace(/\D/g, '');
+  if (d.length !== 11 || /^(\d)\1+$/.test(d)) return false;
+  let s = 0;
+  for (let i = 0; i < 9; i++) s += +d[i] * (10 - i);
+  let r = (s * 10) % 11;
+  if (r >= 10) r = 0;
+  if (r !== +d[9]) return false;
+  s = 0;
+  for (let i = 0; i < 10; i++) s += +d[i] * (11 - i);
+  r = (s * 10) % 11;
+  if (r >= 10) r = 0;
+  return r === +d[10];
+}
+
 // ── helpers de estilo ────────────────────────────────────────────────────────
 
 const inputCls = 'w-full px-4 py-3 rounded-xl border text-sm outline-none transition-all';
@@ -76,11 +101,15 @@ export default function MatriculaPage() {
     const e: Record<string, string> = {};
     if (step === 0) {
       if (!aluno.nome.trim()) e.nome = 'Nome é obrigatório.';
-      if (!aluno.cpf.replace(/\D/g, '')) e.cpf = 'CPF é obrigatório.';
+      const alunoDigits = aluno.cpf.replace(/\D/g, '');
+      if (!alunoDigits) e.cpf = 'CPF é obrigatório.';
+      else if (!validarCPF(alunoDigits)) e.cpf = 'CPF inválido. Verifique os dígitos.';
     }
     if (step === 1 && temResponsavel) {
       if (!resp.nome.trim()) e.respNome = 'Nome do responsável é obrigatório.';
-      if (!resp.cpf.replace(/\D/g, '')) e.respCpf = 'CPF do responsável é obrigatório.';
+      const respDigits = resp.cpf.replace(/\D/g, '');
+      if (!respDigits) e.respCpf = 'CPF do responsável é obrigatório.';
+      else if (!validarCPF(respDigits)) e.respCpf = 'CPF do responsável inválido. Verifique os dígitos.';
     }
     if (step === 2) {
       if (!curso.curso.trim()) e.curso = 'Curso é obrigatório.';
@@ -162,7 +191,7 @@ export default function MatriculaPage() {
   // ── tela de sucesso ────────────────────────────────────────────────────────
 
   if (result) {
-    const link = result.pagamento?.linkSandbox || result.pagamento?.linkPagamento;
+    const link = result.pagamento?.linkPagamento || result.pagamento?.linkSandbox;
     return (
       <main className="min-h-screen flex items-center justify-center p-4" style={{ background: 'var(--surface-alt)' }}>
         <div className="w-full max-w-lg bg-white rounded-2xl shadow-sm p-8 text-center">
@@ -246,7 +275,7 @@ export default function MatriculaPage() {
               <Input value={aluno.nome} onChange={set(setAluno)('nome')} placeholder="Nome do aluno" />
             </Field>
             <Field label="CPF *" error={errors.cpf}>
-              <Input value={aluno.cpf} onChange={set(setAluno)('cpf')} placeholder="000.000.000-00" />
+              <Input value={aluno.cpf} onChange={e => setAluno(prev => ({ ...prev, cpf: maskCPF(e.target.value) }))} placeholder="000.000.000-00" />
             </Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="E-mail">
@@ -286,7 +315,7 @@ export default function MatriculaPage() {
                   <Input value={resp.nome} onChange={set(setResp as any)('nome')} placeholder="Nome do responsável" />
                 </Field>
                 <Field label="CPF *" error={errors.respCpf}>
-                  <Input value={resp.cpf} onChange={set(setResp as any)('cpf')} placeholder="000.000.000-00" />
+                  <Input value={resp.cpf} onChange={e => setResp(prev => ({ ...prev, cpf: maskCPF(e.target.value) }))} placeholder="000.000.000-00" />
                 </Field>
                 <div className="grid grid-cols-2 gap-3">
                   <Field label="E-mail">

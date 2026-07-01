@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import WhatsAppFloat from '../components/WhatsAppFloat';
@@ -73,6 +74,9 @@ const categoriaCor: Record<string, { bg: string; color: string }> = {
 const todasCategorias = ['Todos', 'Carreira', 'Saúde', 'Novidades', 'Pós-Graduação'];
 
 export default function Blog() {
+  const [categoriaAtiva, setCategoriaAtiva] = useState('Todos');
+  const postsFiltrados = categoriaAtiva === 'Todos' ? posts : posts.filter(p => p.categoria === categoriaAtiva);
+
   return (
     <>
       <Header />
@@ -94,27 +98,31 @@ export default function Blog() {
         <section className="section-gap" style={{ background: 'var(--surface)' }}>
           <div className="container-site">
             <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '48px' }}>
-              {todasCategorias.map((cat) => (
-                <span
-                  key={cat}
-                  style={{
-                    background: cat === 'Todos' ? 'var(--brand-600)' : 'var(--surface-alt)',
-                    color: cat === 'Todos' ? 'white' : 'var(--ink-700)',
-                    border: cat === 'Todos' ? '2px solid var(--brand-600)' : '2px solid var(--line)',
-                    borderRadius: 'var(--radius-pill)',
-                    padding: '8px 20px',
-                    fontSize: 'var(--fs-sm)',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                  }}
-                >
-                  {cat}
-                </span>
-              ))}
+              {todasCategorias.map((cat) => {
+                const ativo = cat === categoriaAtiva;
+                return (
+                  <button
+                    key={cat}
+                    onClick={() => setCategoriaAtiva(cat)}
+                    style={{
+                      background: ativo ? 'var(--brand-600)' : 'var(--surface-alt)',
+                      color: ativo ? 'white' : 'var(--ink-700)',
+                      border: ativo ? '2px solid var(--brand-600)' : '2px solid var(--line)',
+                      borderRadius: 'var(--radius-pill)',
+                      padding: '8px 20px',
+                      fontSize: 'var(--fs-sm)',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {cat}
+                  </button>
+                );
+              })}
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '28px' }}>
-              {posts.map((post) => {
+              {postsFiltrados.map((post) => {
                 const cor = categoriaCor[post.categoria] ?? { bg: 'var(--surface-alt)', color: 'var(--ink-700)' };
                 return (
                   <article
@@ -157,15 +165,21 @@ export default function Blog() {
                       <p style={{ color: 'var(--ink-700)', fontSize: 'var(--fs-sm)', lineHeight: 'var(--lh-body)', flex: 1 }}>
                         {post.resumo}
                       </p>
-                      <a
-                        href={post.slug}
-                        style={{ color: 'var(--brand-600)', fontSize: 'var(--fs-sm)', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px', marginTop: 'auto' }}
-                      >
-                        Leia mais
-                        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                          <path d="M5 12h14M12 5l7 7-7 7"/>
-                        </svg>
-                      </a>
+                      {post.slug !== '#' ? (
+                        <a
+                          href={post.slug}
+                          style={{ color: 'var(--brand-600)', fontSize: 'var(--fs-sm)', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px', marginTop: 'auto' }}
+                        >
+                          Leia mais
+                          <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                          </svg>
+                        </a>
+                      ) : (
+                        <span style={{ color: 'var(--ink-400)', fontSize: 'var(--fs-sm)', fontWeight: 600, marginTop: 'auto' }}>
+                          Em breve
+                        </span>
+                      )}
                     </div>
                   </article>
                 );
