@@ -342,7 +342,7 @@ function avisoSeguranca(data: EmailData): string {
         <p class="dm-t2" style="margin:0 0 6px;font-size:13px;color:#555;line-height:1.7;font-family:Arial,sans-serif;">
           Fique atento: a fatura do ${data.nomeEscola} sempre chegar&#225; pelo remetente<br>
           <a href="mailto:${emailDisplay}"
-            style="color:#222;font-weight:bold;text-decoration:none;">${emailDisplay}</a>
+            style="color:#ffffff;font-weight:bold;text-decoration:none;">${emailDisplay}</a>
         </p>
         <p class="dm-t3" style="margin:0;font-size:12px;color:#777;line-height:1.6;font-family:Arial,sans-serif;">
           Nunca solicitamos dados banc&#225;rios ou senhas por e-mail.
@@ -395,7 +395,7 @@ function redesSociais(data: EmailData): string {
       ${redes.map(({ cor, gradient, vmlCor2, letra, fs, inset, nome, url }) => `
       <td style="padding:0 8px;text-align:center;">
         <a href="${url}" target="_blank" style="text-decoration:none;">
-          <!--[if mso]><v:oval xmlns:v="urn:schemas-microsoft-com:vml" style="width:40px;height:40px;" stroked="false"><v:fill type="${gradient ? 'gradient' : 'solid'}" color="${cor}"${gradient ? ` color2="${vmlCor2 ?? cor}" angle="135"` : ''}/><v:textbox inset="0,${inset}px,0,0" style="mso-fit-shape-to-text:false;"><center><span style="font-family:Arial;font-size:${fs}px;font-weight:bold;color:#000000;">${letra}</span></center></v:textbox></v:oval><![endif]-->
+          <!--[if mso]><v:oval xmlns:v="urn:schemas-microsoft-com:vml" style="width:40px;height:40px;" stroked="false"><v:fill type="${gradient ? 'gradient' : 'solid'}" color="${cor}"${gradient ? ` color2="${vmlCor2 ?? cor}" angle="135"` : ''}/><v:textbox inset="0,${inset}px,0,0" style="mso-fit-shape-to-text:false;"><center><span style="font-family:Arial;font-size:${fs}px;font-weight:bold;color:#222;">${letra}</span></center></v:textbox></v:oval><![endif]-->
           <!--[if !mso]><!--><span style="display:inline-block;width:40px;height:40px;${gradient ? `background:${gradient}` : `background-color:${cor}`};border-radius:50%;text-align:center;line-height:40px;font-size:${fs}px;font-weight:bold;color:#000000;font-family:Arial,sans-serif;">${letra}</span><!--<![endif]-->
         </a>
         <p style="margin:4px 0 0;font-size:9px;color:rgba(255,255,255,0.6);font-family:Arial,sans-serif;">${nome}</p>
