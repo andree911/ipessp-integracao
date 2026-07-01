@@ -342,7 +342,7 @@ function avisoSeguranca(data: EmailData): string {
         <p class="dm-t2" style="margin:0 0 6px;font-size:13px;color:#555;line-height:1.7;font-family:Arial,sans-serif;">
           Fique atento: a fatura do ${data.nomeEscola} sempre chegar&#225; pelo remetente<br>
           <a href="mailto:${emailDisplay}"
-            style="color:#222;font-weight:bold;text-decoration:none;">${emailDisplay}</a>
+            style="color:${COR};font-weight:bold;text-decoration:none;">${emailDisplay}</a>
         </p>
         <p class="dm-t3" style="margin:0;font-size:12px;color:#777;line-height:1.6;font-family:Arial,sans-serif;">
           Nunca solicitamos dados banc&#225;rios ou senhas por e-mail.
