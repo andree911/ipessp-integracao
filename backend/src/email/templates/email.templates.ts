@@ -454,7 +454,6 @@ function base(subject: string, introTitulo: string, descParagrafo: string, nota:
   <!--[if gte mso 9]><xml><o:OfficeDocumentSettings><o:AllowPNG/><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml><![endif]-->
   <title>${subject}</title>
   <style>
-    :root { color-scheme: light dark; }
     body { margin: 0 !important; padding: 0 !important; background-color: #f0f2f5 !important; }
     table { border-collapse: collapse; }
     /* ── Mobile: empilha colunas abaixo de 480px ──────────────────── */
@@ -469,19 +468,6 @@ function base(subject: string, introTitulo: string, descParagrafo: string, nota:
       /* Header: logo à esquerda, contatos à direita */
       .hdr-logo { display: block !important; width: 100% !important; text-align: left !important; padding-bottom: 12px !important; }
       .hdr-info { display: block !important; width: 100% !important; text-align: right !important; }
-    }
-    /* ── Dark mode ─────────────────────────────────────────────────── */
-    @media (prefers-color-scheme: dark) {
-      .dm-bg    { background-color: #111827 !important; }
-      .dm-card  { background-color: #1f2937 !important; }
-      .dm-inset { background-color: #283447 !important; }
-      .dm-bdr   { border-bottom-color: #374151 !important; }
-      .dm-bdr-a { border-color: #374151 !important; }
-      .dm-t1    { color: #f9fafb !important; }
-      .dm-t2    { color: #d1d5db !important; }
-      .dm-t3    { color: #9ca3af !important; }
-      /* Logo box: mantém fundo branco mesmo no dark mode (é parte do design da marca) */
-      .logo-box { background-color: #ffffff !important; }
     }
   </style>
 </head>
