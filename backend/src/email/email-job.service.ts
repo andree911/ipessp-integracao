@@ -78,6 +78,8 @@ export class EmailJobService {
       linkedinUrl:    this.config.get<string>('email.linkedinUrl') || undefined,
       cnpj:           this.config.get<string>('email.cnpj') || undefined,
       endereco:       this.config.get<string>('email.endereco') || undefined,
+      linkPortalAluno: this.config.get<string>('email.linkPortalAluno') || undefined,
+      linkSegundaVia:  this.config.get<string>('email.linkPortalAluno') || undefined,
     };
   }
 

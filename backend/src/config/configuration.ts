@@ -46,6 +46,7 @@ export default () => ({
     cnpj: process.env.ESCOLA_CNPJ ?? '',
     endereco: process.env.ESCOLA_ENDERECO ?? '',
     emailNotificacoes: process.env.ESCOLA_EMAIL_NOTIFICACOES ?? '',
+    linkPortalAluno: process.env.EMAIL_PORTAL_ALUNO_URL ?? '',
   },
   n8n: {
     leadsWebhookUrl: process.env.N8N_LEADS_WEBHOOK_URL ?? '',
