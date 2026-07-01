@@ -224,8 +224,8 @@ function secaoPix(data: EmailData): string {
               <table width="100%" cellpadding="0" cellspacing="0" border="0">
                 <tr>
                   <td bgcolor="${COR_DARK}" style="background-color:${COR_DARK};border-radius:8px;padding:14px 16px;">
-                    <p style="margin:0 0 6px;font-size:10px;color:#ffb3be;font-weight:bold;text-transform:uppercase;letter-spacing:1px;font-family:Arial,sans-serif;">Pix copia e cola</p>
-                    <p style="margin:0;font-size:12px;color:#ffffff;font-family:'Courier New',Courier,monospace;word-break:break-all;line-height:1.8;">${data.codigoPix}</p>
+                    <p style="margin:0 0 6px;font-size:10px;color:#ffb3be;font-weight:bold;text-transform:uppercase;letter-spacing:1px;font-family:Arial,sans-serif;">Pix copia e cola <span style="font-weight:normal;letter-spacing:0;">(clique para selecionar)</span></p>
+                    <p style="margin:0;font-size:12px;color:#ffffff;font-family:'Courier New',Courier,monospace;word-break:break-all;line-height:1.8;cursor:pointer;-webkit-user-select:all;-moz-user-select:all;user-select:all;">${data.codigoPix}</p>
                   </td>
                 </tr>
               </table>
@@ -252,8 +252,8 @@ function secaoBoleto(codigo: string): string {
         <table width="100%" cellpadding="0" cellspacing="0" border="0">
           <tr>
             <td bgcolor="${COR_DARK}" style="background-color:${COR_DARK};border-radius:8px;padding:14px 16px;">
-              <p style="margin:0 0 6px;font-size:10px;color:#ffb3be;font-weight:bold;text-transform:uppercase;letter-spacing:1px;font-family:Arial,sans-serif;">Linha Digit&#225;vel</p>
-              <p style="margin:0;font-size:13px;color:#ffffff;font-family:'Courier New',Courier,monospace;word-break:break-all;line-height:1.9;">${codigo}</p>
+              <p style="margin:0 0 6px;font-size:10px;color:#ffb3be;font-weight:bold;text-transform:uppercase;letter-spacing:1px;font-family:Arial,sans-serif;">Linha Digit&#225;vel <span style="font-weight:normal;letter-spacing:0;">(clique para selecionar)</span></p>
+              <p style="margin:0;font-size:13px;color:#ffffff;font-family:'Courier New',Courier,monospace;word-break:break-all;line-height:1.9;cursor:pointer;-webkit-user-select:all;-moz-user-select:all;user-select:all;">${codigo}</p>
             </td>
           </tr>
         </table>
