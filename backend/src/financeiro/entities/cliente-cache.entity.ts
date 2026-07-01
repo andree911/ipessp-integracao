@@ -9,22 +9,22 @@ export class ClienteCache {
   codigoSophia: number | null;
 
   @Index()
-  @Column({ nullable: true })
+  @Column({ nullable: true, type: 'varchar' })
   cpf: string | null;
 
   @Column()
   nomeAluno: string;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, type: 'varchar' })
   nomeResponsavel: string | null;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, type: 'varchar' })
   emailResponsavel: string | null;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, type: 'varchar' })
   telefoneResponsavel: string | null;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, type: 'varchar' })
   ra: string | null;
 
   @UpdateDateColumn()

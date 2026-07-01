@@ -13,7 +13,7 @@ export class LancamentoCache {
   @Column()
   codigoCliente: number;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, type: 'varchar' })
   descricao: string | null;
 
   @Column('decimal', { precision: 10, scale: 2 })
@@ -29,16 +29,16 @@ export class LancamentoCache {
   })
   recebido: boolean;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, type: 'varchar' })
   linhaDigitavel: string | null;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, type: 'varchar' })
   urlBoleto: string | null;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, type: 'varchar' })
   codigoPix: string | null;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, type: 'varchar' })
   competencia: string | null;
 
   @UpdateDateColumn()

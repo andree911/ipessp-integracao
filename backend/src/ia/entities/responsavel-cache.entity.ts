@@ -22,7 +22,7 @@ export class ResponsavelCache {
   @Column()
   nomeResponsavel: string;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, type: 'varchar' })
   email: string | null;
 
   @UpdateDateColumn()
