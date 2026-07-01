@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import WhatsAppFloat from '../components/WhatsAppFloat';
+import { WHATSAPP_URL } from '@/lib/contato';
 
 const posts = [
   {
@@ -196,7 +197,7 @@ export default function Blog() {
             <p style={{ color: 'var(--ink-700)', maxWidth: '440px', margin: '0 auto 28px', lineHeight: 'var(--lh-body)' }}>
               Siga o IPESSP nas redes sociais e receba conteúdos exclusivos sobre saúde, carreiras e oportunidades de especialização.
             </p>
-            <a href="https://wa.me/5511976922127" target="_blank" rel="noopener noreferrer" className="btn btn-primary">
+            <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="btn btn-primary">
               Seguir no WhatsApp
             </a>
           </div>

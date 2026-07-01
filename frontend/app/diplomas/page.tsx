@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import { FONE_DISPLAY, FONE_TEL } from '@/lib/contato';
 import WhatsAppFloat from '../components/WhatsAppFloat';
 import { apiFetch } from '../lib/api';
 
@@ -364,8 +365,8 @@ export default function Diplomas() {
                 <p style={{ color: 'var(--ink-700)', fontSize: 'var(--fs-sm)' }}>
                   Segunda a Quinta: 8h – 22h | Sexta: 8h – 20h | Sábado e Domingo: 8h – 17h
                 </p>
-                <a href="tel:+5511976922127" style={{ color: 'var(--brand-600)', fontSize: 'var(--fs-sm)', fontWeight: 600, textDecoration: 'none' }}>
-                  (11) 97692-2127
+                <a href={FONE_TEL} style={{ color: 'var(--brand-600)', fontSize: 'var(--fs-sm)', fontWeight: 600, textDecoration: 'none' }}>
+                  {FONE_DISPLAY}
                 </a>
                 <a href="mailto:secretaria@ipessp.edu.br" style={{ color: 'var(--brand-600)', fontSize: 'var(--fs-sm)', fontWeight: 600, textDecoration: 'none' }}>
                   secretaria@ipessp.edu.br

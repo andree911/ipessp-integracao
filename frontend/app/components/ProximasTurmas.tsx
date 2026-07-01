@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef } from 'react';
+import Image from 'next/image';
 
 /* Próximas turmas — conteúdo baseado nos cursos reais do IPESSP */
 const events = [
@@ -136,7 +137,7 @@ export default function ProximasTurmas() {
             >
               {/* Image */}
               <div className="relative h-40 overflow-hidden">
-                <img src={ev.image} alt={ev.title} className="w-full h-full object-cover" />
+                <Image src={ev.image} alt={ev.title} fill className="object-cover" sizes="288px" />
                 <span
                   className="absolute top-3 left-3 text-xs font-semibold px-3 py-1 rounded-full text-white"
                   style={{ background: ev.color }}>

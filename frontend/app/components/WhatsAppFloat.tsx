@@ -1,13 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import { WHATSAPP_MSG } from '@/lib/contato';
 
 export default function WhatsAppFloat() {
   const [hovered, setHovered] = useState(false);
 
   return (
     <a
-      href="https://wa.me/5511976922127?text=Olá!%20Gostaria%20de%20mais%20informações%20sobre%20os%20cursos%20do%20IPESSP."
+      href={WHATSAPP_MSG}
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Fale conosco pelo WhatsApp"

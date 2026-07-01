@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { FONE_DISPLAY } from '@/lib/contato';
 
 /* Cursos reais de ipessp.edu.br organizados por grupo */
 const cursoGroups = [
@@ -134,7 +135,7 @@ export default function CTAFinal() {
       if (!res.ok) throw new Error('Erro ao enviar');
       setSent(true);
     } catch {
-      setErro('Não foi possível enviar. Tente novamente ou ligue para (11) 97692-2127.');
+      setErro(`Não foi possível enviar. Tente novamente ou ligue para ${FONE_DISPLAY}.`);
     } finally {
       setLoading(false);
     }

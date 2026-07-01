@@ -1,6 +1,7 @@
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import WhatsAppFloat from '../components/WhatsAppFloat';
+import { FONE_DISPLAY, FONE_TEL, WHATSAPP_URL, EMAIL_CONTATO, EMAIL_HREF } from '@/lib/contato';
 
 const categorias = [
   {
@@ -125,12 +126,12 @@ export default function DocumentosInstitucionaisPage() {
                 </h3>
                 <p style={{ color: 'var(--brand-700)', fontSize: '0.875rem', lineHeight: '1.6' }}>
                   Para acesso a documentos específicos ou versões anteriores, entre em contato com a secretaria pelo e-mail{' '}
-                  <a href="mailto:marketing@ipessp.edu.br" style={{ fontWeight: 700, textDecoration: 'underline' }}>
-                    marketing@ipessp.edu.br
+                  <a href={EMAIL_HREF} style={{ fontWeight: 700, textDecoration: 'underline' }}>
+                    {EMAIL_CONTATO}
                   </a>{' '}
                   ou pelo telefone{' '}
-                  <a href="tel:+5511976922127" style={{ fontWeight: 700, textDecoration: 'underline' }}>
-                    (11) 97692-2127
+                  <a href={FONE_TEL} style={{ fontWeight: 700, textDecoration: 'underline' }}>
+                    {FONE_DISPLAY}
                   </a>
                   .
                 </p>
@@ -214,17 +215,17 @@ export default function DocumentosInstitucionaisPage() {
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <a
-                  href="mailto:marketing@ipessp.edu.br"
+                  href={EMAIL_HREF}
                   className="btn btn-primary justify-center"
                 >
                   <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
                     <polyline points="22,6 12,13 2,6" />
                   </svg>
-                  marketing@ipessp.edu.br
+                  {EMAIL_CONTATO}
                 </a>
                 <a
-                  href="https://wa.me/5511976922127"
+                  href={WHATSAPP_URL}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn btn-outline justify-center"

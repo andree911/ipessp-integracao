@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import WhatsAppFloat from '../components/WhatsAppFloat';
+import { WHATSAPP_URL } from '@/lib/contato';
 
 const categorias = [
   {
@@ -144,7 +145,7 @@ export default function CursosLivres() {
                     {curso.descricao}
                   </p>
                   <a
-                    href="https://wa.me/5511976922127"
+                    href={WHATSAPP_URL}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="btn btn-primary"
@@ -170,7 +171,7 @@ export default function CursosLivres() {
               Nossos cursos livres são ideais para profissionais que buscam atualização rápida e prática sem abrir mão da qualidade do ensino.
             </p>
             <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
-              <a href="https://wa.me/5511976922127" target="_blank" rel="noopener noreferrer" className="btn btn-primary">
+              <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="btn btn-primary">
                 Falar no WhatsApp
               </a>
               <a href="/fale-conosco" className="btn btn-white">

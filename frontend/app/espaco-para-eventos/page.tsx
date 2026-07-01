@@ -3,6 +3,10 @@
 import { useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import {
+  FONE_DISPLAY, FONE_TEL, WHATSAPP_URL, EMAIL_CONTATO, EMAIL_HREF,
+  ENDERECO_RUA, ENDERECO_BAIRRO, ENDERECO_CEP, MAPS_URL,
+} from '@/lib/contato';
 import WhatsAppFloat from '../components/WhatsAppFloat';
 import { apiFetch } from '../lib/api';
 
@@ -150,10 +154,10 @@ export default function EspacoParaEventos() {
               4.000 m² de infraestrutura moderna no coração de São Paulo para congressos, simpósios, workshops e eventos corporativos na área da saúde.
             </p>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginTop: '28px' }}>
-              <a href="https://wa.me/5511976922127" target="_blank" rel="noopener noreferrer" className="btn btn-primary">
+              <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="btn btn-primary">
                 Solicitar orçamento
               </a>
-              <a href="mailto:marketing@ipessp.edu.br" className="btn btn-white">
+              <a href={EMAIL_HREF} className="btn btn-white">
                 Enviar e-mail
               </a>
             </div>
@@ -275,9 +279,9 @@ export default function EspacoParaEventos() {
                     <div>
                       <p style={{ fontWeight: 700, color: 'var(--ink-900)', fontSize: 'var(--fs-sm)', marginBottom: '4px' }}>Endereço</p>
                       <p style={{ color: 'var(--ink-700)', fontSize: 'var(--fs-sm)', lineHeight: 'var(--lh-body)' }}>
-                        Rua Dona Antônia de Queirós, 333<br />
-                        Consolação — São Paulo/SP<br />
-                        CEP: 01307-012
+                        {ENDERECO_RUA}<br />
+                        {ENDERECO_BAIRRO}<br />
+                        {ENDERECO_CEP}
                       </p>
                     </div>
                   </div>
@@ -290,8 +294,8 @@ export default function EspacoParaEventos() {
                     </div>
                     <div>
                       <p style={{ fontWeight: 700, color: 'var(--ink-900)', fontSize: 'var(--fs-sm)', marginBottom: '4px' }}>Telefone / WhatsApp</p>
-                      <a href="tel:+5511976922127" style={{ color: 'var(--brand-600)', fontSize: 'var(--fs-sm)', fontWeight: 600 }}>
-                        (11) 97692-2127
+                      <a href={FONE_TEL} style={{ color: 'var(--brand-600)', fontSize: 'var(--fs-sm)', fontWeight: 600 }}>
+                        {FONE_DISPLAY}
                       </a>
                     </div>
                   </div>
@@ -305,8 +309,8 @@ export default function EspacoParaEventos() {
                     </div>
                     <div>
                       <p style={{ fontWeight: 700, color: 'var(--ink-900)', fontSize: 'var(--fs-sm)', marginBottom: '4px' }}>E-mail</p>
-                      <a href="mailto:marketing@ipessp.edu.br" style={{ color: 'var(--brand-600)', fontSize: 'var(--fs-sm)', fontWeight: 600 }}>
-                        marketing@ipessp.edu.br
+                      <a href={EMAIL_HREF} style={{ color: 'var(--brand-600)', fontSize: 'var(--fs-sm)', fontWeight: 600 }}>
+                        {EMAIL_CONTATO}
                       </a>
                     </div>
                   </div>
@@ -441,10 +445,10 @@ export default function EspacoParaEventos() {
                 </div>
                 <div>
                   <p style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'white', fontSize: 'var(--fs-h3)', marginBottom: '6px' }}>
-                    Rua Dona Antônia de Queirós, 333
+                    {ENDERECO_RUA}
                   </p>
                   <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 'var(--fs-sm)' }}>
-                    Consolação — São Paulo/SP — CEP: 01307-012
+                    {ENDERECO_BAIRRO} — {ENDERECO_CEP}
                   </p>
                   <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', marginTop: '6px' }}>
                     Próximo ao metrô Consolação (linha 2-verde) e metrô Paulista (linha 4-amarela)
@@ -452,7 +456,7 @@ export default function EspacoParaEventos() {
                 </div>
               </div>
               <a
-                href="https://maps.google.com/?q=Rua+Dona+Antônia+de+Queirós,+333,+Consolação,+São+Paulo"
+                href={MAPS_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn btn-white"

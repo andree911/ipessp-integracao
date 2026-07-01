@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import { EMAIL_CONTATO, EMAIL_HREF } from '@/lib/contato';
 import WhatsAppFloat from '../components/WhatsAppFloat';
 import { apiFetch } from '../lib/api';
 
@@ -296,8 +297,8 @@ export default function TrabalheConoscoPage() {
                 </h2>
                 <p style={{ color: 'var(--ink-500)' }}>
                   Preencha o formulário abaixo ou envie diretamente para{' '}
-                  <a href="mailto:marketing@ipessp.edu.br" style={{ color: 'var(--brand-600)', fontWeight: 600 }}>
-                    marketing@ipessp.edu.br
+                  <a href={EMAIL_HREF} style={{ color: 'var(--brand-600)', fontWeight: 600 }}>
+                    {EMAIL_CONTATO}
                   </a>
                 </p>
               </div>

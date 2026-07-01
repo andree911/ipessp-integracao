@@ -91,9 +91,10 @@ export default function MatriculaPage() {
     pagamento: { linkPagamento: string; linkSandbox: string } | null;
   } | null>(null);
 
-  const set = (setter: typeof setAluno) => (field: string) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-      setter(prev => ({ ...prev, [field]: e.target.value }));
+  const set = <T extends Record<string, string>>(setter: React.Dispatch<React.SetStateAction<T>>) =>
+    (field: keyof T) =>
+      (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+        setter(prev => ({ ...prev, [field]: e.target.value } as T));
 
   // ── validações por step ────────────────────────────────────────────────────
 
@@ -287,7 +288,7 @@ export default function MatriculaPage() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Sexo">
-                <Select value={aluno.sexo} onChange={set(setAluno as any)('sexo')}>
+                <Select value={aluno.sexo} onChange={set(setAluno)('sexo')}>
                   <option value="M">Masculino</option>
                   <option value="F">Feminino</option>
                 </Select>
@@ -312,21 +313,21 @@ export default function MatriculaPage() {
             {temResponsavel && (
               <>
                 <Field label="Nome completo *" error={errors.respNome}>
-                  <Input value={resp.nome} onChange={set(setResp as any)('nome')} placeholder="Nome do responsável" />
+                  <Input value={resp.nome} onChange={set(setResp)('nome')} placeholder="Nome do responsável" />
                 </Field>
                 <Field label="CPF *" error={errors.respCpf}>
                   <Input value={resp.cpf} onChange={e => setResp(prev => ({ ...prev, cpf: maskCPF(e.target.value) }))} placeholder="000.000.000-00" />
                 </Field>
                 <div className="grid grid-cols-2 gap-3">
                   <Field label="E-mail">
-                    <Input type="email" value={resp.email} onChange={set(setResp as any)('email')} placeholder="email@exemplo.com" />
+                    <Input type="email" value={resp.email} onChange={set(setResp)('email')} placeholder="email@exemplo.com" />
                   </Field>
                   <Field label="Telefone">
-                    <Input value={resp.telefone} onChange={set(setResp as any)('telefone')} placeholder="(11) 99999-9999" />
+                    <Input value={resp.telefone} onChange={set(setResp)('telefone')} placeholder="(11) 99999-9999" />
                   </Field>
                 </div>
                 <Field label="Parentesco">
-                  <Select value={resp.tipoParentesco} onChange={set(setResp as any)('tipoParentesco')}>
+                  <Select value={resp.tipoParentesco} onChange={set(setResp)('tipoParentesco')}>
                     <option value="1">Mãe</option>
                     <option value="2">Pai</option>
                     <option value="3">Outro</option>
@@ -342,14 +343,14 @@ export default function MatriculaPage() {
           <div className="flex flex-col gap-4">
             <h2 className="text-xl font-bold" style={{ fontFamily: 'var(--font-sora)', color: 'var(--ink-900)' }}>Dados do curso</h2>
             <Field label="Curso *" error={errors.curso}>
-              <Input value={curso.curso} onChange={set(setCurso as any)('curso')} placeholder="Ex: Enfermagem" />
+              <Input value={curso.curso} onChange={set(setCurso)('curso')} placeholder="Ex: Enfermagem" />
             </Field>
             <Field label="Unidade *" error={errors.unidade}>
-              <Input value={curso.unidade} onChange={set(setCurso as any)('unidade')} placeholder="Ex: Unidade Centro" />
+              <Input value={curso.unidade} onChange={set(setCurso)('unidade')} placeholder="Ex: Unidade Centro" />
             </Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Turno">
-                <Select value={curso.turno} onChange={set(setCurso as any)('turno')}>
+                <Select value={curso.turno} onChange={set(setCurso)('turno')}>
                   <option>Manhã</option>
                   <option>Tarde</option>
                   <option>Noite</option>
@@ -357,11 +358,11 @@ export default function MatriculaPage() {
                 </Select>
               </Field>
               <Field label="Período letivo *" error={errors.periodoLetivo}>
-                <Input value={curso.periodoLetivo} onChange={set(setCurso as any)('periodoLetivo')} placeholder="Ex: 2025/1" />
+                <Input value={curso.periodoLetivo} onChange={set(setCurso)('periodoLetivo')} placeholder="Ex: 2025/1" />
               </Field>
             </div>
             <Field label="Currículo (opcional)">
-              <Input value={curso.curriculo} onChange={set(setCurso as any)('curriculo')} placeholder="Código do currículo" />
+              <Input value={curso.curriculo} onChange={set(setCurso)('curriculo')} placeholder="Código do currículo" />
             </Field>
           </div>
         )}
@@ -375,17 +376,17 @@ export default function MatriculaPage() {
             </p>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Nº de parcelas">
-                <Input type="number" min={1} value={plano.numeroParcelas} onChange={set(setPlano as any)('numeroParcelas')} placeholder="12" />
+                <Input type="number" min={1} value={plano.numeroParcelas} onChange={set(setPlano)('numeroParcelas')} placeholder="12" />
               </Field>
               <Field label="Valor por parcela (R$) *" error={errors.valorParcela}>
-                <Input type="number" min={0} step="0.01" value={plano.valorParcela} onChange={set(setPlano as any)('valorParcela')} placeholder="0,00" />
+                <Input type="number" min={0} step="0.01" value={plano.valorParcela} onChange={set(setPlano)('valorParcela')} placeholder="0,00" />
               </Field>
             </div>
             <Field label="Data da 1ª parcela *" error={errors.dataPrimeiraParcela}>
-              <Input type="date" value={plano.dataPrimeiraParcela} onChange={set(setPlano as any)('dataPrimeiraParcela')} />
+              <Input type="date" value={plano.dataPrimeiraParcela} onChange={set(setPlano)('dataPrimeiraParcela')} />
             </Field>
             <Field label="Desconto (opcional)">
-              <Input value={plano.desconto} onChange={set(setPlano as any)('desconto')} placeholder="Ex: 10%" />
+              <Input value={plano.desconto} onChange={set(setPlano)('desconto')} placeholder="Ex: 10%" />
             </Field>
           </div>
         )}

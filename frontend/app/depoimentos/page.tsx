@@ -1,6 +1,7 @@
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import WhatsAppFloat from '../components/WhatsAppFloat';
+import { WHATSAPP_URL } from '@/lib/contato';
 
 const depoimentos = [
   {
@@ -196,7 +197,7 @@ export default function Depoimentos() {
                 <a href="/#pre-inscricao" className="btn btn-primary">
                   Matricule-se agora
                 </a>
-                <a href="https://wa.me/5511976922127" target="_blank" rel="noopener noreferrer" className="btn btn-white">
+                <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="btn btn-white">
                   Falar com consultor
                 </a>
               </div>

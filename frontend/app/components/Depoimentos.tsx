@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 
 /* Depoimentos reais extraídos do site ipessp.edu.br */
 const depoimentos = [
@@ -139,7 +140,7 @@ export default function Depoimentos() {
                   className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0"
                   style={{ border: '3px solid var(--brand-200)' }}
                 >
-                  <img src={d.avatar} alt={d.nome} className="w-full h-full object-cover" />
+                  <Image src={d.avatar} alt={d.nome} width={48} height={48} className="w-full h-full object-cover" />
                 </div>
                 <div>
                   <p className="font-semibold text-sm" style={{ color: 'var(--ink-900)' }}>

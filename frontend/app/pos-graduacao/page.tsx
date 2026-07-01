@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import WhatsAppFloat from '../components/WhatsAppFloat';
+import { WHATSAPP_URL } from '@/lib/contato';
 
 const areas = [
   {
@@ -153,7 +154,7 @@ export default function PosGraduacao() {
                       {curso.nome}
                     </h3>
                     <a
-                      href="https://wa.me/5511976922127"
+                      href={WHATSAPP_URL}
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{ color: 'var(--brand-600)', fontSize: 'var(--fs-sm)', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px', marginTop: 'auto' }}
@@ -182,7 +183,7 @@ export default function PosGraduacao() {
               Fale com nosso time de consultores e descubra qual pós-graduação é ideal para o seu perfil e objetivos profissionais.
             </p>
             <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
-              <a href="https://wa.me/5511976922127" target="_blank" rel="noopener noreferrer" className="btn btn-primary">
+              <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="btn btn-primary">
                 Falar com consultor
               </a>
               <a href="/fale-conosco" className="btn btn-white">

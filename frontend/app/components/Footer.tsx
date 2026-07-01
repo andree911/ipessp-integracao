@@ -1,6 +1,12 @@
 'use client';
 
 import Image from 'next/image';
+import {
+  FONE_DISPLAY, FONE_TEL, WHATSAPP_URL, EMAIL_CONTATO, EMAIL_HREF,
+  ENDERECO_RUA, ENDERECO_BAIRRO, ENDERECO_CEP, sophiaPortalUrl,
+} from '@/lib/contato';
+
+const SOPHIA_URL = sophiaPortalUrl();
 
 const socials = [
   { label: 'LinkedIn', href: '#', icon: (<svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>) },
@@ -30,7 +36,7 @@ const footerLinks = {
     { label: 'Documentos Institucionais', href: '/documentos-institucionais' },
   ],
   'Estudantes': [
-    { label: 'Portal do Aluno', href: process.env.NEXT_PUBLIC_SOPHIA_PORTAL_URL ?? '#' },
+    { label: 'Portal do Aluno', href: SOPHIA_URL },
     { label: 'Biblioteca Virtual', href: '/biblioteca-virtual' },
     { label: 'Revista Científica', href: '/revista-cientifica' },
     { label: 'Blog', href: '/blog' },
@@ -72,14 +78,14 @@ export default function Footer() {
                   href={s.href}
                   aria-label={s.label}
                   className="w-9 h-9 rounded-xl flex items-center justify-center transition-all"
-                  style={{ background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.6)' }}
+                  style={{ background: 'rgba(255,255,255,0.07)', color: 'var(--brand-500)' }}
                   onMouseEnter={e => {
                     e.currentTarget.style.background = 'var(--brand-600)';
                     e.currentTarget.style.color = '#fff';
                   }}
                   onMouseLeave={e => {
                     e.currentTarget.style.background = 'rgba(255,255,255,0.07)';
-                    e.currentTarget.style.color = 'rgba(255,255,255,0.6)';
+                    e.currentTarget.style.color = 'var(--brand-500)';
                   }}
                 >
                   {s.icon}
@@ -126,9 +132,9 @@ export default function Footer() {
             </h4>
             <address className="text-sm leading-relaxed not-italic"
               style={{ color: 'rgba(255,255,255,0.5)' }}>
-              Rua Dona Antônia de Queirós, 333<br />
-              Consolação – São Paulo/SP<br />
-              CEP: 01307-012
+              {ENDERECO_RUA}<br />
+              {ENDERECO_BAIRRO}<br />
+              {ENDERECO_CEP}
             </address>
           </div>
           <div>
@@ -137,7 +143,7 @@ export default function Footer() {
               Contato
             </h4>
             <div className="flex flex-col gap-2.5">
-              <a href="tel:+5511976922127"
+              <a href={FONE_TEL}
                 className="text-sm flex items-center gap-2 transition-colors"
                 style={{ color: 'rgba(255,255,255,0.5)' }}
                 onMouseEnter={e => { e.currentTarget.style.color = 'var(--brand-300)'; }}
@@ -145,9 +151,9 @@ export default function Footer() {
                 <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 014.13 11 19.79 19.79 0 011.07 2.36 2 2 0 013.06 0h3a2 2 0 012 1.72c.12.96.36 1.9.7 2.81a2 2 0 01-.45 2.11L7.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.91.34 1.85.58 2.81.7A2 2 0 0122 16.92z"/>
                 </svg>
-                (11) 97692-2127
+                {FONE_DISPLAY}
               </a>
-              <a href="https://wa.me/5511976922127" target="_blank" rel="noopener noreferrer"
+              <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer"
                 className="text-sm flex items-center gap-2 transition-colors"
                 style={{ color: 'rgba(255,255,255,0.5)' }}
                 onMouseEnter={e => { e.currentTarget.style.color = '#25D366'; }}
@@ -157,7 +163,7 @@ export default function Footer() {
                 </svg>
                 WhatsApp
               </a>
-              <a href="mailto:marketing@ipessp.edu.br"
+              <a href={EMAIL_HREF}
                 className="text-sm flex items-center gap-2 transition-colors"
                 style={{ color: 'rgba(255,255,255,0.5)' }}
                 onMouseEnter={e => { e.currentTarget.style.color = 'var(--brand-300)'; }}
@@ -166,7 +172,7 @@ export default function Footer() {
                   <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
                   <polyline points="22,6 12,13 2,6"/>
                 </svg>
-                marketing@ipessp.edu.br
+                {EMAIL_CONTATO}
               </a>
             </div>
           </div>

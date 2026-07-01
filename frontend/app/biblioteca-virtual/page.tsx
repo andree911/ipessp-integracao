@@ -3,6 +3,7 @@
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import WhatsAppFloat from '../components/WhatsAppFloat';
+import { sophiaPortalUrl } from '@/lib/contato';
 
 const bases = [
   {
@@ -94,7 +95,7 @@ export default function BibliotecaVirtual() {
             <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 'var(--fs-body)', maxWidth: '580px', lineHeight: 'var(--lh-body)', marginBottom: '36px' }}>
               Acervo digital completo com e-books, artigos científicos e periódicos especializados nas áreas da saúde, disponível 24h para alunos matriculados.
             </p>
-            <a href={process.env.NEXT_PUBLIC_SOPHIA_PORTAL_URL ?? '#'} className="btn btn-primary">
+            <a href={sophiaPortalUrl()} className="btn btn-primary">
               Acessar Biblioteca A
             </a>
           </div>
