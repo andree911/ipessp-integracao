@@ -36,6 +36,7 @@ export class ImportacaoService {
         linhaDigitavel?: string;
         urlBoleto?: string;
         codigoPix?: string;
+        codigoBoleto?: number;
         competencia?: string;
       }>;
     }>,
@@ -69,6 +70,7 @@ export class ImportacaoService {
               linhaDigitavel: lanc.linhaDigitavel,
               urlBoleto: lanc.urlBoleto,
               codigoPix: lanc.codigoPix,
+              codigoBoleto: lanc.codigoBoleto,
               competencia: lanc.competencia,
             });
             lancamentosImportados++;

@@ -121,6 +121,7 @@ export class SyncService {
           linhaDigitavel: l.linhaDigitavel,
           urlBoleto: l.urlBoletoDigital,
           codigoPix: l.codigoPix,
+          codigoBoleto: l.codigoBoleto,
           competencia: l.competencia,
         })),
       }]);

@@ -17,6 +17,13 @@ export class IaController {
     return this.iaService.getFinanceiroByCpf(cpf);
   }
 
+  @Get('boleto')
+  getBoleto(@Query('cpf') cpf: string, @Query('codigoBoleto') codigoBoleto: string) {
+    if (!cpf) throw new BadRequestException('Parâmetro cpf é obrigatório');
+    if (!codigoBoleto) throw new BadRequestException('Parâmetro codigoBoleto é obrigatório');
+    return this.iaService.getBoletoPdf(cpf, Number(codigoBoleto));
+  }
+
   @Get('avisos')
   getAvisos() {
     return this.iaService.getAvisos();

@@ -43,9 +43,25 @@ export class IaService {
         linhaDigitavel: p.linhaDigitavel ?? null,
         urlBoleto: p.urlBoleto ?? null,
         pix: p.codigoPix ?? null,
+        codigoBoleto: p.codigoBoleto ?? null,
       })),
       totalPendente: dados.pendencias.reduce((s, p) => s + p.valor, 0),
     }];
+  }
+
+  /**
+   * Baixa o PDF do boleto no Sophia e devolve em base64, pronto pra IA
+   * anexar como documento na conversa do WhatsApp (nó de envio de
+   * documento da Z-API aceita base64 direto, sem precisar de URL pública).
+   */
+  async getBoletoPdf(cpf: string, codigoBoleto: number): Promise<{ base64: string; fileName: string; mimeType: string }> {
+    const { codigoAluno } = await this.financeiro.getBoletoInfo(cpf, codigoBoleto);
+    const pdf = await this.sophia.getBoleto(codigoAluno, codigoBoleto);
+    return {
+      base64: pdf.toString('base64'),
+      fileName: `boleto-${codigoBoleto}.pdf`,
+      mimeType: 'application/pdf',
+    };
   }
 
   async getAvisos() {

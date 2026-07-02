@@ -6,8 +6,9 @@ import { createHmac } from 'crypto';
 import { MercadoPagoService } from './mercadopago.service';
 import { EmailService } from '../email/email.service';
 import { WhatsAppService } from '../email/whatsapp.service';
+import { SophiaService } from '../sophia/sophia.service';
 import { MatriculaCache } from '../matriculas/entities/matricula-cache.entity';
-import { errMsg } from '../common/err.util';
+import { errMsg, axiosDetail } from '../common/err.util';
 
 interface MpPayment {
   id?: string | number | null;
@@ -29,6 +30,7 @@ export class MercadoPagoController {
     private readonly mp: MercadoPagoService,
     private readonly email: EmailService,
     private readonly whatsapp: WhatsAppService,
+    private readonly sophia: SophiaService,
     private readonly config: ConfigService,
   ) {}
 
@@ -91,6 +93,45 @@ export class MercadoPagoController {
     const ref = String(pagamento.external_reference ?? '');
     const cache = ref ? await this.cacheRepo.findOne({ where: { externalReference: ref } }) : null;
 
+    // Trava de idempotência: o Mercado Pago pode reentregar o mesmo webhook mais de
+    // uma vez. Sem isso, cada reentrega criaria um cliente duplicado no Sophia e
+    // reenviaria a notificação pro financeiro.
+    if (cache?.notificadoEm) {
+      this.logger.log(`Webhook duplicado ignorado para ref=${ref} (já processado em ${cache.notificadoEm.toISOString()})`);
+      return;
+    }
+
+    // Cria o cliente/prospecto automaticamente no Sophia — a secretaria só precisa
+    // conferir e efetivar a matrícula (conversão cliente→aluno é manual, sem endpoint
+    // de API pra isso). Ver documentacao/BACKEND.md, seção "Matrícula + pagamento".
+    let codigoClienteSophia: number | null = null;
+    let erroSophia: string | null = null;
+    if (cache?.cpfAluno && cache?.nomeAluno) {
+      try {
+        const resultado = await this.sophia.criarCliente({
+          nome: cache.nomeAluno,
+          cpf: cache.cpfAluno,
+          email: cache.emailAluno ?? undefined,
+          telefone: cache.telefoneAluno ?? undefined,
+          sexo: (cache.sexoAluno as 'M' | 'F') ?? undefined,
+          dataNascimento: cache.dataNascimentoAluno ?? undefined,
+          observacao: `Matrícula via site — pagamento MP aprovado (id ${pagamento.id}, ref ${ref}).`,
+          unidade: cache.unidade ?? undefined,
+          curso: cache.curso ?? undefined,
+          turno: cache.turno ?? undefined,
+          periodoLetivo: cache.periodoLetivo ?? undefined,
+        });
+        codigoClienteSophia = (resultado as { codigo?: number })?.codigo ?? null;
+        this.logger.log(`Cliente criado no Sophia para ref=${ref}: ${JSON.stringify(resultado)}`);
+      } catch (err: unknown) {
+        erroSophia = JSON.stringify(axiosDetail(err));
+        this.logger.error(`Falha ao criar cliente no Sophia para ref=${ref}: ${erroSophia}`);
+      }
+    } else {
+      erroSophia = 'Dados insuficientes em MatriculaCache (nome/CPF do aluno ausentes) — não foi possível criar o cliente automaticamente.';
+      this.logger.warn(`notificarPagamentoAprovado: ${erroSophia} (ref=${ref})`);
+    }
+
     const payer = pagamento.payer ?? {};
     const nomeAluno = cache?.nomeAluno || [payer.first_name, payer.last_name].filter(Boolean).join(' ') || 'N/A';
     const curso = cache?.curso || 'N/A';
@@ -107,10 +148,16 @@ export class MercadoPagoController {
       v != null ? `R$ ${Number(v).toFixed(2).replace('.', ',')}` : 'N/A';
 
     // WhatsApp para o financeiro
+    const statusSophia = codigoClienteSophia
+      ? `✅ Cliente já criado no Sophia — código *${codigoClienteSophia}*. Só efetivar a matrícula.`
+      : `⚠️ Falha ao criar cliente automaticamente no Sophia: ${erroSophia}. Cadastre manualmente com os dados abaixo.`;
+
     const telefoneFinanceiro = this.config.get<string>('zapi.telefoneFinanceiro');
     if (telefoneFinanceiro) {
       const msg = [
         `✅ *Pagamento aprovado — registrar matrícula no Sophia*`,
+        ``,
+        statusSophia,
         ``,
         `*Aluno:* ${nomeAluno}`,
         `*CPF:* ${cache?.cpfAluno || 'N/A'}`,
@@ -147,6 +194,11 @@ export class MercadoPagoController {
         <div style="font-family:Arial,sans-serif;max-width:680px;margin:0 auto">
           <h2 style="color:#1f9d55;margin-bottom:4px">✅ Pagamento Aprovado — Registrar Matrícula no Sophia</h2>
           <p style="color:#555;margin-top:0">Data de aprovação: <strong>${dataAprovacao}</strong> &nbsp;|&nbsp; Valor pago: <strong>${valor}</strong> &nbsp;|&nbsp; ID MP: <strong>${pagamento.id}</strong></p>
+          <p style="padding:12px 16px;border-radius:8px;font-size:14px;background:${codigoClienteSophia ? '#eafaf1' : '#fdf5f5'};color:${codigoClienteSophia ? '#1f9d55' : '#C8102E'}">
+            ${codigoClienteSophia
+              ? `✅ Cliente já criado no Sophia — código <strong>${codigoClienteSophia}</strong>. Só efetivar a matrícula.`
+              : `⚠️ Falha ao criar cliente automaticamente no Sophia: ${erroSophia}. Cadastre manualmente com os dados abaixo.`}
+          </p>
           <table style="border-collapse:collapse;width:100%;font-size:14px">
             ${secao('Dados do Aluno')}
             ${l('Nome', cache?.nomeAluno || 'N/A')}
@@ -185,6 +237,13 @@ export class MercadoPagoController {
       } catch (err: unknown) {
         this.logger.warn(`Email financeiro falhou: ${errMsg(err)}`);
       }
+    }
+
+    if (cache) {
+      await this.cacheRepo.update(cache.id, {
+        codigoClienteSophia,
+        notificadoEm: new Date(),
+      });
     }
   }
 }

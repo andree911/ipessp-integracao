@@ -14,6 +14,7 @@ export interface PendenciaFinanceira {
   linhaDigitavel?: string;
   urlBoleto?: string;
   codigoPix?: string;
+  codigoBoleto?: number;
   competencia?: string;
 }
 
@@ -64,6 +65,7 @@ export class FinanceiroService {
           linhaDigitavel: l.linhaDigitavel ?? undefined,
           urlBoleto: l.urlBoleto ?? undefined,
           codigoPix: l.codigoPix ?? undefined,
+          codigoBoleto: l.codigoBoleto ?? undefined,
           competencia: l.competencia ?? undefined,
         });
       }
@@ -77,6 +79,33 @@ export class FinanceiroService {
       ra: primeiro.ra ?? String(primeiro.codigoSophia ?? primeiro.id),
       pendencias,
     };
+  }
+
+  /**
+   * Confirma que o boleto pertence a um cliente com esse CPF e devolve o
+   * código do aluno no Sophia (necessário pra baixar o PDF via API).
+   */
+  async getBoletoInfo(cpf: string, codigoBoleto: number): Promise<{ codigoAluno: number }> {
+    const cpfLimpo = cpf.replace(/\D/g, '');
+    const clientes = await this.clienteRepo.find({ where: { cpf: cpfLimpo } });
+    if (clientes.length === 0) {
+      throw new NotFoundException('Nenhum aluno encontrado para o CPF informado.');
+    }
+
+    const clienteIds = clientes.map((c) => c.id);
+    const lancamento = await this.lancamentoRepo.findOne({
+      where: { codigoCliente: In(clienteIds), codigoBoleto },
+    });
+    if (!lancamento) {
+      throw new NotFoundException('Boleto não encontrado para este CPF.');
+    }
+
+    const cliente = clientes.find((c) => c.id === lancamento.codigoCliente);
+    if (!cliente?.codigoSophia) {
+      throw new NotFoundException('Aluno sem código Sophia associado.');
+    }
+
+    return { codigoAluno: cliente.codigoSophia };
   }
 
   async getLancamentosPendentes(): Promise<{ cliente: ClienteCache; lancamento: LancamentoCache }[]> {

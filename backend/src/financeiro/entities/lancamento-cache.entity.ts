@@ -38,6 +38,9 @@ export class LancamentoCache {
   @Column({ nullable: true, type: 'varchar' })
   codigoPix: string | null;
 
+  @Column({ nullable: true, type: 'integer' })
+  codigoBoleto: number | null;
+
   @Column({ nullable: true, type: 'varchar' })
   competencia: string | null;
 

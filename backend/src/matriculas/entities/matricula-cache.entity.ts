@@ -76,6 +76,15 @@ export class MatriculaCache {
   @Column({ nullable: true })
   preferenceId: string;
 
+  // Preenchidos quando o webhook do MP processa o pagamento aprovado.
+  // `notificadoEm` também serve de trava de idempotência — o MP pode reentregar
+  // o mesmo webhook mais de uma vez, e sem essa trava o cliente seria duplicado no Sophia.
+  @Column({ nullable: true, type: 'integer' })
+  codigoClienteSophia: number | null;
+
+  @Column({ nullable: true, type: 'timestamp' })
+  notificadoEm: Date | null;
+
   @CreateDateColumn()
   criadoEm: Date;
 }

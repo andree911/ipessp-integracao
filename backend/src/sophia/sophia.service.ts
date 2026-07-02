@@ -172,6 +172,12 @@ export class SophiaService implements OnModuleInit {
     sexo?: 'M' | 'F';
     dataNascimento?: string;   // YYYY-MM-DD
     observacao?: string;
+    // Preenchidos = vira "interesse" no Sophia (curso pretendido pelo prospecto).
+    // Formato exato ({ descricao }) ainda não validado em produção — ver documentacao/BACKEND.md.
+    unidade?: string;
+    curso?: string;
+    turno?: string;
+    periodoLetivo?: string;
   }): Promise<unknown> {
     const nascimento = dados.dataNascimento ?? '1990-01-01';
     const body: Record<string, unknown> = {
@@ -187,9 +193,19 @@ export class SophiaService implements OnModuleInit {
       if (dados.telefone) contatos.push({ tipo: 'celular', valor: dados.telefone });
       body.contatos = contatos;
     }
+    if (dados.unidade || dados.curso || dados.turno || dados.periodoLetivo) {
+      body.interesse = {
+        ...(dados.unidade ? { unidade: { descricao: dados.unidade } } : {}),
+        ...(dados.curso ? { curso: { descricao: dados.curso } } : {}),
+        ...(dados.turno ? { turno: { descricao: dados.turno } } : {}),
+        ...(dados.periodoLetivo ? { periodo: { descricao: dados.periodoLetivo } } : {}),
+      };
+    }
     this.logger.log(`SophiA criarCliente → body: ${JSON.stringify(body)}`);
     try {
-      const resultado = await this.post<unknown>(`${this.apiBase}/clientes`, body);
+      // enviarEmail=false: quem envia a comunicação pro aluno é o próprio backend
+      // (WhatsApp/e-mail já disparados no fluxo de matrícula), não o Sophia.
+      const resultado = await this.post<unknown>(`${this.apiBase}/clientes?enviarEmail=false`, body);
       this.logger.log(`SophiA criarCliente ← resposta: ${JSON.stringify(resultado)}`);
       return resultado;
     } catch (err: unknown) {
