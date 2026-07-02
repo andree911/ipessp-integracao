@@ -26,6 +26,7 @@ export interface EmailData {
   qrCodeUrl?: string;
   linkPortalAluno?: string;
   linkSegundaVia?: string;
+  linkComoAcessar?: string;
 }
 
 const COR = '#7C2529';
@@ -442,7 +443,7 @@ function rodape(data: EmailData): string {
 // ─── Base ─────────────────────────────────────────────────────────────────────
 
 function base(subject: string, introTitulo: string, descParagrafo: string, nota: string, data: EmailData, preheader = ''): string {
-  const portalUrl = data.linkPortalAluno ?? data.siteUrl ?? '#';
+  const comoAcessarUrl = data.linkComoAcessar ?? data.linkPortalAluno ?? '#';
 
   return `<!DOCTYPE html>
 <html lang="pt-BR" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
@@ -511,7 +512,7 @@ ${preheader ? `<div style="display:none;font-size:1px;color:#f0f2f5;line-height:
           ${avisoSeguranca(data)}
 
           <!-- 9. Botão CTA principal -->
-          ${botaoPrincipal(portalUrl)}
+          ${botaoPrincipal(comoAcessarUrl)}
 
           <!-- Nota de rodapé do corpo -->
           ${nota}
@@ -647,9 +648,16 @@ export function emailConfirmacaoMatricula(d: ConfirmacaoMatriculaData): string {
 
 // ─── Templates exportados ─────────────────────────────────────────────────────
 
+const SUBJECTS_LEMBRETE: Record<number, string> = {
+  7: 'IPESSP - Sua Mensalidade Vence em 7 Dias',
+  5: 'IPESSP - Lembrete de Vencimento',
+  3: 'IPESSP - Sua Parcela Vence em Breve',
+  1: 'IPESSP - Sua Mensalidade Vence Amanhã',
+};
+
 export function templateLembrete(data: EmailData): { subject: string; html: string } {
-  const primeiroNome = data.nomeAluno.split(' ')[0];
-  const subject = `Mensalidade de ${primeiroNome} — vence em ${data.diasRestantes} dia${data.diasRestantes === 1 ? '' : 's'}`;
+  const subject = SUBJECTS_LEMBRETE[data.diasRestantes ?? 0]
+    ?? `IPESSP - Sua Mensalidade Vence em ${data.diasRestantes} Dias`;
   const preheader = `Pague até ${data.vencimento} via PIX ou boleto e evite juros e multas.`;
 
   const desc = `Voc&#234; est&#225; recebendo o aviso de que o boleto do(a) aluno(a)
@@ -667,8 +675,7 @@ export function templateLembrete(data: EmailData): { subject: string; html: stri
 }
 
 export function templateVencimentoHoje(data: EmailData): { subject: string; html: string } {
-  const primeiroNome = data.nomeAluno.split(' ')[0];
-  const subject = `Mensalidade de ${primeiroNome} — vence HOJE`;
+  const subject = 'IPESSP - Vencimento da sua parcela';
   const preheader = `Pague até o final de hoje, ${data.vencimento}, e evite juros. PIX e boleto disponíveis.`;
 
   const desc = `Voc&#234; est&#225; recebendo o aviso de que o boleto do(a) aluno(a)
@@ -683,9 +690,24 @@ export function templateVencimentoHoje(data: EmailData): { subject: string; html
   return { subject, html: base(subject, 'Sua mensalidade do IPESSP vence hoje.', desc, nota, data, preheader) };
 }
 
+const SUBJECTS_COBRANCA: Record<number, string> = {
+  1:  'IPESSP - Parcela em Aberto',
+  2:  'IPESSP - Lembrete importante sobre sua mensalidade',
+  3:  'IPESSP - Regularização pendente - 3 dias de atraso',
+  7:  'IPESSP - Aviso de Mensalidade em Atraso',
+  8:  'IPESSP - Boleto em atraso',
+  9:  'IPESSP - Parcela em Atraso',
+  10: 'IPESSP - Aviso de pendência financeira - 10 dias em atraso',
+  12: 'IPESSP - PARCELA EM ATRASO',
+  15: 'IPESSP - AVISO DE INADIMPLÊNCIA',
+  20: 'IPESSP - PARCELA COM 20 DIAS EM ATRASO',
+  25: 'IPESSP - MENSALIDADE EM ATRASO',
+  30: 'Regularização Urgente – Débito em Aberto há 30 dias',
+};
+
 export function templateCobranca(data: EmailData): { subject: string; html: string } {
-  const primeiroNome = data.nomeAluno.split(' ')[0];
-  const subject = `Mensalidade de ${primeiroNome} em atraso — ${data.diasAtraso} dia${data.diasAtraso === 1 ? '' : 's'}`;
+  const subject = SUBJECTS_COBRANCA[data.diasAtraso ?? 0]
+    ?? `IPESSP - Mensalidade em atraso — ${data.diasAtraso} dia${data.diasAtraso === 1 ? '' : 's'}`;
   const preheader = `Venceu em ${data.vencimento}. Regularize agora para evitar maiores encargos. Estamos à disposição.`;
 
   const desc = `Identificamos que o boleto do(a) aluno(a) <strong>${data.nomeAluno}</strong>

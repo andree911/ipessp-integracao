@@ -20,6 +20,15 @@ import { parseDateBR } from '../common/date.util';
 
 const QR_CID = 'qrpix@email';
 
+const EMAIL_ANTES_TIPO: Record<number, EmailTipo> = {
+  7: 'lembrete_7', 5: 'lembrete_5', 3: 'lembrete_3', 1: 'lembrete_1',
+};
+const EMAIL_APOS_TIPO: Record<number, EmailTipo> = {
+  1: 'cobranca_1',   2: 'cobranca_2',  3: 'cobranca_3',  7: 'cobranca_7',
+  8: 'cobranca_8',   9: 'cobranca_9',  10: 'cobranca_10', 12: 'cobranca_12',
+  15: 'cobranca_15', 20: 'cobranca_20', 25: 'cobranca_25', 30: 'cobranca_30',
+};
+
 async function gerarQrCode(texto: string): Promise<Buffer | undefined> {
   try {
     return await QRCode.toBuffer(texto, { width: 260, margin: 1, type: 'png' });
@@ -80,6 +89,10 @@ export class EmailJobService {
       endereco:       this.config.get<string>('email.endereco') || undefined,
       linkPortalAluno: this.config.get<string>('email.linkPortalAluno') || undefined,
       linkSegundaVia:  this.config.get<string>('email.linkPortalAluno') || undefined,
+      linkComoAcessar: (() => {
+        const base = this.config.get<string>('backendUrl');
+        return base ? `${base}/como-pagar` : undefined;
+      })(),
     };
   }
 
@@ -91,8 +104,8 @@ export class EmailJobService {
     }
     this.logger.log('=== Iniciando job de emails ===');
 
-    const diasAntes = this.config.get<number>('email.diasAntes') ?? 3;
-    const diasAposVencimento = this.config.get<number[]>('email.diasAposVencimento') ?? [1, 3, 7];
+    const diasAntes = this.config.get<number[]>('email.diasAntes') ?? [7, 5, 3, 1];
+    const diasAposVencimento = this.config.get<number[]>('email.diasAposVencimento') ?? [1, 2, 3, 7, 8, 9, 10, 12, 15, 20, 25, 30];
     const escola = this.dadosEscola();
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
@@ -111,8 +124,8 @@ export class EmailJobService {
 
         let tipo: EmailTipo | null = null;
         if (diffDias === 0) tipo = 'vencimento_hoje';
-        else if (diffDias > 0 && diffDias <= diasAntes) tipo = 'lembrete';
-        else if (diffDias < 0 && diasAposVencimento.includes(Math.abs(diffDias))) tipo = 'cobranca';
+        else if (diffDias > 0 && diasAntes.includes(diffDias)) tipo = EMAIL_ANTES_TIPO[diffDias] ?? 'lembrete';
+        else if (diffDias < 0 && diasAposVencimento.includes(Math.abs(diffDias))) tipo = EMAIL_APOS_TIPO[Math.abs(diffDias)] ?? 'cobranca';
 
         if (!tipo) continue;
 
@@ -141,8 +154,8 @@ export class EmailJobService {
         const qrBuffer = lancamento.codigoPix ? await gerarQrCode(lancamento.codigoPix) : undefined;
 
         let template: { subject: string; html: string };
-        if (tipo === 'lembrete') template = templateLembrete(emailData);
-        else if (tipo === 'vencimento_hoje') template = templateVencimentoHoje(emailData);
+        if (tipo === 'vencimento_hoje') template = templateVencimentoHoje(emailData);
+        else if (tipo.startsWith('lembrete')) template = templateLembrete(emailData);
         else template = templateCobranca(emailData);
 
         const log = this.emailLogRepo.create({
@@ -212,8 +225,8 @@ export class EmailJobService {
     const qrBuffer = lancamento.codigoPix ? await gerarQrCode(lancamento.codigoPix) : undefined;
 
     let template: { subject: string; html: string };
-    if (tipo === 'lembrete') template = templateLembrete(emailData);
-    else if (tipo === 'vencimento_hoje') template = templateVencimentoHoje(emailData);
+    if (tipo === 'vencimento_hoje') template = templateVencimentoHoje(emailData);
+    else if (tipo.startsWith('lembrete')) template = templateLembrete(emailData);
     else template = templateCobranca(emailData);
 
     await this.emailService.enviar(
@@ -263,8 +276,8 @@ export class EmailJobService {
     const qrBuffer = pend.codigoPix ? await gerarQrCode(pend.codigoPix) : undefined;
 
     let template: { subject: string; html: string };
-    if (tipo === 'lembrete') template = templateLembrete(emailData);
-    else if (tipo === 'vencimento_hoje') template = templateVencimentoHoje(emailData);
+    if (tipo === 'vencimento_hoje') template = templateVencimentoHoje(emailData);
+    else if (tipo.startsWith('lembrete')) template = templateLembrete(emailData);
     else template = templateCobranca(emailData);
 
     await this.emailService.enviar(
@@ -314,8 +327,8 @@ export class EmailJobService {
     const qrBuffer = lancamento.codigoPix ? await gerarQrCode(lancamento.codigoPix) : undefined;
 
     let template: { subject: string; html: string };
-    if (tipo === 'lembrete') template = templateLembrete(emailData);
-    else if (tipo === 'vencimento_hoje') template = templateVencimentoHoje(emailData);
+    if (tipo === 'vencimento_hoje') template = templateVencimentoHoje(emailData);
+    else if (tipo.startsWith('lembrete')) template = templateLembrete(emailData);
     else template = templateCobranca(emailData);
 
     await this.emailService.enviar(

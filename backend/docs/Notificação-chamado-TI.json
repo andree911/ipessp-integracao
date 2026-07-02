@@ -44,7 +44,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const record = $input.first().json.body.record;\nconst status = record.status;\nconst resolucao = record.resolucao;\nconst titulo = record.titulo;\n\nconst mensagens = {\n  em_andamento: `🔧 *Seu chamado está sendo atendido!*\\n\\n*Assunto:* ${titulo}\\n\\nNossa equipe de TI já está trabalhando nisso. Em breve você terá uma resposta.`,\n  aguardando: `⏳ *O TI precisa de mais informações sobre seu chamado.*\\n\\n*Assunto:* ${titulo}\\n\\nEntre em contato com o suporte: wa.me/NUMERO_TI`,\n  resolvido: `✅ *Seu chamado foi resolvido!*\\n\\n*Assunto:* ${titulo}${resolucao ? `\\n\\n*Solução:* ${resolucao}` : ''}\\n\\nSe ainda tiver dúvidas, é só falar aqui.`,\n  fechado: `✅ *Seu chamado foi encerrado.*\\n\\n*Assunto:* ${titulo}${resolucao ? `\\n\\n*Solução:* ${resolucao}` : ''}`,\n};\n\nconst mensagem = mensagens[status];\nif (!mensagem) return [];\n\nreturn [{ json: { telefone: record.telefone_solicitante, mensagem } }];"
+        "jsCode": "const record = $input.first().json.body.record;\nconst status = record.status;\nconst resolucao = record.resolucao;\nconst titulo = record.titulo;\n\nconst mensagens = {\n  em_andamento: `🔧 *Seu chamado está sendo atendido!*\\n\\n*Assunto:* ${titulo}\\n\\nNossa equipe de TI já está trabalhando nisso. Em breve você terá uma resposta.`,\n  aguardando: `⏳ *O TI precisa de mais informações sobre seu chamado.*\\n\\n*Assunto:* ${titulo}\\n\\nEntre em contato com o suporte: wa.me/5511968566862`,\n  resolvido: `✅ *Seu chamado foi resolvido!*\\n\\n*Assunto:* ${titulo}${resolucao ? `\\n\\n*Solução:* ${resolucao}` : ''}\\n\\nSe ainda tiver dúvidas, é só falar aqui.`,\n  fechado: `✅ *Seu chamado foi encerrado.*\\n\\n*Assunto:* ${titulo}${resolucao ? `\\n\\n*Solução:* ${resolucao}` : ''}`,\n};\n\nconst mensagem = mensagens[status];\nif (!mensagem) return [];\n\nreturn [{ json: { telefone: record.telefone_solicitante, mensagem } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -55,17 +55,17 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.z-api.io/instances/INSTANCE_ID/token/INSTANCE_TOKEN/send-text",
+        "url": "={{ 'https://api.z-api.io/instances/' + $env.ZAPI_INSTANCE_ID + '/token/' + $env.ZAPI_TOKEN + '/send-text' }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Client-Token", "value": "CLIENT_TOKEN" },
+            { "name": "Client-Token", "value": "={{ $env.ZAPI_CLIENT_TOKEN }}" },
             { "name": "Content-Type", "value": "application/json" }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"phone\": \"{{ $json.telefone }}\",\n  \"message\": \"{{ $json.mensagem }}\"\n}",
+        "jsonBody": "={{ JSON.stringify({ phone: $json.telefone, message: $json.mensagem }) }}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",

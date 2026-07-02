@@ -32,8 +32,10 @@ export default () => ({
     from: process.env.SMTP_FROM ?? '',
     nomeEscola: process.env.ESCOLA_NOME ?? 'Escola',
     telefoneEscola: process.env.ESCOLA_TELEFONE ?? '',
-    diasAntes: parseInt(process.env.EMAIL_DIAS_ANTES ?? '3', 10),
-    diasAposVencimento: (process.env.EMAIL_DIAS_APOS ?? '1,3,7')
+    diasAntes: (process.env.EMAIL_DIAS_ANTES ?? '7,5,3,1')
+      .split(',')
+      .map((d) => parseInt(d.trim(), 10)),
+    diasAposVencimento: (process.env.EMAIL_DIAS_APOS ?? '1,2,3,7,8,9,10,12,15,20,25,30')
       .split(',')
       .map((d) => parseInt(d.trim(), 10)),
     logoUrl: process.env.EMAIL_LOGO_URL ?? '',
@@ -57,6 +59,12 @@ export default () => ({
     clientToken: process.env.ZAPI_CLIENT_TOKEN ?? '',
     cronHabilitado: process.env.WPP_CRON_HABILITADO ?? 'false',
     telefoneFinanceiro: process.env.ZAPI_TELEFONE_FINANCEIRO ?? '',
+    diasAntes: (process.env.WPP_DIAS_ANTES ?? '7,5,3,1')
+      .split(',')
+      .map((d) => parseInt(d.trim(), 10)),
+    diasApos: (process.env.WPP_DIAS_APOS ?? '1,2,3,7,8,9,10,12,15,20')
+      .split(',')
+      .map((d) => parseInt(d.trim(), 10)),
   },
   jwt: {
     secret: process.env.JWT_SECRET || (() => { throw new Error('JWT_SECRET env var is required'); })(),
@@ -65,6 +73,7 @@ export default () => ({
   admin: {
     apiKey: process.env.ADMIN_API_KEY ?? '',
   },
+  backendUrl: process.env.BACKEND_URL ?? '',
   mercadopago: {
     accessToken: process.env.MP_ACCESS_TOKEN ?? '',
     sandbox: process.env.MP_SANDBOX !== 'false',
