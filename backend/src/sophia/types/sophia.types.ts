@@ -84,45 +84,6 @@ export interface NotaAlunoItem {
   nome: string;
 }
 
-// Payload para POST /alunos/{idAluno}/responsaveis
-export interface CriarResponsavelAlunoApiModel {
-  nome: string;
-  cpf?: string;
-  email?: string;
-  telefone?: string;
-  tipoVinculo?: {
-    codigo?: number;
-    descricao?: string;
-    // 1=Mãe, 2=Pai, 3=Outros
-    tipoParentesco?: 1 | 2 | 3;
-  };
-  responsavelFinanceiro?: boolean;
-  responsavelPedagogico?: boolean;
-}
-
-// Retorno de POST /alunos/{idAluno}/responsaveis
-export interface CriarResponsavelAlunoRetornoApiModel {
-  codigo: number;
-  nome: string;
-  cpf?: string;
-  email?: string;
-  telefone?: string;
-  responsavelFinanceiro: boolean;
-  responsavelPedagogico: boolean;
-}
-
-// Payload para POST /alunos/{idAluno}/Matriculas
-export interface MatriculaInclusaoApiModel {
-  unidade: string;
-  curso: string;
-  turno: string;
-  periodoLetivo: string;
-  curriculo?: string;
-  valorPrimeiraParcela?: number;
-  dataPagamento?: string; // ISO date-time
-  descontoMensalidade?: string;
-}
-
 // Campos reais retornados por GET /alunos/{id}/Lancamentos
 export interface LancamentoAlunoApiModel {
   codigo: number;

@@ -33,9 +33,9 @@ Site institucional
                               Webhook MP aprovado → /v1/pagamentos/mp-webhook
                                        │
                                        ▼
-                        Notifica financeiro (e-mail + WhatsApp) para registro manual no Sophia
-                        (registro automático via POST /clientes + POST /Matriculas — planejado,
-                         ver seção "Matrícula automatizada (planejado)")
+                        Backend cria Cliente automaticamente no Sophia (POST /clientes)
+                        e notifica o financeiro (e-mail + WhatsApp) para efetivar a
+                        matrícula manualmente (ver seção "Matrícula + pagamento" abaixo)
 
 WhatsApp (usuário) ──► Z-API ──► n8n Bot Flow (AI Agent + Tools)
                                        │
@@ -61,14 +61,16 @@ Supabase DB Webhook → n8n Notificação → Z-API → WhatsApp (solicitante de
 
 | Guard | Onde é usado | Como |
 |---|---|---|
-| `IaBearerGuard` | `/ia/*`, `/v1/leads/*` | Bearer token fixo (`IA_BEARER_TOKEN`) |
+| `IaBearerGuard` | `/ia/*`, `/v1/leads/*`, `/v1/ti/*`, `/v1/matriculas` | Bearer token fixo (`IA_BEARER_TOKEN`) |
 | `AdminApiKeyGuard` | `/v1/admin/*` | API key separada (`ADMIN_API_KEY`) |
 | Assinatura HMAC | `/v1/pagamentos/mp-webhook` | Valida header `x-signature` do Mercado Pago contra `MP_WEBHOOK_SECRET` |
-| Sem guard (público, com rate limit) | `/v1/candidaturas`, `/v1/mensagens-contato`, `/v1/manifestacoes`, `/v1/solicitacoes-eventos`, `/v1/matriculas` | `ThrottlerGuard` do NestJS limita abuso |
+| Sem guard (público, com rate limit) | `/v1/candidaturas`, `/v1/mensagens-contato`, `/v1/manifestacoes`, `/v1/solicitacoes-eventos` | `ThrottlerGuard` do NestJS limita abuso |
 
 ```
 Authorization: Bearer <IA_BEARER_TOKEN>
 ```
+
+> **Atenção — pegadinha de nomes:** no frontend (`site-ipessp-frontend`), as rotas proxy `POST /api/matriculas` e `POST /api/lead` injetam `MATRICULAS_API_KEY` e `LEADS_API_KEY` respectivamente como esse Bearer token. Apesar do nome diferente de cada lado, **os três (`IA_BEARER_TOKEN` aqui, `MATRICULAS_API_KEY` e `LEADS_API_KEY` no frontend) precisam ser exatamente o mesmo valor** — não são segredos independentes. Se algum for gerado/rotacionado sem replicar nos outros dois, o formulário de matrícula ou a captura de lead do site passam a falhar com 401 sem aviso visível pro usuário.
 
 ---
 
@@ -98,6 +100,13 @@ Retorna pendências financeiras do aluno via cache local (`clientes_cache` + `la
 #### `GET /ia/boleto?cpf=&codigoBoleto=`
 Baixa o PDF do boleto direto do Sophia (`GET /alunos/{idAluno}/Boletos/{codigoBoleto}`) e devolve em base64 (`{ base64, fileName, mimeType }`), pronto para o node de envio de documento da Z-API anexar na conversa do WhatsApp sem precisar de URL pública. Valida que o `codigoBoleto` pertence a um lançamento de um cliente com aquele CPF antes de liberar.
 
+#### `POST /ia/boleto/enviar`
+Mesma validação do endpoint acima, mas já manda o PDF direto pro WhatsApp do número informado via Z-API (`WhatsAppService.enviarDocumento`), em vez de devolver o base64 pra quem chamou. É essa a rota que a tool "Enviar Boleto PDF" do bot usa quando o aluno pede o boleto em arquivo (não só linha digitável/PIX).
+
+```json
+{ "cpf": "12345678900", "codigoBoleto": 123, "telefone": "11999999999" }
+```
+
 #### `GET /ia/secretaria?cpf=`
 Retorna matrículas ativas do aluno consultando o SophiA (`getMatriculasAluno`).
 
@@ -112,15 +121,6 @@ Lista os cursos cadastrados no Sophia (`GET /Cursos`) — usado para montar o pa
 
 #### `GET /ia/turma-detalhada?codigo=`
 Detalhe de uma turma do Sophia (`GET /Turmas/detalhada/{codigoTurma}`).
-
-#### `POST /ia/prospectivo`
-Cria um cliente/prospecto no Sophia (`POST /clientes`).
-
-#### `POST /ia/responsavel`
-Vincula um responsável (financeiro e/ou pedagógico) a um aluno já existente, localizado por CPF no cache.
-
-#### `POST /ia/matricula`
-Matricula um aluno já existente no Sophia (`POST /alunos/{idAluno}/Matriculas`).
 
 #### `GET /ia/avisos`
 Avisos ativos da tabela `avisos` no Supabase.
@@ -146,6 +146,8 @@ Recebe a notificação do Mercado Pago, valida a assinatura HMAC (`x-signature` 
 2. Notifica o financeiro por WhatsApp (`ZAPI_TELEFONE_FINANCEIRO`) e e-mail (`ESCOLA_EMAIL_NOTIFICACOES`) — se o passo 1 deu certo, a notificação já vem com o **código do cliente no Sophia**, e a secretaria só precisa efetivar a matrícula (conversão cliente→aluno é manual, sem endpoint de API pra isso — ver seção abaixo). Se falhar, a notificação cai no formato antigo, com todos os dados pra cadastro manual do zero.
 
 A notificação manual nunca é pulada — ela é o fallback de segurança tanto pra falha técnica quanto pro passo de conversão cliente→aluno, que continua sempre humano.
+
+Idempotência contra reentrega do MP: em vez de checar `notificadoEm` e só gravar no fim, o backend faz um `UPDATE ... WHERE notificadoEm IS NULL` atômico logo no início — se duas reentregas do mesmo evento chegarem quase simultâneas, só uma consegue "reivindicar" a linha em `MatriculaCache`, evitando cliente duplicado no Sophia.
 
 ---
 
@@ -280,7 +282,7 @@ O Mercado Pago é mantido mesmo com essa automação — ele processa cartão (q
 Ainda não confirmado por falta de teste em produção (não testar com CPF de aluno real sem necessidade):
 - O formato exato aceito pelo campo `interesse` do `POST /clientes` (implementado como `{ curso: { descricao }, turno: { descricao }, periodo: { descricao }, unidade: { descricao } }` em `SophiaService.criarCliente` — baseado no schema do swagger, mas nunca validado contra uma resposta real). Hoje o site (`app/matricula` no frontend) coleta `curso`/`unidade`/`periodoLetivo` como texto livre, então o `interesse` só vai ficar visualmente correto pra secretaria se o texto digitado bater com o catálogo — considerar trocar por `<select>` alimentado por `GET /ia/cursos` (e futuros `/ia/unidades`, `/ia/periodos`) se isso incomodar na prática.
 
-**`POST /alunos/{idAluno}/Matriculas` é uma feature separada e independente**, já usada hoje pelo bot (`/ia/matricula`) para matricular um **aluno já existente** em um curso adicional/rematrícula — não tem relação com o fluxo de matrícula nova do site. Pendências de validação desse endpoint (valores exatos de catálogo, comportamento de `valorPrimeiraParcela`+`dataPagamento`) só importam se/quando esse fluxo de rematrícula for revisitado — não bloqueiam o fluxo de matrícula nova descrito acima.
+**Nota histórica:** o backend já teve endpoints (`POST /ia/prospectivo`, `POST /ia/responsavel`, `POST /ia/matricula`) que chamavam `POST /clientes`, `POST /alunos/{id}/responsaveis` e `POST /alunos/{id}/Matriculas` diretamente, pensados numa versão anterior do fluxo de rematrícula. Nenhum dos três chegou a ser ligado a um fluxo real (nem bot, nem site) e foram removidos do código — quem cria o Cliente no Sophia hoje é só o webhook do Mercado Pago (`MercadoPagoController.notificarPagamentoAprovado`), direto via `SophiaService.criarCliente`. Se um fluxo de rematrícula (matricular aluno já existente em curso adicional) for revisitado no futuro, esses métodos precisam ser recriados do zero — a lógica descrita neste documento sobre `POST /alunos/{idAluno}/Matriculas` continua valendo como referência de como a API se comporta, só não há mais código chamando.
 
 ---
 
@@ -291,13 +293,13 @@ Ainda não confirmado por falta de teste em produção (não testar com CPF de a
 | `TelefoneCpfCache` | `telefone_cpf_cache` | Associação telefone → CPF + tipo + e-mail |
 | `ClienteCache` | `clientes_cache` | Cache de clientes/alunos do Sophia (`codigoSophia` = `idAluno`) |
 | `LancamentoCache` | `lancamentos_cache` | Cache de lançamentos financeiros, incluindo `linhaDigitavel`, `codigoPix`, `codigoBoleto`, `urlBoleto` |
-| `MatriculaCache` | `matriculas_cache` | Solicitações de matrícula pelo site + dados do pagamento Mercado Pago |
+| `ResponsavelCache` | `responsavel_cache` | Cache do responsável financeiro vinculado a cada aluno por CPF — alimentado pelo `SyncService`, lido por `GET /ia/secretaria` |
+| `MatriculaCache` | `matriculas_cache` | Solicitações de matrícula pelo site + dados do pagamento Mercado Pago + `codigoClienteSophia`/`notificadoEm` (idempotência do webhook) |
 | `Chamado` | `chamados` | Chamados de TI (compartilhado com corporativo) |
 | `EmailLog` | `email_log` | Log de e-mails enviados |
-| `Lead` / `LeadHistorico` | `leads` | CRM de leads |
-| `Candidatura` | `candidaturas` | Candidaturas de vagas |
-| `Manifestacao`, `MensagemContato`, `SolicitacaoEvento` | (formulários) | Formulários institucionais do site |
-| `Usuario` / `Professor` | `usuarios` / `professores` | Auth do corporativo |
+| `Lead` / `LeadHistorico` | `lead` / `lead_historico` | CRM de leads |
+| `Candidatura` | `candidatura` | Candidaturas de vagas |
+| `Manifestacao`, `MensagemContato`, `SolicitacaoEvento` | `manifestacao`, `mensagem_contato`, `solicitacao_evento` | Formulários institucionais do site |
 
 > **Atenção:** TypeORM com `synchronize: true`. Colunas `nullable: true` em PostgreSQL exigem `type` explícito no decorator `@Column` (ex.: `'varchar'`, `'integer'`), caso contrário ocorre `DataTypeNotSupportedError`.
 
@@ -317,9 +319,7 @@ O `SophiaService` encapsula todas as chamadas HTTP ao ERP:
 | `getBoleto(idAluno, codigoBoleto)` | Baixa o PDF do boleto (base64 → Buffer) |
 | `getColaboradores` | Busca professor por e-mail/nome |
 | `getListaChamadaProfessor` / `getAlunosListaChamada` | Cronograma + turmas do professor / alunos de uma aula |
-| `criarCliente` | Cadastro de prospecto (`POST /clientes`) |
-| `criarResponsavelAluno` / `vincularResponsavelFinanceiro` | Vínculo responsável ↔ aluno |
-| `matricularAluno` | Matrícula no SophiA (`POST /alunos/{id}/Matriculas`) |
+| `criarCliente` | Cadastro de prospecto (`POST /clientes`) — chamado hoje só pelo webhook do Mercado Pago aprovado |
 | `getCursos` / `getTurmaDetalhada` | Catálogo de cursos/turmas (usar para montar payload de matrícula com valores corretos) |
 
 Documentação bruta da API (Swagger 2.0 exportado) em `documentacao/swagger.json`. Documentação da API do Bolecode/Itaú (collection Postman, **não é do Sophia**) em `documentacao/Bolecode_new 3.json` — mantida só como referência, não integrar direto (ver seção acima).
@@ -371,10 +371,12 @@ Mensagens geradas por status:
 
 | Arquivo | Descrição |
 |---|---|
+| `Bot-IPESSP-WhatsApp.json` | Bot de atendimento (AI Agent) — financeiro, secretaria, TI, avisos, calendário, cursos, captura de lead e envio de boleto em PDF |
 | `Keep-alive-backend.json` | Ping a `/health` a cada 10 min (evita sleep do Render) |
 | `Notificação-chamado-TI.json` | Notifica solicitante via WhatsApp quando chamado muda de status |
-| `CRM-IPESSP-Leads-completo.json` | Fluxo de CRM / leads |
-| `n8n-nutricao-whatsapp.json` | Fluxo de nutrição via WhatsApp |
+| `CRM-IPESSP-Leads-completo.json` | CRM de leads: notificação de novo lead, nutrição automática (a cada 30 min), relatórios diário/semanal e reativação de leads pausados |
+
+Todos os 4 usam `$env.NOME` (n8n auto-hospedado no Render — variáveis reais configuradas no painel do serviço n8n, não pela feature paga "Variables" do n8n Cloud).
 
 ---
 
@@ -385,7 +387,7 @@ Mensagens geradas por status:
 | `DATABASE_URL` | Supabase PostgreSQL connection string |
 | `SOPHIA_BASE_URL`, `SOPHIA_USUARIO`, `SOPHIA_SENHA`, `SOPHIA_TENANT` | Credenciais do ERP SophiA |
 | `SUPABASE_URL`, `SUPABASE_SERVICE_KEY` | Projeto Supabase (dados + storage de currículos) |
-| `IA_BEARER_TOKEN` | Token Bearer dos endpoints do bot (`/ia/*`, `/v1/leads/*`) |
+| `IA_BEARER_TOKEN` | Token Bearer de `/ia/*`, `/v1/leads/*`, `/v1/ti/*` e `/v1/matriculas` — precisa ser igual a `MATRICULAS_API_KEY`/`LEADS_API_KEY` no frontend (ver seção Autenticação) |
 | `ADMIN_API_KEY` | Chave dos endpoints `/v1/admin/*` |
 | `JWT_SECRET` | Obrigatório — sem ele a aplicação não sobe |
 | `WEBHOOK_SECRET` | (reservado para webhooks internos) |

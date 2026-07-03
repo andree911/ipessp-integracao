@@ -7,10 +7,6 @@ import { WhatsAppService } from '../email/whatsapp.service';
 import { ResponsavelCache } from './entities/responsavel-cache.entity';
 import { TelefoneCpfCache } from './entities/telefone-cpf-cache.entity';
 import { SupabaseService } from './supabase.service';
-import { CriarProspectivoDto } from './dto/prospectivo.dto';
-import { CriarResponsavelDto } from './dto/criar-responsavel.dto';
-import { axiosDetail } from '../common/err.util';
-import { MatricularAlunoDto } from './dto/matricular-aluno.dto';
 import { AssociarTelefoneDto } from './dto/associar-telefone.dto';
 
 @Injectable()
@@ -106,86 +102,6 @@ export class IaService {
       return [];
     }
     return data ?? [];
-  }
-
-  async criarProspectivo(dto: CriarProspectivoDto) {
-    try {
-      return await this.sophia.criarCliente(dto);
-    } catch (err: unknown) {
-      const sophiaError = axiosDetail(err);
-      this.logger.error(`criarProspectivo falhou: ${JSON.stringify(sophiaError)}`);
-      throw { sophiaError, message: 'Sophia recusou a criação do cliente' };
-    }
-  }
-
-  async criarResponsavel(dto: CriarResponsavelDto) {
-    const cpfNumeros = dto.cpfAluno.replace(/\D/g, '');
-    const registros = await this.cacheRepo.find({ where: { cpf: cpfNumeros } });
-    if (registros.length === 0) {
-      throw new NotFoundException(
-        'Nenhum aluno encontrado para o CPF informado. Verifique se o CPF está cadastrado no sistema.',
-      );
-    }
-
-    // Usa o primeiro registro para obter o codigoAluno (todos compartilham o mesmo CPF de responsável)
-    const { codigoAluno, nomeAluno } = registros[0];
-
-    const resultado = await this.sophia.criarResponsavelAluno(codigoAluno, {
-      nome: dto.nome,
-      cpf: dto.cpf,
-      email: dto.email,
-      telefone: dto.telefone,
-      responsavelFinanceiro: dto.responsavelFinanceiro ?? false,
-      responsavelPedagogico: dto.responsavelPedagogico ?? false,
-      tipoVinculo: dto.tipoParentesco
-        ? { tipoParentesco: dto.tipoParentesco }
-        : undefined,
-    });
-
-    if (dto.responsavelFinanceiro && resultado.codigo) {
-      await this.sophia.vincularResponsavelFinanceiro(codigoAluno, resultado.codigo);
-    }
-
-    // Atualiza o cache inline para que /ia/financeiro já funcione sem esperar o cron
-    if (dto.responsavelFinanceiro && dto.cpf) {
-      const novoCpf = dto.cpf.replace(/\D/g, '');
-      await this.cacheRepo.upsert(
-        {
-          cpf: novoCpf,
-          codigoAluno,
-          nomeAluno,
-          codigoResponsavel: resultado.codigo,
-          nomeResponsavel: resultado.nome,
-          email: resultado.email ?? null,
-        } as ResponsavelCache,
-        ['cpf', 'codigoAluno'],
-      );
-      this.logger.log(`Cache IA atualizado inline: CPF ${novoCpf} → aluno ${codigoAluno}`);
-    }
-
-    return {
-      ok: true,
-      codigoResponsavel: resultado.codigo,
-      codigoAluno,
-      nomeAluno,
-      responsavelFinanceiro: dto.responsavelFinanceiro ?? false,
-    };
-  }
-
-  async matricularAluno(dto: MatricularAlunoDto) {
-    const resultado = await this.sophia.matricularAluno(dto.codigoAluno, {
-      unidade: dto.unidade,
-      curso: dto.curso,
-      turno: dto.turno,
-      periodoLetivo: dto.periodoLetivo,
-      curriculo: dto.curriculo,
-      valorPrimeiraParcela: dto.valorPrimeiraParcela,
-      dataPagamento: dto.dataPagamento,
-      descontoMensalidade: dto.descontoMensalidade,
-    });
-
-    this.logger.log(`Matrícula criada no SophiA: aluno ${dto.codigoAluno}, curso ${dto.curso}`);
-    return resultado;
   }
 
   async getSecretariaByCpf(cpf: string) {

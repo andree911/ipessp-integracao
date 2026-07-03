@@ -14,9 +14,6 @@ import {
   MatriculaAlunoApiModel,
   MatriculasWrapperApiModel,
   ResponsavelAlunoApiModel,
-  CriarResponsavelAlunoApiModel,
-  CriarResponsavelAlunoRetornoApiModel,
-  MatriculaInclusaoApiModel,
 } from './types/sophia.types';
 
 @Injectable()
@@ -92,25 +89,6 @@ export class SophiaService implements OnModuleInit {
         await this.autenticar();
         const { data } = await firstValueFrom(
           this.http.post<T>(url, body, { headers: this.headers() }),
-        );
-        return data;
-      }
-      throw err;
-    }
-  }
-
-  private async put<T>(url: string, body: unknown): Promise<T> {
-    try {
-      const { data } = await firstValueFrom(
-        this.http.put<T>(url, body, { headers: this.headers() }),
-      );
-      return data;
-    } catch (err: unknown) {
-      if (isAxios401(err)) {
-        this.logger.warn('SophiA: token expirado, reautenticando...');
-        await this.autenticar();
-        const { data } = await firstValueFrom(
-          this.http.put<T>(url, body, { headers: this.headers() }),
         );
         return data;
       }
@@ -276,27 +254,6 @@ export class SophiaService implements OnModuleInit {
       this.logger.warn(`Volume alto (${alunos.length} alunos) — monitorar uso de memória no sync`);
     }
     return alunos;
-  }
-
-  async criarResponsavelAluno(
-    idAluno: number,
-    dados: CriarResponsavelAlunoApiModel,
-  ): Promise<CriarResponsavelAlunoRetornoApiModel> {
-    return this.post<CriarResponsavelAlunoRetornoApiModel>(
-      `${this.apiBase}/alunos/${idAluno}/responsaveis`,
-      dados,
-    );
-  }
-
-  async vincularResponsavelFinanceiro(idAluno: number, idResponsavel: number): Promise<void> {
-    await this.put<unknown>(
-      `${this.apiBase}/alunos/${idAluno}/responsavelFinanceiro`,
-      idResponsavel,
-    );
-  }
-
-  async matricularAluno(idAluno: number, dados: MatriculaInclusaoApiModel): Promise<unknown> {
-    return this.post<unknown>(`${this.apiBase}/alunos/${idAluno}/Matriculas`, dados);
   }
 
   async getCursos(): Promise<unknown> {
