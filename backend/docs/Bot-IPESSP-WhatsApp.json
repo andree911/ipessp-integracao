@@ -206,7 +206,7 @@
     },
     {
       "parameters": {
-        "toolDescription": "Registra um novo lead/prospecto interessado em cursos do IPESSP. Use quando o usuário demonstrar interesse em se matricular, pedir informações sobre cursos ou pedir para ser contatado. Colete nome, email e telefone antes de chamar.",
+        "toolDescription": "Registra um novo lead/prospecto interessado em cursos do IPESSP. Use quando o usuário demonstrar interesse em se matricular, pedir informações sobre cursos ou pedir para ser contatado. Colete nome e email antes de chamar (telefone já é identificado automaticamente pelo WhatsApp).",
         "method": "POST",
         "url": "=https://integracao-sophia-n8n.onrender.com/v1/leads",
         "sendHeaders": true,
@@ -218,7 +218,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"nome\": \"{{ $fromAI('nome', 'Nome completo do interessado') }}\",\n  \"email\": \"{{ $fromAI('email', 'Email do interessado, se informado') }}\",\n  \"telefone\": \"{{ $fromAI('telefone', 'Telefone do interessado, somente números') }}\",\n  \"cursoInteresse\": \"{{ $fromAI('cursoInteresse', 'Curso ou área de interesse mencionada') }}\",\n  \"origem\": \"chatbot\"\n}",
+        "jsonBody": "={\n  \"nome\": \"{{ $fromAI('nome', 'Nome completo do interessado') }}\",\n  \"email\": \"{{ $fromAI('email', 'Email do interessado, se informado') }}\",\n  \"telefone\": \"{{ $('Webhook').item.json.body.phone }}\",\n  \"cursoInteresse\": \"{{ $fromAI('cursoInteresse', 'Curso ou área de interesse mencionada') }}\",\n  \"origem\": \"chatbot\"\n}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequestTool",

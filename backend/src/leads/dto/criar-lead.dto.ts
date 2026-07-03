@@ -1,4 +1,10 @@
+import { Transform } from 'class-transformer';
 import { IsEmail, IsNotEmpty, IsOptional, IsString, IsIn, Matches, MaxLength } from 'class-validator';
+
+// n8n (via $fromAI) sempre manda string, nunca omite o campo: quando a IA não
+// tem a informação, o valor vem como "". @IsOptional() só ignora null/undefined,
+// então sem esse Transform "" cairia nos validadores de formato e voltaria 400.
+const undefinedSeVazio = ({ value }: { value: string }) => (value === '' ? undefined : value);
 
 export class CriarLeadDto {
   @IsNotEmpty()
@@ -6,10 +12,12 @@ export class CriarLeadDto {
   @MaxLength(200)
   nome: string;
 
+  @Transform(undefinedSeVazio)
   @IsOptional()
   @IsEmail()
   email?: string;
 
+  @Transform(undefinedSeVazio)
   @IsOptional()
   @IsString()
   @MaxLength(20)
