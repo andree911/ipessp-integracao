@@ -13,7 +13,7 @@
     },
     {
       "parameters": {
-        "url": "=https://integracao-sophia-n8n.onrender.com/health",
+        "url": "={{ $env.CORE_API_URL }}/health",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",

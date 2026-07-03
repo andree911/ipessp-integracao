@@ -1,6 +1,6 @@
 import { Body, Controller, Headers, HttpCode, Logger, Post, Query } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { createHmac } from 'crypto';
 import { MercadoPagoService } from './mercadopago.service';
@@ -94,11 +94,18 @@ export class MercadoPagoController {
     const cache = ref ? await this.cacheRepo.findOne({ where: { externalReference: ref } }) : null;
 
     // Trava de idempotência: o Mercado Pago pode reentregar o mesmo webhook mais de
-    // uma vez. Sem isso, cada reentrega criaria um cliente duplicado no Sophia e
-    // reenviaria a notificação pro financeiro.
-    if (cache?.notificadoEm) {
-      this.logger.log(`Webhook duplicado ignorado para ref=${ref} (já processado em ${cache.notificadoEm.toISOString()})`);
-      return;
+    // uma vez, inclusive quase simultaneamente. Um UPDATE condicional atômico (em vez
+    // de ler notificadoEm e só gravar no final) fecha a janela de corrida — só uma
+    // execução consegue "reivindicar" a linha; a outra sai sem duplicar o cliente no Sophia.
+    if (cache) {
+      const claim = await this.cacheRepo.update(
+        { id: cache.id, notificadoEm: IsNull() },
+        { notificadoEm: new Date() },
+      );
+      if (claim.affected === 0) {
+        this.logger.log(`Webhook duplicado ignorado para ref=${ref} (corrida com outra execução)`);
+        return;
+      }
     }
 
     // Cria o cliente/prospecto automaticamente no Sophia — a secretaria só precisa
@@ -240,10 +247,7 @@ export class MercadoPagoController {
     }
 
     if (cache) {
-      await this.cacheRepo.update(cache.id, {
-        codigoClienteSophia,
-        notificadoEm: new Date(),
-      });
+      await this.cacheRepo.update(cache.id, { codigoClienteSophia });
     }
   }
 }

@@ -55,11 +55,11 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.z-api.io/instances/3F497673391262B5E38ECAD85331F05F/token/23DD6E612F8766B753610EE4/send-text",
+        "url": "={{ 'https://api.z-api.io/instances/' + $env.ZAPI_INSTANCE_ID + '/token/' + $env.ZAPI_TOKEN + '/send-text' }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Client-Token", "value": "=F08e1c9c0504d4da7bc5b9e5a2685d3d5S" },
+            { "name": "Client-Token", "value": "={{ $env.ZAPI_CLIENT_TOKEN }}" },
             { "name": "Content-Type", "value": "application/json" }
           ]
         },

@@ -27,14 +27,14 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.z-api.io/instances/3F497673391262B5E38ECAD85331F05F/token/23DD6E612F8766B753610EE4/send-text",
+        "url": "={{ 'https://api.z-api.io/instances/' + $env.ZAPI_INSTANCE_ID + '/token/' + $env.ZAPI_TOKEN + '/send-text' }}",
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "Client-Token", "value": "=F08e1c9c0504d4da7bc5b9e5a2685d3d5S" }]
+          "parameters": [{ "name": "Client-Token", "value": "={{ $env.ZAPI_CLIENT_TOKEN }}" }]
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ phone: '5511940343994', message: $json.mensagem }) }}",
+        "jsonBody": "={{ JSON.stringify({ phone: $env.ZAPI_TELEFONE_EQUIPE, message: $json.mensagem }) }}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -56,10 +56,10 @@
     },
     {
       "parameters": {
-        "url": "=https://integracao-sophia-n8n.onrender.com/v1/leads/prontos-para-contato",
+        "url": "={{ $env.CORE_API_URL }}/v1/leads/prontos-para-contato",
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "Authorization", "value": "=Bearer d381c324adfc9ce74e195fcb7dc024e99b7e8bcf91d4bc86aa26f7c89c368a1c" }]
+          "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}" }]
         },
         "options": {}
       },
@@ -82,10 +82,10 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.z-api.io/instances/3F497673391262B5E38ECAD85331F05F/token/23DD6E612F8766B753610EE4/send-text",
+        "url": "={{ 'https://api.z-api.io/instances/' + $env.ZAPI_INSTANCE_ID + '/token/' + $env.ZAPI_TOKEN + '/send-text' }}",
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "Client-Token", "value": "=F08e1c9c0504d4da7bc5b9e5a2685d3d5S" }]
+          "parameters": [{ "name": "Client-Token", "value": "={{ $env.ZAPI_CLIENT_TOKEN }}" }]
         },
         "sendBody": true,
         "specifyBody": "json",
@@ -101,10 +101,10 @@
     {
       "parameters": {
         "method": "PATCH",
-        "url": "={{ 'https://integracao-sophia-n8n.onrender.com' + '/v1/leads/' + $('Montar Mensagens Nurturing').item.json.leadId + '/nurturing-avanco' }}",
+        "url": "={{ $env.CORE_API_URL + '/v1/leads/' + $('Montar Mensagens Nurturing').item.json.leadId + '/nurturing-avanco' }}",
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "Authorization", "value": "=Bearer d381c324adfc9ce74e195fcb7dc024e99b7e8bcf91d4bc86aa26f7c89c368a1c" }]
+          "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}" }]
         },
         "options": {}
       },
@@ -127,10 +127,10 @@
     },
     {
       "parameters": {
-        "url": "=https://integracao-sophia-n8n.onrender.com/v1/leads/relatorio/diario",
+        "url": "={{ $env.CORE_API_URL }}/v1/leads/relatorio/diario",
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "Authorization", "value": "=Bearer d381c324adfc9ce74e195fcb7dc024e99b7e8bcf91d4bc86aa26f7c89c368a1c" }]
+          "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}" }]
         },
         "options": {}
       },
@@ -153,14 +153,14 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.z-api.io/instances/3F497673391262B5E38ECAD85331F05F/token/23DD6E612F8766B753610EE4/send-text",
+        "url": "={{ 'https://api.z-api.io/instances/' + $env.ZAPI_INSTANCE_ID + '/token/' + $env.ZAPI_TOKEN + '/send-text' }}",
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "Client-Token", "value": "=F08e1c9c0504d4da7bc5b9e5a2685d3d5S" }]
+          "parameters": [{ "name": "Client-Token", "value": "={{ $env.ZAPI_CLIENT_TOKEN }}" }]
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ phone: '5511940343994', message: $json.mensagem }) }}",
+        "jsonBody": "={{ JSON.stringify({ phone: $env.ZAPI_TELEFONE_EQUIPE, message: $json.mensagem }) }}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -182,10 +182,10 @@
     },
     {
       "parameters": {
-        "url": "=https://integracao-sophia-n8n.onrender.com/v1/leads/relatorio",
+        "url": "={{ $env.CORE_API_URL }}/v1/leads/relatorio",
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "Authorization", "value": "=Bearer d381c324adfc9ce74e195fcb7dc024e99b7e8bcf91d4bc86aa26f7c89c368a1c" }]
+          "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}" }]
         },
         "options": {}
       },
@@ -208,14 +208,14 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.z-api.io/instances/3F497673391262B5E38ECAD85331F05F/token/23DD6E612F8766B753610EE4/send-text",
+        "url": "={{ 'https://api.z-api.io/instances/' + $env.ZAPI_INSTANCE_ID + '/token/' + $env.ZAPI_TOKEN + '/send-text' }}",
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "Client-Token", "value": "=F08e1c9c0504d4da7bc5b9e5a2685d3d5S" }]
+          "parameters": [{ "name": "Client-Token", "value": "={{ $env.ZAPI_CLIENT_TOKEN }}" }]
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ phone: '5511940343994', message: $json.mensagem }) }}",
+        "jsonBody": "={{ JSON.stringify({ phone: $env.ZAPI_TELEFONE_EQUIPE, message: $json.mensagem }) }}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -238,10 +238,10 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://integracao-sophia-n8n.onrender.com/v1/leads/reativar-nurturing",
+        "url": "={{ $env.CORE_API_URL }}/v1/leads/reativar-nurturing",
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "Authorization", "value": "=Bearer d381c324adfc9ce74e195fcb7dc024e99b7e8bcf91d4bc86aa26f7c89c368a1c" }]
+          "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}" }]
         },
         "options": {}
       },
