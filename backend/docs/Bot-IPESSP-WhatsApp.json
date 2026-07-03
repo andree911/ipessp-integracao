@@ -218,7 +218,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"nome\": \"={{ $fromAI('nome', 'Nome completo do interessado') }}\",\n  \"email\": \"={{ $fromAI('email', 'Email do interessado, se informado') }}\",\n  \"telefone\": \"={{ $fromAI('telefone', 'Telefone do interessado, somente números') }}\",\n  \"cursoInteresse\": \"={{ $fromAI('cursoInteresse', 'Curso ou área de interesse mencionada') }}\",\n  \"origem\": \"chatbot\"\n}",
+        "jsonBody": "={\n  \"nome\": \"{{ $fromAI('nome', 'Nome completo do interessado') }}\",\n  \"email\": \"{{ $fromAI('email', 'Email do interessado, se informado') }}\",\n  \"telefone\": \"{{ $fromAI('telefone', 'Telefone do interessado, somente números') }}\",\n  \"cursoInteresse\": \"{{ $fromAI('cursoInteresse', 'Curso ou área de interesse mencionada') }}\",\n  \"origem\": \"chatbot\"\n}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequestTool",
@@ -256,7 +256,7 @@
           "conditions": [
             {
               "id": "33162f65-fed3-48a0-832d-6b2029a90ff2",
-              "leftValue": "=={{ $json.body.text.message }}",
+              "leftValue": "={{ $json.body.text.message }}",
               "rightValue": "^(oi|olá|ola|bom dia|boa tarde|boa noite|hi|hello|menu|inicio|início|comecar|começar|ajuda|help|start|opa|eae|ei|hey|tudo bem|td bem)",
               "operator": { "type": "string", "operation": "regex" }
             }
@@ -297,7 +297,7 @@
           "conditions": [
             {
               "id": "75abb9e4-9ccc-4d21-aaae-078a3a477f55",
-              "leftValue": "=={{ $json.body.listResponseMessage?.rowId }}",
+              "leftValue": "={{ $json.body.listResponseMessage?.rowId }}",
               "rightValue": "",
               "operator": { "type": "string", "operation": "exists", "singleValue": true }
             }
@@ -327,7 +327,7 @@
         "url": "={{ $env.CORE_API_URL }}/ia/cpf-por-telefone",
         "sendQuery": true,
         "queryParameters": {
-          "parameters": [{ "name": "telefone", "value": "=={{ $('Webhook').item.json.body.phone }}" }]
+          "parameters": [{ "name": "telefone", "value": "={{ $('Webhook').item.json.body.phone }}" }]
         },
         "sendHeaders": true,
         "headerParameters": {
@@ -366,7 +366,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"telefone\": \"={{ $('Webhook').item.json.body.phone }}\",\n  \"cpf\": \"={{ $fromAI('cpf', 'CPF informado pelo usuário, somente números') }}\",\n  \"nomeResponsavel\": \"={{ $fromAI('nomeResponsavel', 'Nome do responsável se informado, senão string vazia') }}\",\n  \"tipo\": \"={{ $fromAI('tipo', 'Tipo do usuário: aluno, professor ou funcionario. Pergunte ao usuário caso não saiba.') }}\",\n  \"email\": \"={{ $fromAI('email', 'Email institucional se informado pelo professor, senão string vazia') }}\"\n}",
+        "jsonBody": "={\n  \"telefone\": \"{{ $('Webhook').item.json.body.phone }}\",\n  \"cpf\": \"{{ $fromAI('cpf', 'CPF informado pelo usuário, somente números') }}\",\n  \"nomeResponsavel\": \"{{ $fromAI('nomeResponsavel', 'Nome do responsável se informado, senão string vazia') }}\",\n  \"tipo\": \"{{ $fromAI('tipo', 'Tipo do usuário: aluno, professor ou funcionario. Pergunte ao usuário caso não saiba.') }}\",\n  \"email\": \"{{ $fromAI('email', 'Email institucional se informado pelo professor, senão string vazia') }}\"\n}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequestTool",
@@ -386,7 +386,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"titulo\": \"={{ $fromAI('titulo', 'Título curto do problema, ex: Sem acesso ao portal') }}\",\n  \"descricao\": \"={{ $fromAI('descricao', 'Descrição detalhada do problema relatado') }}\",\n  \"categoria\": \"={{ $fromAI('categoria', 'Categoria: Hardware, Software, Acesso, Rede, Email ou Outro') }}\",\n  \"prioridade\": \"={{ $fromAI('prioridade', 'Prioridade: baixa, media, alta ou urgente') }}\",\n  \"telefoneSolicitante\": \"={{ $('Webhook').item.json.body.phone }}\",\n  \"criadoPorNome\": \"={{ $fromAI('criadoPorNome', 'Nome do usuário se conhecido, senão string vazia') }}\",\n  \"setor\": \"={{ $fromAI('setor', 'Tipo do usuário: aluno, professor ou funcionario') }}\"\n}",
+        "jsonBody": "={\n  \"titulo\": \"{{ $fromAI('titulo', 'Título curto do problema, ex: Sem acesso ao portal') }}\",\n  \"descricao\": \"{{ $fromAI('descricao', 'Descrição detalhada do problema relatado') }}\",\n  \"categoria\": \"{{ $fromAI('categoria', 'Categoria: Hardware, Software, Acesso, Rede, Email ou Outro') }}\",\n  \"prioridade\": \"{{ $fromAI('prioridade', 'Prioridade: baixa, media, alta ou urgente') }}\",\n  \"telefoneSolicitante\": \"{{ $('Webhook').item.json.body.phone }}\",\n  \"criadoPorNome\": \"{{ $fromAI('criadoPorNome', 'Nome do usuário se conhecido, senão string vazia') }}\",\n  \"setor\": \"{{ $fromAI('setor', 'Tipo do usuário: aluno, professor ou funcionario') }}\"\n}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequestTool",
@@ -401,7 +401,7 @@
         "url": "={{ $env.CORE_API_URL }}/v1/ti/chamados",
         "sendQuery": true,
         "queryParameters": {
-          "parameters": [{ "name": "telefone", "value": "=={{ $('Webhook').item.json.body.phone }}" }]
+          "parameters": [{ "name": "telefone", "value": "={{ $('Webhook').item.json.body.phone }}" }]
         },
         "sendHeaders": true,
         "headerParameters": {
@@ -421,7 +421,7 @@
         "url": "={{ $env.CORE_API_URL }}/ia/secretaria",
         "sendQuery": true,
         "queryParameters": {
-          "parameters": [{ "name": "cpf", "value": "=={{ $fromAI('cpf', 'CPF do aluno ou responsável, somente números') }}" }]
+          "parameters": [{ "name": "cpf", "value": "={{ $fromAI('cpf', 'CPF do aluno ou responsável, somente números') }}" }]
         },
         "sendHeaders": true,
         "headerParameters": {
@@ -441,7 +441,7 @@
         "url": "={{ $env.CORE_API_URL }}/ia/secretaria/professor",
         "sendQuery": true,
         "queryParameters": {
-          "parameters": [{ "name": "email", "value": "=={{ $fromAI('email', 'Email institucional do professor') }}" }]
+          "parameters": [{ "name": "email", "value": "={{ $fromAI('email', 'Email institucional do professor') }}" }]
         },
         "sendHeaders": true,
         "headerParameters": {
@@ -461,7 +461,7 @@
         "url": "={{ $env.CORE_API_URL }}/ia/secretaria/professor/alunos",
         "sendQuery": true,
         "queryParameters": {
-          "parameters": [{ "name": "disciplinaId", "value": "=={{ $fromAI('disciplinaId', 'ID da disciplina retornado pela consulta do professor') }}" }]
+          "parameters": [{ "name": "disciplinaId", "value": "={{ $fromAI('disciplinaId', 'ID da disciplina retornado pela consulta do professor') }}" }]
         },
         "sendHeaders": true,
         "headerParameters": {
@@ -481,7 +481,7 @@
         "url": "={{ $env.CORE_API_URL }}/v1/leads",
         "sendQuery": true,
         "queryParameters": {
-          "parameters": [{ "name": "telefone", "value": "=={{ $('Webhook').item.json.body.phone }}" }]
+          "parameters": [{ "name": "telefone", "value": "={{ $('Webhook').item.json.body.phone }}" }]
         },
         "sendHeaders": true,
         "headerParameters": {
@@ -500,7 +500,7 @@
         "url": "={{ $env.CORE_API_URL }}/ia/cpf-por-telefone",
         "sendQuery": true,
         "queryParameters": {
-          "parameters": [{ "name": "telefone", "value": "=={{ $('Webhook').item.json.body.phone }}" }]
+          "parameters": [{ "name": "telefone", "value": "={{ $('Webhook').item.json.body.phone }}" }]
         },
         "sendHeaders": true,
         "headerParameters": {
