@@ -5,6 +5,7 @@ import { CriarProspectivoDto } from './dto/prospectivo.dto';
 import { CriarResponsavelDto } from './dto/criar-responsavel.dto';
 import { MatricularAlunoDto } from './dto/matricular-aluno.dto';
 import { AssociarTelefoneDto } from './dto/associar-telefone.dto';
+import { EnviarBoletoDto } from './dto/enviar-boleto.dto';
 
 @Controller('ia')
 @UseGuards(IaBearerGuard)
@@ -22,6 +23,11 @@ export class IaController {
     if (!cpf) throw new BadRequestException('Parâmetro cpf é obrigatório');
     if (!codigoBoleto) throw new BadRequestException('Parâmetro codigoBoleto é obrigatório');
     return this.iaService.getBoletoPdf(cpf, Number(codigoBoleto));
+  }
+
+  @Post('boleto/enviar')
+  enviarBoleto(@Body() dto: EnviarBoletoDto) {
+    return this.iaService.enviarBoletoWhatsapp(dto.cpf, dto.codigoBoleto, dto.telefone);
   }
 
   @Get('avisos')

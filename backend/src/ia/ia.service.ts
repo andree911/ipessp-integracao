@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SophiaService } from '../sophia/sophia.service';
 import { FinanceiroService } from '../financeiro/financeiro.service';
+import { WhatsAppService } from '../email/whatsapp.service';
 import { ResponsavelCache } from './entities/responsavel-cache.entity';
 import { TelefoneCpfCache } from './entities/telefone-cpf-cache.entity';
 import { SupabaseService } from './supabase.service';
@@ -19,6 +20,7 @@ export class IaService {
   constructor(
     private readonly sophia: SophiaService,
     private readonly financeiro: FinanceiroService,
+    private readonly whatsapp: WhatsAppService,
     private readonly supabase: SupabaseService,
     @InjectRepository(ResponsavelCache)
     private readonly cacheRepo: Repository<ResponsavelCache>,
@@ -62,6 +64,13 @@ export class IaService {
       fileName: `boleto-${codigoBoleto}.pdf`,
       mimeType: 'application/pdf',
     };
+  }
+
+  /** Busca o PDF do boleto e manda direto pro WhatsApp do próprio usuário — usado pela tool do bot. */
+  async enviarBoletoWhatsapp(cpf: string, codigoBoleto: number, telefone: string): Promise<{ ok: boolean }> {
+    const { base64, fileName } = await this.getBoletoPdf(cpf, codigoBoleto);
+    await this.whatsapp.enviarDocumento(telefone, base64, fileName);
+    return { ok: true };
   }
 
   async getAvisos() {
