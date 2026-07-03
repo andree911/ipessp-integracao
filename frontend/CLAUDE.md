@@ -29,6 +29,8 @@ Usado só onde o backend exige `Authorization: Bearer <token>` (pra não expor a
 
 Ambas são proxies burros (`app/api/matriculas/route.ts`, `app/api/lead/route.ts`): recebem o JSON do cliente, repassam verbatim pro backend com o header `Authorization` injetado no servidor, e devolvem a resposta (status + body) sem transformar nada. Se a env var da chave não estiver setada, respondem `503` direto (não chegam a chamar o backend).
 
+> **Atenção — pegadinha de nomes:** o backend valida `/v1/matriculas` e `/v1/leads` com o mesmo guard (`IaBearerGuard`), que compara contra um único `IA_BEARER_TOKEN`. Ou seja, apesar do nome diferente, **`MATRICULAS_API_KEY` e `LEADS_API_KEY` aqui precisam ter exatamente o mesmo valor** do `IA_BEARER_TOKEN` configurado no backend — não são segredos independentes. Se algum for gerado/rotacionado sem replicar nos outros, o POST volta 401 e o formulário quebra sem log visível no frontend.
+
 ### 2. Chamada direta do browser (`apiFetch`) — para endpoints públicos
 
 `app/lib/api.ts` expõe `apiFetch(path, init)`, que chama `${NEXT_PUBLIC_API_URL}${path}` direto do navegador, com `credentials: 'include'` e `Content-Type: application/json` automático (exceto quando o body é `FormData`, pra upload de arquivo funcionar). Usado por: `/v1/candidaturas`, `/v1/mensagens-contato`, `/v1/manifestacoes`, `/v1/solicitacoes-eventos` — nenhum desses exige Bearer token no backend.
