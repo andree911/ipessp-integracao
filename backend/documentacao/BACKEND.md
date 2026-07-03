@@ -269,18 +269,18 @@ Contexto: substituição do Rubeus/TOTVS pelo SophiA. A API pública do Sophia n
 
 **Cliente ≠ Aluno no Sophia — confirmado.** `POST /clientes` cria um prospecto num cadastro totalmente separado do de "Alunos" (telas e códigos independentes dentro do Sophia). Não existe, em nenhum lugar da API, um endpoint para converter um Cliente em Aluno — essa conversão (que provavelmente já inclui a matrícula em si, geração de RA, plano de pagamento e afins) é feita manualmente pela secretaria dentro do Sophia. Ou seja, o `POST /alunos/{idAluno}/Matriculas` só serve para um aluno **que já existe** (ex.: rematrícula, curso adicional) — não para o cadastro inicial de um aluno novo.
 
-**Fluxo implementado:**
+**Fluxo implementado (matrícula nova pelo site) — escopo fechado:**
 1. Mercado Pago cobra a 1ª parcela (cartão/PIX/boleto do MP).
 2. Webhook aprovado → backend chama `POST /clientes` automaticamente no Sophia (dados do aluno/responsável/curso já preenchidos, `interesse` com curso/turno/período/unidade).
-3. Notificação ao financeiro (WhatsApp + e-mail) — com o código do cliente já criado, se deu certo — para a secretaria efetivar a matrícula manualmente no Sophia (passo que não tem como automatizar, ver acima). Se o passo 2 falhar, a notificação cai no formato de cadastro manual completo (fallback).
-4. Ao efetivar a matrícula dentro do Sophia, o próprio sistema gera o plano de pagamento completo (todas as parcelas, pela tabela de preço do curso já configurada) — a emissão do boleto/PIX de cada parcela em si segue o processo interno/manual do Sophia, não é instantânea.
+3. Notificação ao financeiro (WhatsApp + e-mail) — com o código do cliente já criado, se deu certo — para a secretaria efetivar a matrícula manualmente no Sophia. Se o passo 2 falhar, a notificação cai no formato de cadastro manual completo (fallback).
+4. **Daqui pra frente é 100% manual, numa ação só dentro do Sophia**: transformar Cliente em Aluno + matricular + gerar o plano de pagamento completo (todas as parcelas, pela tabela de preço do curso já configurada). A emissão do boleto/PIX de cada parcela em si segue o processo interno/manual do Sophia (não instantâneo, não por lançamento).
 
-O Mercado Pago é mantido mesmo com essa automação — ele processa cartão (que o Bolecode não suporta) e funciona como filtro: só quem paga vira cliente/matrícula real no Sophia.
+O Mercado Pago é mantido mesmo com essa automação — ele processa cartão (que o Bolecode não suporta) e funciona como filtro: só quem paga vira cliente real no Sophia. **`POST /alunos/{idAluno}/Matriculas` não faz parte deste fluxo** — não há como encadear `POST /clientes` → `POST /Matriculas` automaticamente, porque no momento da criação do Cliente ainda não existe `idAluno` nenhum (é exatamente esse o motivo de o passo 4 ser manual).
 
-Ainda não confirmado por falta de teste em produção com um Aluno já existente (não testar com CPF de aluno real sem necessidade):
-1. Os valores exatos de catálogo (`curso`/`turno`/`periodoLetivo`/`unidade`) que o Sophia espera em `POST /Matriculas` — usar sempre o que vier de `GET /Cursos`, `/Turmas`, `/Periodos`, `/Unidades`, nunca texto digitado à mão.
-2. Se `valorPrimeiraParcela` + `dataPagamento` (nesse endpoint, pra um aluno já existente) marca a parcela como recebida, ou se gera um boleto novo.
-3. O formato exato aceito pelo campo `interesse` do `POST /clientes` (implementado como `{ curso: { descricao }, turno: { descricao }, periodo: { descricao }, unidade: { descricao } }` em `SophiaService.criarCliente` — baseado no schema do swagger, mas nunca validado contra uma resposta real).
+Ainda não confirmado por falta de teste em produção (não testar com CPF de aluno real sem necessidade):
+- O formato exato aceito pelo campo `interesse` do `POST /clientes` (implementado como `{ curso: { descricao }, turno: { descricao }, periodo: { descricao }, unidade: { descricao } }` em `SophiaService.criarCliente` — baseado no schema do swagger, mas nunca validado contra uma resposta real). Hoje o site (`app/matricula` no frontend) coleta `curso`/`unidade`/`periodoLetivo` como texto livre, então o `interesse` só vai ficar visualmente correto pra secretaria se o texto digitado bater com o catálogo — considerar trocar por `<select>` alimentado por `GET /ia/cursos` (e futuros `/ia/unidades`, `/ia/periodos`) se isso incomodar na prática.
+
+**`POST /alunos/{idAluno}/Matriculas` é uma feature separada e independente**, já usada hoje pelo bot (`/ia/matricula`) para matricular um **aluno já existente** em um curso adicional/rematrícula — não tem relação com o fluxo de matrícula nova do site. Pendências de validação desse endpoint (valores exatos de catálogo, comportamento de `valorPrimeiraParcela`+`dataPagamento`) só importam se/quando esse fluxo de rematrícula for revisitado — não bloqueiam o fluxo de matrícula nova descrito acima.
 
 ---
 
