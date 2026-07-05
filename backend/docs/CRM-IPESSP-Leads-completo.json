@@ -96,7 +96,8 @@
       "typeVersion": 4.4,
       "position": [784, 400],
       "id": "b1c2d3e4-1111-1111-1111-000000000004",
-      "name": "Enviar WhatsApp Nurturing"
+      "name": "Enviar WhatsApp Nurturing",
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
