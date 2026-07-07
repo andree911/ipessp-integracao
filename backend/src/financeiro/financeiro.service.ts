@@ -81,6 +81,50 @@ export class FinanceiroService {
     };
   }
 
+  /** Mesma lógica de getByCpf, mas buscando pelo codigoSophia do aluno (usado pelo Portal do Aluno, que já tem esse código pela sessão logada). */
+  async getByCodigoSophia(codigoSophia: number): Promise<FinanceiroCliente> {
+    const clientes = await this.clienteRepo.find({ where: { codigoSophia } });
+    if (clientes.length === 0) {
+      throw new NotFoundException('Nenhum registro financeiro encontrado para este aluno.');
+    }
+
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+
+    const pendencias: PendenciaFinanceira[] = [];
+    for (const cliente of clientes) {
+      const lancamentos = await this.lancamentoRepo.find({
+        where: { codigoCliente: cliente.id, recebido: false },
+      });
+      for (const l of lancamentos) {
+        const venc = parseDateBR(l.dataVencimento);
+        venc.setHours(0, 0, 0, 0);
+        const diffDias = Math.round((hoje.getTime() - venc.getTime()) / 86_400_000);
+        pendencias.push({
+          codigo: l.id,
+          descricao: l.descricao ?? 'Mensalidade',
+          vencimento: l.dataVencimento.substring(0, 10),
+          valor: Number(l.valorPrevisto),
+          diasAtraso: diffDias > 0 ? diffDias : 0,
+          linhaDigitavel: l.linhaDigitavel ?? undefined,
+          urlBoleto: l.urlBoleto ?? undefined,
+          codigoPix: l.codigoPix ?? undefined,
+          codigoBoleto: l.codigoBoleto ?? undefined,
+          competencia: l.competencia ?? undefined,
+        });
+      }
+    }
+
+    const primeiro = clientes[0];
+    return {
+      nomeAluno: primeiro.nomeAluno,
+      nomeResponsavel: primeiro.nomeResponsavel ?? primeiro.nomeAluno,
+      emailResponsavel: primeiro.emailResponsavel,
+      ra: primeiro.ra ?? String(primeiro.codigoSophia ?? primeiro.id),
+      pendencias,
+    };
+  }
+
   /**
    * Confirma que o boleto pertence a um cliente com esse CPF e devolve o
    * código do aluno no Sophia (necessário pra baixar o PDF via API).

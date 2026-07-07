@@ -24,6 +24,7 @@ export class ClienteCache {
   @Column({ nullable: true, type: 'varchar' })
   telefoneResponsavel: string | null;
 
+  @Index()
   @Column({ nullable: true, type: 'varchar' })
   ra: string | null;
 

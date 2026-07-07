@@ -17,6 +17,10 @@ import { FinanceiroModule } from './financeiro/financeiro.module';
 import { TiModule } from './ti/ti.module';
 import { MatriculasModule } from './matriculas/matriculas.module';
 import { MercadoPagoModule } from './mercadopago/mercadopago.module';
+import { PortalAlunoModule } from './portal-aluno/portal-aluno.module';
+import { PortalAlunoConta } from './portal-aluno/entities/portal-aluno-conta.entity';
+import { PortalAlunoRefreshToken } from './portal-aluno/entities/portal-aluno-refresh-token.entity';
+import { PortalAlunoResetToken } from './portal-aluno/entities/portal-aluno-reset-token.entity';
 import { Chamado } from './ti/entities/chamado.entity';
 import { ClienteCache } from './financeiro/entities/cliente-cache.entity';
 import { LancamentoCache } from './financeiro/entities/lancamento-cache.entity';
@@ -49,6 +53,7 @@ import { MatriculaCache } from './matriculas/entities/matricula-cache.entity';
         entities: [
           EmailLog, ResponsavelCache, TelefoneCpfCache, Lead, LeadHistorico, MensagemContato, Manifestacao,
           SolicitacaoEvento, Candidatura, ClienteCache, LancamentoCache, Chamado, MatriculaCache,
+          PortalAlunoConta, PortalAlunoRefreshToken, PortalAlunoResetToken,
         ],
         synchronize: false,
         ssl: { rejectUnauthorized: false },
@@ -67,6 +72,7 @@ import { MatriculaCache } from './matriculas/entities/matricula-cache.entity';
     TiModule,
     MatriculasModule,
     MercadoPagoModule,
+    PortalAlunoModule,
   ],
 })
 export class AppModule {}
