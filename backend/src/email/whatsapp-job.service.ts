@@ -109,7 +109,7 @@ export class WhatsAppJobService {
     return `⚠️ Olá, ${nome}!\nSua mensalidade está em aberto há *${atraso} dia(s)* (venceu em *${venc}*). Regularize o quanto antes para evitar maiores encargos.${pixBloco}${cta('Acessar Portal')}`;
   }
 
-  @Cron('0 8 * * *', { name: 'wpp_job' })
+  @Cron('0 8 * * *', { name: 'wpp_job', timeZone: 'America/Sao_Paulo' })
   async runWhatsAppJob(): Promise<void> {
     if (this.config.get<string>('zapi.cronHabilitado') !== 'true') {
       this.logger.warn('Job de WhatsApp desabilitado (WPP_CRON_HABILITADO=false)');

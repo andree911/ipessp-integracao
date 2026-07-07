@@ -96,7 +96,7 @@ export class EmailJobService {
     };
   }
 
-  @Cron('0 8 * * *', { name: 'email_job' })
+  @Cron('0 8 * * *', { name: 'email_job', timeZone: 'America/Sao_Paulo' })
   async runEmailJob(): Promise<void> {
     if (!this.habilitado) {
       this.logger.warn('Job de emails desabilitado (EMAIL_CRON_HABILITADO=false)');

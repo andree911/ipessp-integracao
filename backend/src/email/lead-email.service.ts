@@ -48,7 +48,7 @@ export class LeadEmailService {
     }
   }
 
-  @Cron('0 9 * * *')
+  @Cron('0 9 * * *', { timeZone: 'America/Sao_Paulo' })
   async processarSequencia(): Promise<void> {
     const agora = new Date();
 
