@@ -162,7 +162,40 @@ export class IaService {
   }
 
   async getCursos() {
-    return this.sophia.getCursos();
+    const [cursos, conteudo] = await Promise.all([
+      this.sophia.getCursos() as Promise<Array<{ codigo: number; nome: string; nomeResumido: string }>>,
+      this.getCursosConteudo(),
+    ]);
+
+    const conteudoPorCodigo = new Map(conteudo.map((c) => [c.codigo_curso, c]));
+
+    return cursos.map((curso) => {
+      const extra = conteudoPorCodigo.get(curso.codigo);
+      return {
+        codigo: curso.codigo,
+        nome: curso.nome,
+        nomeResumido: curso.nomeResumido,
+        descricao: extra?.descricao ?? null,
+        duracao: extra?.duracao ?? null,
+        precoMensalidade: extra?.preco_mensalidade ?? null,
+      };
+    });
+  }
+
+  private async getCursosConteudo() {
+    const sb = this.supabase.getClient();
+    if (!sb) return [];
+
+    const { data, error } = await sb
+      .from('curso_conteudo')
+      .select('codigo_curso, descricao, duracao, preco_mensalidade')
+      .eq('ativo', true);
+
+    if (error) {
+      this.logger.error(`Erro ao buscar conteúdo de cursos: ${error.message}`);
+      return [];
+    }
+    return data ?? [];
   }
 
   async getTurmaDetalhada(codigoTurma: number) {

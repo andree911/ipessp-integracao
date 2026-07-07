@@ -527,7 +527,7 @@
     },
     {
       "parameters": {
-        "toolDescription": "Lista os cursos oferecidos pelo IPESSP (graduação, pós-graduação, cursos livres). Use quando o usuário perguntar quais cursos existem ou pedir informações sobre um curso específico, antes de registrar um lead com o curso de interesse.",
+        "toolDescription": "Lista os cursos oferecidos pelo IPESSP (graduação, pós-graduação, cursos livres), incluindo descricao, duracao e precoMensalidade quando cadastrados. Esses três campos podem vir null se ainda não foram preenchidos para aquele curso — nesse caso, NÃO invente o valor; diga que ainda não tem essa informação e ofereça registrar o lead. Use quando o usuário perguntar quais cursos existem ou pedir informações sobre um curso específico, antes de registrar um lead com o curso de interesse.",
         "url": "={{ $env.CORE_API_URL }}/ia/cursos",
         "sendHeaders": true,
         "headerParameters": {
