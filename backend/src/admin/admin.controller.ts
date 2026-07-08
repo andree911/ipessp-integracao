@@ -91,7 +91,7 @@ export class AdminController {
   @Post('email/disparar')
   @HttpCode(202)
   emailDisparar() {
-    void this.emailJobService.runEmailJob();
+    void this.emailJobService.runEmailJob('manual');
     return { message: 'Job de emails iniciado manualmente' };
   }
 }

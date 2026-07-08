@@ -100,7 +100,18 @@ export class EmailJobService {
   }
 
   @Cron('0 7,19 * * *', { name: 'email_job', timeZone: 'America/Sao_Paulo' })
-  async runEmailJob(): Promise<void> {
+  async runEmailJobCron(): Promise<void> {
+    return this.runEmailJob('cron');
+  }
+
+  /**
+   * `origem: 'cron'` (as duas rodadas automáticas, 7h e 19h) nunca pula por
+   * duplicidade — quem continua pendente recebe nas duas. `origem: 'manual'`
+   * (POST /email/trigger) só reenvia se ainda não tiver mandado esse mesmo
+   * tipo pra esse lançamento hoje, pra não duplicar se alguém disparar sem
+   * querer entre as rodadas do cron.
+   */
+  async runEmailJob(origem: 'cron' | 'manual' = 'cron'): Promise<void> {
     if (!this.habilitado) {
       this.logger.warn('Job de emails desabilitado (EMAIL_CRON_HABILITADO=false)');
       return;
@@ -129,6 +140,13 @@ export class EmailJobService {
 
         const tipo = this.calcularTipo(diffDias, diasAntes, diasAposVencimento);
         if (!tipo) continue;
+
+        if (origem === 'manual') {
+          const jaEnviado = await this.emailLogRepo.findOne({
+            where: { codigoLancamento: String(lancamento.id), tipo, enviado: true },
+          });
+          if (jaEnviado && new Date(jaEnviado.enviadoEm).toDateString() === hoje.toDateString()) continue;
+        }
 
         if (!(await this.aindaPendenteNaSophia(cliente, lancamento, cacheAlunos))) {
           totalJaPagos++;

@@ -23,7 +23,7 @@ export class EmailController {
   @Post('trigger')
   @HttpCode(202)
   trigger(): { message: string } {
-    void this.jobService.runEmailJob();
+    void this.jobService.runEmailJob('manual');
     return { message: 'Job de emails iniciado' };
   }
 
