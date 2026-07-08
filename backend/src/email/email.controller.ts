@@ -45,10 +45,10 @@ export class EmailController {
 
   @Post('test/sophia')
   @HttpCode(200)
-  async testarSophia(@Body('para') para: string): Promise<{ ok: boolean; aluno: string; tipo: string; lancamento: number }> {
+  async testarSophia(@Body('para') para: string): Promise<{ ok: boolean; total: number; enviados: { aluno: string; tipo: string; lancamento: number }[] }> {
     if (!para) throw new BadRequestException('Informe o campo "para" com o email de destino');
-    const resultado = await this.jobService.previewComDadosSophia(para);
-    return { ok: true, ...resultado };
+    const enviados = await this.jobService.previewComDadosSophia(para);
+    return { ok: true, total: enviados.length, enviados };
   }
 
   @Post('test/cpf')

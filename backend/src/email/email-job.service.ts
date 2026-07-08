@@ -251,12 +251,12 @@ export class EmailJobService {
   }
 
   /**
-   * Escolhe, entre os lançamentos pendentes, o primeiro que REALMENTE dispararia
-   * um email no job real (mesmos marcos de dia configurados) — pra que o preview
-   * simule de verdade "como se fosse produção" em vez de pegar qualquer pendência
-   * arbitrária (que pode vencer daqui a meses e nunca geraria email nenhum).
+   * Manda, pro destinatário de teste, uma cópia do email de TODA pendência
+   * que REALMENTE dispararia um email hoje no job real (mesmos marcos de dia
+   * configurados) — pra simular "como se fosse produção" de verdade, incluindo
+   * o volume de emails que sairiam, não só um exemplo isolado.
    */
-  async previewComDadosSophia(destinatario: string): Promise<{ aluno: string; tipo: string; lancamento: number }> {
+  async previewComDadosSophia(destinatario: string): Promise<{ aluno: string; tipo: string; lancamento: number }[]> {
     const escola = this.dadosEscola();
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
@@ -268,7 +268,8 @@ export class EmailJobService {
     if (pendentes.length === 0) throw new Error('Nenhum lançamento em aberto encontrado no banco local');
 
     const cacheAlunos = new Map<number, LancamentoAlunoApiModel[]>();
-    let encontrado: { cliente: (typeof pendentes)[number]['cliente']; lancamento: (typeof pendentes)[number]['lancamento']; diffDias: number; tipo: EmailTipo } | null = null;
+    const resultados: { aluno: string; tipo: string; lancamento: number }[] = [];
+
     for (const { cliente, lancamento } of pendentes) {
       const venc = parseDateBR(lancamento.dataVencimento);
       venc.setHours(0, 0, 0, 0);
@@ -276,49 +277,45 @@ export class EmailJobService {
       const tipo = this.calcularTipo(diffDias, diasAntes, diasAposVencimento);
       if (!tipo) continue;
       if (!(await this.aindaPendenteNaSophia(cliente, lancamento, cacheAlunos))) continue;
-      encontrado = { cliente, lancamento, diffDias, tipo };
-      break;
+
+      const emailData: EmailData = {
+        nomeAluno:       cliente.nomeAluno,
+        nomeResponsavel: cliente.nomeResponsavel ?? cliente.nomeAluno,
+        descricao:       'Mensalidade',
+        valor:           `R$ ${Number(lancamento.valorPrevisto).toFixed(2).replace('.', ',')}`,
+        vencimento:      venc.toLocaleDateString('pt-BR'),
+        diasRestantes:   diffDias > 0 ? diffDias : undefined,
+        diasAtraso:      diffDias < 0 ? Math.abs(diffDias) : undefined,
+        codigoBarras:    lancamento.linhaDigitavel ?? undefined,
+        urlBoleto:       lancamento.urlBoleto ?? undefined,
+        codigoPix:       lancamento.codigoPix ?? undefined,
+        qrCodeUrl:       lancamento.codigoPix ? `cid:${QR_CID}` : undefined,
+        codigoMatricula: cliente.ra ?? String(cliente.codigoSophia ?? cliente.id),
+        competencia:     lancamento.competencia ? this.formatarCompetencia(lancamento.competencia) : undefined,
+        ...escola,
+      };
+
+      const qrBuffer = lancamento.codigoPix ? await gerarQrCode(lancamento.codigoPix) : undefined;
+
+      let template: { subject: string; html: string };
+      if (tipo === 'vencimento_hoje') template = templateVencimentoHoje(emailData);
+      else if (tipo.startsWith('lembrete')) template = templateLembrete(emailData);
+      else template = templateCobranca(emailData);
+
+      await this.emailService.enviar(
+        destinatario, `[PREVIEW] ${template.subject} — ${cliente.nomeAluno}`, template.html,
+        qrBuffer ? [{ cid: QR_CID, buffer: qrBuffer, nome: 'qrpix.png' }] : undefined,
+      );
+      resultados.push({ aluno: cliente.nomeAluno, tipo, lancamento: lancamento.id });
     }
-    if (!encontrado) {
+
+    if (resultados.length === 0) {
       throw new Error(
         'Nenhuma pendência hoje bate exatamente com os dias configurados (EMAIL_DIAS_ANTES/EMAIL_DIAS_APOS), ou as que bateriam já estão pagas na Sophia — ' +
         'nenhum email real seria disparado agora. Use /email/test/cpf ou /email/test/lancamento pra testar um aluno específico mesmo assim.',
       );
     }
-
-    const { cliente, lancamento, diffDias, tipo } = encontrado;
-    const venc = parseDateBR(lancamento.dataVencimento);
-    venc.setHours(0, 0, 0, 0);
-
-    const emailData: EmailData = {
-      nomeAluno:       cliente.nomeAluno,
-      nomeResponsavel: cliente.nomeResponsavel ?? cliente.nomeAluno,
-      descricao:       'Mensalidade',
-      valor:           `R$ ${Number(lancamento.valorPrevisto).toFixed(2).replace('.', ',')}`,
-      vencimento:      venc.toLocaleDateString('pt-BR'),
-      diasRestantes:   diffDias > 0 ? diffDias : undefined,
-      diasAtraso:      diffDias < 0 ? Math.abs(diffDias) : undefined,
-      codigoBarras:    lancamento.linhaDigitavel ?? undefined,
-      urlBoleto:       lancamento.urlBoleto ?? undefined,
-      codigoPix:       lancamento.codigoPix ?? undefined,
-      qrCodeUrl:       lancamento.codigoPix ? `cid:${QR_CID}` : undefined,
-      codigoMatricula: cliente.ra ?? String(cliente.codigoSophia ?? cliente.id),
-      competencia:     lancamento.competencia ? this.formatarCompetencia(lancamento.competencia) : undefined,
-      ...escola,
-    };
-
-    const qrBuffer = lancamento.codigoPix ? await gerarQrCode(lancamento.codigoPix) : undefined;
-
-    let template: { subject: string; html: string };
-    if (tipo === 'vencimento_hoje') template = templateVencimentoHoje(emailData);
-    else if (tipo.startsWith('lembrete')) template = templateLembrete(emailData);
-    else template = templateCobranca(emailData);
-
-    await this.emailService.enviar(
-      destinatario, `[PREVIEW] ${template.subject}`, template.html,
-      qrBuffer ? [{ cid: QR_CID, buffer: qrBuffer, nome: 'qrpix.png' }] : undefined,
-    );
-    return { aluno: cliente.nomeAluno, tipo, lancamento: lancamento.id };
+    return resultados;
   }
 
   async previewPorCpf(cpf: string, destinatario: string): Promise<{ aluno: string; tipo: string; lancamento: number }> {
