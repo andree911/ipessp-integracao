@@ -6,6 +6,10 @@ import { usePathname, useRouter } from 'next/navigation';
 const TABS = [
   { label: 'Financeiro', href: '/portal-do-aluno/financeiro' },
   { label: 'Curso', href: '/portal-do-aluno/curso' },
+  { label: 'Notas', href: '/portal-do-aluno/notas' },
+  { label: 'Frequência', href: '/portal-do-aluno/frequencia' },
+  { label: 'Horário', href: '/portal-do-aluno/horario' },
+  { label: 'Documentos', href: '/portal-do-aluno/documentos' },
 ];
 
 export default function PortalTabs() {
@@ -20,14 +24,14 @@ export default function PortalTabs() {
 
   return (
     <div className="flex items-center justify-between border-b" style={{ borderColor: 'var(--line)' }}>
-      <nav className="flex gap-1">
+      <nav className="flex gap-1 overflow-x-auto">
         {TABS.map(tab => {
           const ativo = pathname === tab.href;
           return (
             <Link
               key={tab.href}
               href={tab.href}
-              className="px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors"
+              className="px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap"
               style={{
                 borderColor: ativo ? 'var(--brand-600)' : 'transparent',
                 color: ativo ? 'var(--brand-600)' : 'var(--ink-700)',

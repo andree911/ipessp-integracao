@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Header from '@/app/components/Header';
 import Footer from '@/app/components/Footer';
@@ -44,7 +43,9 @@ export default function PortalLoginPage() {
       <Header />
       <main className="max-w-md mx-auto px-4 py-16">
         <h1 className="text-2xl font-semibold mb-1" style={{ color: 'var(--ink-900)' }}>Portal do Aluno</h1>
-        <p className="text-sm mb-8" style={{ color: 'var(--ink-700)' }}>Entre com seu RA e senha.</p>
+        <p className="text-sm mb-8" style={{ color: 'var(--ink-700)' }}>
+          Entre com seu RA e a senha de 6 dígitos que a Sophia enviou pro seu e-mail — é a mesma senha do Portal do Aluno antigo.
+        </p>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <Field label="RA">
@@ -61,14 +62,9 @@ export default function PortalLoginPage() {
           </button>
         </form>
 
-        <div className="flex flex-col gap-2 mt-6 text-sm text-center">
-          <Link href="/portal-do-aluno/esqueci-senha" className="hover:underline" style={{ color: 'var(--brand-600)' }}>
-            Esqueci minha senha
-          </Link>
-          <Link href="/portal-do-aluno/primeiro-acesso" className="hover:underline" style={{ color: 'var(--brand-600)' }}>
-            Primeiro acesso? Crie sua senha aqui
-          </Link>
-        </div>
+        <p className="text-sm mt-6 text-center" style={{ color: 'var(--ink-500)' }}>
+          Esqueceu a senha ou nunca recebeu o e-mail? Entre em contato com a secretaria.
+        </p>
       </main>
       <Footer />
       <WhatsAppFloat />

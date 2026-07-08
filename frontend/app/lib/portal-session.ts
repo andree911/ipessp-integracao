@@ -24,21 +24,26 @@ export const cookieOptionsRefresh = {
 };
 
 async function backendFetch(path: string, init: RequestInit = {}) {
+  const isFormData = typeof FormData !== 'undefined' && init.body instanceof FormData;
   const res = await fetch(`${BACKEND}${path}`, {
     ...init,
-    headers: { 'Content-Type': 'application/json', ...(init.headers as Record<string, string> ?? {}) },
+    headers: {
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+      ...(init.headers as Record<string, string> ?? {}),
+    },
   });
   const data = await res.json().catch(() => ({}));
   return { status: res.status, data };
 }
 
 /**
- * Chama um endpoint autenticado do Portal do Aluno (GET /portal/me/*).
+ * Chama um endpoint autenticado do Portal do Aluno (GET/POST /portal/me/*).
  * Se o access token expirou, tenta renovar 1x com o refresh token antes de
  * desistir. Devolve os tokens novos (se renovou) pra rota chamadora setar
- * os cookies na resposta.
+ * os cookies na resposta. `init.body` como FormData (upload de arquivo) é
+ * repassado sem forçar Content-Type json.
  */
-export async function portalFetch(path: string): Promise<{
+export async function portalFetch(path: string, init: RequestInit = {}): Promise<{
   status: number;
   data: unknown;
   novosTokens?: { accessToken: string; refreshToken: string };
@@ -47,7 +52,7 @@ export async function portalFetch(path: string): Promise<{
   const access = store.get(ACCESS_COOKIE)?.value;
 
   if (access) {
-    const r = await backendFetch(path, { headers: { Authorization: `Bearer ${access}` } });
+    const r = await backendFetch(path, { ...init, headers: { ...(init.headers as Record<string, string> ?? {}), Authorization: `Bearer ${access}` } });
     if (r.status !== 401) return r;
   }
 
@@ -63,6 +68,6 @@ export async function portalFetch(path: string): Promise<{
   }
 
   const novosTokens = refreshRes.data as { accessToken: string; refreshToken: string };
-  const retry = await backendFetch(path, { headers: { Authorization: `Bearer ${novosTokens.accessToken}` } });
+  const retry = await backendFetch(path, { ...init, headers: { ...(init.headers as Record<string, string> ?? {}), Authorization: `Bearer ${novosTokens.accessToken}` } });
   return { ...retry, novosTokens };
 }

@@ -188,7 +188,8 @@ export default function Header() {
           <div className="flex items-center gap-4 text-xs">
             {[
               { label: 'Clínica Estética', href: '/clinica-escola' },
-              { label: 'Portal do Aluno', href: '/portal-do-aluno' },
+              { label: 'Portal do Aluno', href: SOPHIA_PORTAL_URL },
+              { label: 'Portal', href: '/portal-do-aluno' },
               { label: 'Portal do Professor', href: SOPHIA_PORTAL_URL },
               { label: 'Biblioteca Virtual', href: '/biblioteca-virtual' },
             ].map(item => (
@@ -393,7 +394,8 @@ export default function Header() {
               </a>
 
               {[
-                { label: 'Portal do Aluno', href: '/portal-do-aluno' },
+                { label: 'Portal do Aluno', href: SOPHIA_PORTAL_URL },
+                { label: 'Portal', href: '/portal-do-aluno' },
                 { label: 'Portal do Professor', href: SOPHIA_PORTAL_URL },
                 { label: 'Diplomas', href: '/diplomas' },
                 {
