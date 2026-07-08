@@ -255,14 +255,27 @@ export class EmailJobService {
    * que REALMENTE dispararia um email hoje no job real (mesmos marcos de dia
    * configurados) — pra simular "como se fosse produção" de verdade, incluindo
    * o volume de emails que sairiam, não só um exemplo isolado.
+   *
+   * `diasSimulados` (opcional) restringe a busca a um único marco específico
+   * — mesma convenção do diffDias interno (positivo = dias antes de vencer,
+   * negativo = dias em atraso, 0 = vence hoje) — em vez de considerar TODOS
+   * os marcos configurados. Os dados continuam 100% reais (vencimento e
+   * valor de cada aluno não são forjados); só filtra quem está exatamente
+   * naquele dia hoje. Dá erro se o dia pedido não estiver configurado em
+   * EMAIL_DIAS_ANTES/EMAIL_DIAS_APOS (nunca geraria email nenhum) — mesmo
+   * sem isso, se ninguém estiver exatamente nesse dia hoje, também dá erro.
    */
-  async previewComDadosSophia(destinatario: string): Promise<{ aluno: string; tipo: string; lancamento: number }[]> {
+  async previewComDadosSophia(destinatario: string, diasSimulados?: number): Promise<{ aluno: string; tipo: string; lancamento: number }[]> {
     const escola = this.dadosEscola();
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
 
     const diasAntes = this.config.get<number[]>('email.diasAntes') ?? [7, 5, 3, 1];
     const diasAposVencimento = this.config.get<number[]>('email.diasAposVencimento') ?? [1, 2, 3, 7, 8, 9, 10, 12, 15, 20, 25, 30];
+
+    if (diasSimulados !== undefined && !this.calcularTipo(diasSimulados, diasAntes, diasAposVencimento)) {
+      throw new Error(`O dia simulado (${diasSimulados}) não está em EMAIL_DIAS_ANTES/EMAIL_DIAS_APOS — nenhum email real seria disparado nesse marco.`);
+    }
 
     const pendentes = await this.financeiro.getLancamentosPendentes();
     if (pendentes.length === 0) throw new Error('Nenhum lançamento em aberto encontrado no banco local');
@@ -274,6 +287,7 @@ export class EmailJobService {
       const venc = parseDateBR(lancamento.dataVencimento);
       venc.setHours(0, 0, 0, 0);
       const diffDias = Math.round((venc.getTime() - hoje.getTime()) / 86_400_000);
+      if (diasSimulados !== undefined && diffDias !== diasSimulados) continue;
       const tipo = this.calcularTipo(diffDias, diasAntes, diasAposVencimento);
       if (!tipo) continue;
       if (!(await this.aindaPendenteNaSophia(cliente, lancamento, cacheAlunos))) continue;
@@ -310,9 +324,12 @@ export class EmailJobService {
     }
 
     if (resultados.length === 0) {
+      const motivo = diasSimulados !== undefined
+        ? `Nenhuma pendência está exatamente ${diasSimulados} dia(s) em relação ao vencimento hoje (ou as que estão já foram pagas na Sophia).`
+        : 'Nenhuma pendência hoje bate exatamente com os dias configurados (EMAIL_DIAS_ANTES/EMAIL_DIAS_APOS), ou as que bateriam já estão pagas na Sophia.';
       throw new Error(
-        'Nenhuma pendência hoje bate exatamente com os dias configurados (EMAIL_DIAS_ANTES/EMAIL_DIAS_APOS), ou as que bateriam já estão pagas na Sophia — ' +
-        'nenhum email real seria disparado agora. Use /email/test/cpf ou /email/test/lancamento pra testar um aluno específico mesmo assim.',
+        motivo +
+        ' Nenhum email real seria disparado agora. Use /email/test/cpf ou /email/test/lancamento pra testar um aluno específico mesmo assim.',
       );
     }
     return resultados;
