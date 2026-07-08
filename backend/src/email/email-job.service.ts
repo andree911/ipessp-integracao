@@ -318,7 +318,16 @@ export class EmailJobService {
     return resultados;
   }
 
-  async previewPorCpf(cpf: string, destinatario: string): Promise<{ aluno: string; tipo: string; lancamento: number }> {
+  /**
+   * `diasSimulados` (opcional) força o cenário de dia a testar, no lugar do
+   * diffDias real do lançamento mais próximo — mesma convenção do diffDias
+   * interno: positivo = dias antes de vencer, negativo = dias em atraso, 0 =
+   * vence hoje. Útil pra testar um marco específico (ex.: -1 = "1 dia após o
+   * vencimento") sem depender de existir um lançamento real batendo com ele
+   * hoje. Se o dia simulado não estiver em EMAIL_DIAS_ANTES/EMAIL_DIAS_APOS,
+   * dá erro (mesma regra do job real — não geraria email nenhum).
+   */
+  async previewPorCpf(cpf: string, destinatario: string, diasSimulados?: number): Promise<{ aluno: string; tipo: string; lancamento: number }> {
     const escola = this.dadosEscola();
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
@@ -329,14 +338,28 @@ export class EmailJobService {
     dados.pendencias.sort((a, b) => a.vencimento.localeCompare(b.vencimento));
     const pend = dados.pendencias[0];
 
-    const venc = parseDateBR(pend.vencimento);
-    venc.setHours(0, 0, 0, 0);
-    const diffDias = Math.round((venc.getTime() - hoje.getTime()) / 86_400_000);
+    const diasAntes = this.config.get<number[]>('email.diasAntes') ?? [7, 5, 3, 1];
+    const diasAposVencimento = this.config.get<number[]>('email.diasAposVencimento') ?? [1, 2, 3, 7, 8, 9, 10, 12, 15, 20, 25, 30];
 
+    let venc: Date;
+    let diffDias: number;
     let tipo: EmailTipo;
-    if (diffDias === 0) tipo = 'vencimento_hoje';
-    else if (diffDias < 0) tipo = 'cobranca';
-    else tipo = 'lembrete';
+    if (diasSimulados !== undefined) {
+      diffDias = diasSimulados;
+      venc = new Date(hoje.getTime() + diasSimulados * 86_400_000);
+      const tipoSimulado = this.calcularTipo(diffDias, diasAntes, diasAposVencimento);
+      if (!tipoSimulado) {
+        throw new Error(`O dia simulado (${diasSimulados}) não está em EMAIL_DIAS_ANTES/EMAIL_DIAS_APOS — nenhum email real seria disparado nesse marco.`);
+      }
+      tipo = tipoSimulado;
+    } else {
+      venc = parseDateBR(pend.vencimento);
+      venc.setHours(0, 0, 0, 0);
+      diffDias = Math.round((venc.getTime() - hoje.getTime()) / 86_400_000);
+      if (diffDias === 0) tipo = 'vencimento_hoje';
+      else if (diffDias < 0) tipo = 'cobranca';
+      else tipo = 'lembrete';
+    }
 
     const emailData: EmailData = {
       nomeAluno:       dados.nomeAluno,
@@ -369,7 +392,8 @@ export class EmailJobService {
     return { aluno: dados.nomeAluno, tipo, lancamento: pend.codigo };
   }
 
-  async previewPorLancamento(codigoLancamento: number, destinatario: string): Promise<{ aluno: string; tipo: string; lancamento: number }> {
+  /** `diasSimulados` — ver comentário de previewPorCpf, mesma convenção e comportamento. */
+  async previewPorLancamento(codigoLancamento: number, destinatario: string, diasSimulados?: number): Promise<{ aluno: string; tipo: string; lancamento: number }> {
     const escola = this.dadosEscola();
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
@@ -384,14 +408,28 @@ export class EmailJobService {
       throw new Error(`Lançamento ${codigoLancamento} já está pago na Sophia (cache local ainda não tinha sido atualizado pelo sync de hora em hora).`);
     }
 
-    const venc = parseDateBR(lancamento.dataVencimento);
-    venc.setHours(0, 0, 0, 0);
-    const diffDias = Math.round((venc.getTime() - hoje.getTime()) / 86_400_000);
+    const diasAntes = this.config.get<number[]>('email.diasAntes') ?? [7, 5, 3, 1];
+    const diasAposVencimento = this.config.get<number[]>('email.diasAposVencimento') ?? [1, 2, 3, 7, 8, 9, 10, 12, 15, 20, 25, 30];
 
+    let venc: Date;
+    let diffDias: number;
     let tipo: EmailTipo;
-    if (diffDias === 0) tipo = 'vencimento_hoje';
-    else if (diffDias < 0) tipo = 'cobranca';
-    else tipo = 'lembrete';
+    if (diasSimulados !== undefined) {
+      diffDias = diasSimulados;
+      venc = new Date(hoje.getTime() + diasSimulados * 86_400_000);
+      const tipoSimulado = this.calcularTipo(diffDias, diasAntes, diasAposVencimento);
+      if (!tipoSimulado) {
+        throw new Error(`O dia simulado (${diasSimulados}) não está em EMAIL_DIAS_ANTES/EMAIL_DIAS_APOS — nenhum email real seria disparado nesse marco.`);
+      }
+      tipo = tipoSimulado;
+    } else {
+      venc = parseDateBR(lancamento.dataVencimento);
+      venc.setHours(0, 0, 0, 0);
+      diffDias = Math.round((venc.getTime() - hoje.getTime()) / 86_400_000);
+      if (diffDias === 0) tipo = 'vencimento_hoje';
+      else if (diffDias < 0) tipo = 'cobranca';
+      else tipo = 'lembrete';
+    }
 
     const emailData: EmailData = {
       nomeAluno:       cliente.nomeAluno,

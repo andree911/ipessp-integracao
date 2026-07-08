@@ -56,11 +56,12 @@ export class EmailController {
   async testarPorCpf(
     @Body('cpf') cpf: string,
     @Body('para') para: string,
+    @Body('diasSimulados') diasSimulados?: number,
   ): Promise<{ ok: boolean; aluno: string; tipo: string; lancamento: number }> {
     if (!cpf) throw new BadRequestException('Informe o campo "cpf"');
     if (!para) throw new BadRequestException('Informe o campo "para" com o email de destino');
     try {
-      const resultado = await this.jobService.previewPorCpf(cpf, para);
+      const resultado = await this.jobService.previewPorCpf(cpf, para, diasSimulados);
       return { ok: true, ...resultado };
     } catch (err: unknown) {
       const msg = errMsg(err);
@@ -75,10 +76,11 @@ export class EmailController {
   async testarPorLancamento(
     @Body('codigoLancamento', ParseIntPipe) codigoLancamento: number,
     @Body('para') para: string,
+    @Body('diasSimulados') diasSimulados?: number,
   ): Promise<{ ok: boolean; aluno: string; tipo: string; lancamento: number }> {
     if (!para) throw new BadRequestException('Informe o campo "para" com o email de destino');
     try {
-      const resultado = await this.jobService.previewPorLancamento(codigoLancamento, para);
+      const resultado = await this.jobService.previewPorLancamento(codigoLancamento, para, diasSimulados);
       return { ok: true, ...resultado };
     } catch (err: unknown) {
       if ((err as { status?: number }).status === 404) throw err;
