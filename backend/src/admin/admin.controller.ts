@@ -6,6 +6,7 @@ import { LeadsService } from '../leads/leads.service';
 import { MoverEstagioDto } from '../leads/dto/mover-estagio.dto';
 import { FinanceiroService } from '../financeiro/financeiro.service';
 import { EmailJobService } from '../email/email-job.service';
+import { SophiaService } from '../sophia/sophia.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -18,6 +19,7 @@ export class AdminController {
     private readonly leadsService: LeadsService,
     private readonly financeiroService: FinanceiroService,
     private readonly emailJobService: EmailJobService,
+    private readonly sophia: SophiaService,
   ) {}
 
   // ─── Leads / CRM ─────────────────────────────────────────────────────────────
@@ -93,5 +95,20 @@ export class AdminController {
   emailDisparar() {
     void this.emailJobService.runEmailJob('manual');
     return { message: 'Job de emails iniciado manualmente' };
+  }
+
+  // ─── Diagnóstico Sophia ─────────────────────────────────────────────────────
+  // Endpoints temporários pra inspecionar o formato real de retorno de
+  // Notas/Horário (não documentado de forma confiável no swagger da Sophia).
+  // Sem guard além do AdminApiKeyGuard da classe — não expõe token da Sophia.
+
+  @Get('sophia/notas')
+  diagnosticoNotas(@Query('matricula', ParseIntPipe) matricula: number) {
+    return this.sophia.getNotasAvaliacoes(matricula);
+  }
+
+  @Get('sophia/horario')
+  diagnosticoHorario(@Query('matricula', ParseIntPipe) matricula: number) {
+    return this.sophia.getHorarioDetalhado(matricula);
   }
 }
