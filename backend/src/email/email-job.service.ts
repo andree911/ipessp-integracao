@@ -6,6 +6,8 @@ import { Repository } from 'typeorm';
 import { errMsg } from '../common/err.util';
 import * as QRCode from 'qrcode';
 import { FinanceiroService } from '../financeiro/financeiro.service';
+import { SophiaService } from '../sophia/sophia.service';
+import { LancamentoAlunoApiModel } from '../sophia/types/sophia.types';
 import { EmailService } from './email.service';
 import { EmailLog, EmailTipo } from './entities/email-log.entity';
 import { LancamentoCache } from '../financeiro/entities/lancamento-cache.entity';
@@ -56,6 +58,7 @@ export class EmailJobService {
     private readonly financeiro: FinanceiroService,
     private readonly emailService: EmailService,
     private readonly config: ConfigService,
+    private readonly sophia: SophiaService,
     @InjectRepository(EmailLog)
     private readonly emailLogRepo: Repository<EmailLog>,
     @InjectRepository(LancamentoCache)
@@ -112,8 +115,10 @@ export class EmailJobService {
 
     const BATCH_LIMIT = 500;
     const pendentes = (await this.financeiro.getLancamentosPendentes()).slice(0, BATCH_LIMIT);
+    const cacheAlunos = new Map<number, LancamentoAlunoApiModel[]>();
     let totalEnviados = 0;
     let totalErros = 0;
+    let totalJaPagos = 0;
 
     for (const { cliente, lancamento } of pendentes) {
       if (!cliente.emailResponsavel) continue;
@@ -129,6 +134,11 @@ export class EmailJobService {
           where: { codigoLancamento: String(lancamento.id), tipo, enviado: true },
         });
         if (jaEnviado && new Date(jaEnviado.enviadoEm).toDateString() === hoje.toDateString()) continue;
+
+        if (!(await this.aindaPendenteNaSophia(cliente, lancamento, cacheAlunos))) {
+          totalJaPagos++;
+          continue;
+        }
 
         const emailData: EmailData = {
           nomeAluno:       cliente.nomeAluno,
@@ -180,7 +190,43 @@ export class EmailJobService {
       }
     }
 
-    this.logger.log(`=== Job de emails concluído: ${totalEnviados} enviados, ${totalErros} erros ===`);
+    this.logger.log(`=== Job de emails concluído: ${totalEnviados} enviados, ${totalErros} erros, ${totalJaPagos} já pagos (pulados) ===`);
+  }
+
+  /**
+   * O cache local (lancamentos_cache) só é atualizado pelo sync de hora em
+   * hora — se o aluno pagou depois do último ciclo, o "recebido" local ainda
+   * está desatualizado. Antes de mandar o email, confere ao vivo na Sophia
+   * se a parcela realmente continua em aberto, pra não cobrar quem já pagou.
+   * `cacheAlunos` evita repetir a chamada pro mesmo aluno dentro do mesmo run.
+   */
+  private async aindaPendenteNaSophia(
+    cliente: ClienteCache,
+    lancamento: LancamentoCache,
+    cacheAlunos: Map<number, LancamentoAlunoApiModel[]>,
+  ): Promise<boolean> {
+    if (!cliente.codigoSophia || !lancamento.codigoSophia) return true;
+
+    try {
+      let lancamentosAluno = cacheAlunos.get(cliente.codigoSophia);
+      if (!lancamentosAluno) {
+        lancamentosAluno = await this.sophia.getLancamentosAluno(cliente.codigoSophia);
+        cacheAlunos.set(cliente.codigoSophia, lancamentosAluno);
+      }
+
+      const atual = lancamentosAluno.find((l) => l.codigo === lancamento.codigoSophia);
+      if (!atual) return true; // não achou na Sophia — não bloqueia por segurança
+
+      if (atual.recebido > 0) {
+        await this.lancamentoRepo.update(lancamento.id, { recebido: true });
+        this.logger.log(`Lançamento ${lancamento.id} já estava pago na Sophia — pulando email e corrigindo cache local`);
+        return false;
+      }
+      return true;
+    } catch (err: unknown) {
+      this.logger.warn(`Falha ao conferir pagamento ao vivo do lançamento ${lancamento.id}: ${errMsg(err)}`);
+      return true; // checagem falhou — não bloqueia o envio
+    }
   }
 
   /** Mesma regra do job real: só considera dia 0 (vencimento hoje) ou um dos dias configurados em EMAIL_DIAS_ANTES/EMAIL_DIAS_APOS. */
@@ -208,20 +254,21 @@ export class EmailJobService {
     const pendentes = await this.financeiro.getLancamentosPendentes();
     if (pendentes.length === 0) throw new Error('Nenhum lançamento em aberto encontrado no banco local');
 
+    const cacheAlunos = new Map<number, LancamentoAlunoApiModel[]>();
     let encontrado: { cliente: (typeof pendentes)[number]['cliente']; lancamento: (typeof pendentes)[number]['lancamento']; diffDias: number; tipo: EmailTipo } | null = null;
     for (const { cliente, lancamento } of pendentes) {
       const venc = parseDateBR(lancamento.dataVencimento);
       venc.setHours(0, 0, 0, 0);
       const diffDias = Math.round((venc.getTime() - hoje.getTime()) / 86_400_000);
       const tipo = this.calcularTipo(diffDias, diasAntes, diasAposVencimento);
-      if (tipo) {
-        encontrado = { cliente, lancamento, diffDias, tipo };
-        break;
-      }
+      if (!tipo) continue;
+      if (!(await this.aindaPendenteNaSophia(cliente, lancamento, cacheAlunos))) continue;
+      encontrado = { cliente, lancamento, diffDias, tipo };
+      break;
     }
     if (!encontrado) {
       throw new Error(
-        'Nenhuma pendência hoje bate exatamente com os dias configurados (EMAIL_DIAS_ANTES/EMAIL_DIAS_APOS) — ' +
+        'Nenhuma pendência hoje bate exatamente com os dias configurados (EMAIL_DIAS_ANTES/EMAIL_DIAS_APOS), ou as que bateriam já estão pagas na Sophia — ' +
         'nenhum email real seria disparado agora. Use /email/test/cpf ou /email/test/lancamento pra testar um aluno específico mesmo assim.',
       );
     }
@@ -322,6 +369,10 @@ export class EmailJobService {
 
     const cliente = await this.clienteRepo.findOne({ where: { id: lancamento.codigoCliente } });
     if (!cliente) throw new NotFoundException(`Cliente do lançamento ${codigoLancamento} não encontrado`);
+
+    if (!(await this.aindaPendenteNaSophia(cliente, lancamento, new Map()))) {
+      throw new Error(`Lançamento ${codigoLancamento} já está pago na Sophia (cache local ainda não tinha sido atualizado pelo sync de hora em hora).`);
+    }
 
     const venc = parseDateBR(lancamento.dataVencimento);
     venc.setHours(0, 0, 0, 0);
