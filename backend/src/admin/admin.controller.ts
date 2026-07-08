@@ -102,6 +102,14 @@ export class AdminController {
   // Notas/Horário (não documentado de forma confiável no swagger da Sophia).
   // Sem guard além do AdminApiKeyGuard da classe — não expõe token da Sophia.
 
+  // codigoAluno = o "Código" que aparece no card do aluno na Sophia. Devolve
+  // as matrículas dele — usa o "codigoMatricula" do resultado nas duas rotas
+  // abaixo (sophia/notas e sophia/horario), que pedem outro código.
+  @Get('sophia/matriculas')
+  diagnosticoMatriculas(@Query('aluno', ParseIntPipe) codigoAluno: number) {
+    return this.sophia.getMatriculasAluno(codigoAluno);
+  }
+
   @Get('sophia/notas')
   diagnosticoNotas(@Query('matricula', ParseIntPipe) matricula: number) {
     return this.sophia.getNotasAvaliacoes(matricula);
