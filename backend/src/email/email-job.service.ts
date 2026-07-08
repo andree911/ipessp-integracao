@@ -122,11 +122,7 @@ export class EmailJobService {
         venc.setHours(0, 0, 0, 0);
         const diffDias = Math.round((venc.getTime() - hoje.getTime()) / 86_400_000);
 
-        let tipo: EmailTipo | null = null;
-        if (diffDias === 0) tipo = 'vencimento_hoje';
-        else if (diffDias > 0 && diasAntes.includes(diffDias)) tipo = EMAIL_ANTES_TIPO[diffDias] ?? 'lembrete';
-        else if (diffDias < 0 && diasAposVencimento.includes(Math.abs(diffDias))) tipo = EMAIL_APOS_TIPO[Math.abs(diffDias)] ?? 'cobranca';
-
+        const tipo = this.calcularTipo(diffDias, diasAntes, diasAposVencimento);
         if (!tipo) continue;
 
         const jaEnviado = await this.emailLogRepo.findOne({
@@ -187,23 +183,52 @@ export class EmailJobService {
     this.logger.log(`=== Job de emails concluído: ${totalEnviados} enviados, ${totalErros} erros ===`);
   }
 
+  /** Mesma regra do job real: só considera dia 0 (vencimento hoje) ou um dos dias configurados em EMAIL_DIAS_ANTES/EMAIL_DIAS_APOS. */
+  private calcularTipo(diffDias: number, diasAntes: number[], diasAposVencimento: number[]): EmailTipo | null {
+    if (diffDias === 0) return 'vencimento_hoje';
+    if (diffDias > 0 && diasAntes.includes(diffDias)) return EMAIL_ANTES_TIPO[diffDias] ?? 'lembrete';
+    if (diffDias < 0 && diasAposVencimento.includes(Math.abs(diffDias))) return EMAIL_APOS_TIPO[Math.abs(diffDias)] ?? 'cobranca';
+    return null;
+  }
+
+  /**
+   * Escolhe, entre os lançamentos pendentes, o primeiro que REALMENTE dispararia
+   * um email no job real (mesmos marcos de dia configurados) — pra que o preview
+   * simule de verdade "como se fosse produção" em vez de pegar qualquer pendência
+   * arbitrária (que pode vencer daqui a meses e nunca geraria email nenhum).
+   */
   async previewComDadosSophia(destinatario: string): Promise<{ aluno: string; tipo: string; lancamento: number }> {
     const escola = this.dadosEscola();
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
 
+    const diasAntes = this.config.get<number[]>('email.diasAntes') ?? [7, 5, 3, 1];
+    const diasAposVencimento = this.config.get<number[]>('email.diasAposVencimento') ?? [1, 2, 3, 7, 8, 9, 10, 12, 15, 20, 25, 30];
+
     const pendentes = await this.financeiro.getLancamentosPendentes();
     if (pendentes.length === 0) throw new Error('Nenhum lançamento em aberto encontrado no banco local');
 
-    const { cliente, lancamento } = pendentes[0];
+    let encontrado: { cliente: (typeof pendentes)[number]['cliente']; lancamento: (typeof pendentes)[number]['lancamento']; diffDias: number; tipo: EmailTipo } | null = null;
+    for (const { cliente, lancamento } of pendentes) {
+      const venc = parseDateBR(lancamento.dataVencimento);
+      venc.setHours(0, 0, 0, 0);
+      const diffDias = Math.round((venc.getTime() - hoje.getTime()) / 86_400_000);
+      const tipo = this.calcularTipo(diffDias, diasAntes, diasAposVencimento);
+      if (tipo) {
+        encontrado = { cliente, lancamento, diffDias, tipo };
+        break;
+      }
+    }
+    if (!encontrado) {
+      throw new Error(
+        'Nenhuma pendência hoje bate exatamente com os dias configurados (EMAIL_DIAS_ANTES/EMAIL_DIAS_APOS) — ' +
+        'nenhum email real seria disparado agora. Use /email/test/cpf ou /email/test/lancamento pra testar um aluno específico mesmo assim.',
+      );
+    }
+
+    const { cliente, lancamento, diffDias, tipo } = encontrado;
     const venc = parseDateBR(lancamento.dataVencimento);
     venc.setHours(0, 0, 0, 0);
-    const diffDias = Math.round((venc.getTime() - hoje.getTime()) / 86_400_000);
-
-    let tipo: EmailTipo;
-    if (diffDias === 0) tipo = 'vencimento_hoje';
-    else if (diffDias < 0) tipo = 'cobranca';
-    else tipo = 'lembrete';
 
     const emailData: EmailData = {
       nomeAluno:       cliente.nomeAluno,

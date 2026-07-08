@@ -1,0 +1,11 @@
+-- lancamentos_cache está sem a coluna codigoBoleto, que já existe há tempos
+-- no código (LancamentoCache entity) e é usada tanto pelo job real de
+-- cobrança por email/WhatsApp quanto pelos endpoints de teste /email/test/*.
+-- Sem ela, GET getLancamentosPendentes() quebra (500) em produção.
+--
+-- Nome entre aspas e em camelCase de propósito: essa tabela (diferente das
+-- que criamos hoje) não usa @Column({ name: 'snake_case' }) no TypeORM, então
+-- o nome físico da coluna precisa bater exatamente com a propriedade da
+-- entity — sem aspas o Postgres converteria pra minúsculo (codigoboleto) e
+-- o erro continuaria.
+alter table lancamentos_cache add column if not exists "codigoBoleto" integer;
