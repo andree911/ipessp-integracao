@@ -4,9 +4,9 @@ import { Request } from 'express';
 import * as jwt from 'jsonwebtoken';
 
 export interface PortalAlunoRequestUser {
-  contaId: string;
   codigoSophia: number;
   ra: string;
+  nome: string;
 }
 
 @Injectable()
@@ -25,9 +25,9 @@ export class PortalAlunoGuard implements CanActivate {
     try {
       const payload = jwt.verify(token, this.config.get<string>('jwt.secret')!) as PortalAlunoRequestUser;
       (req as Request & { portalAluno: PortalAlunoRequestUser }).portalAluno = {
-        contaId: payload.contaId,
         codigoSophia: payload.codigoSophia,
         ra: payload.ra,
+        nome: payload.nome,
       };
       return true;
     } catch {

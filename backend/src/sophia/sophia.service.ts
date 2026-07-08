@@ -8,10 +8,12 @@ import { errMsg, isAxios401, axiosDetail } from '../common/err.util';
 import {
   AlunoApiModel,
   AlunoDetalhadoApiModel,
+  AutenticacaoAlunoApiModelRetorno,
   ColaboradorApiModel,
   LancamentoAlunoApiModel,
   ListaChamadaItem,
   MatriculaAlunoApiModel,
+  MatriculaFrequenciaApiModel,
   MatriculasWrapperApiModel,
   ResponsavelAlunoApiModel,
 } from './types/sophia.types';
@@ -258,6 +260,40 @@ export class SophiaService implements OnModuleInit {
 
   async getCursos(): Promise<unknown> {
     return this.get<unknown>(`${this.apiBase}/Cursos`);
+  }
+
+  // Valida a senha REAL do aluno (a mesma de 6 dígitos que a Sophia manda por
+  // e-mail) — não temos como conferir isso localmente, então delegamos pra
+  // Sophia a cada tentativa de login do Portal do Aluno. O swagger descreve
+  // "codigo"/"email" indo no header, mas o schema do body (AutenticacaoAlunoApiModel)
+  // é quem manda: os três campos (email, codigo, senha) vão no corpo da requisição.
+  async validarLogin(params: { codigo?: string; email?: string; senha: string }): Promise<AutenticacaoAlunoApiModelRetorno> {
+    try {
+      return await this.post<AutenticacaoAlunoApiModelRetorno>(`${this.apiBase}/Alunos/ValidarLogin`, params);
+    } catch (err: unknown) {
+      const detail = axiosDetail(err);
+      this.logger.warn(`SophiA validarLogin erro: ${JSON.stringify(detail)}`);
+      throw err;
+    }
+  }
+
+  // Formato de retorno não documentado no swagger (schema aponta pro DTO de
+  // filtro, não pro de resposta) — devolvido cru, o front decide como exibir.
+  async getNotasAvaliacoes(idMatricula: number): Promise<unknown> {
+    return this.get<unknown>(`${this.apiBase}/alunos/Matriculas/${idMatricula}/NotasAvaliacoesCompleto`);
+  }
+
+  async getFrequenciaCompleta(idMatricula: number): Promise<MatriculaFrequenciaApiModel> {
+    return this.get<MatriculaFrequenciaApiModel>(`${this.apiBase}/alunos/Matriculas/${idMatricula}/FrequenciaCompleto`);
+  }
+
+  // Resposta "200 Success" sem schema documentado no swagger — devolvido cru.
+  async getHorarioDetalhado(idMatricula: number): Promise<unknown> {
+    return this.get<unknown>(`${this.apiBase}/alunos/matriculas/${idMatricula}/QuadrosHorarios/Detalhados`);
+  }
+
+  async postDocumentoCliente(idCliente: number, doc: { descricao: string; url: string; extensao: string }): Promise<unknown> {
+    return this.post<unknown>(`${this.apiBase}/clientes/${idCliente}/Documentos`, doc);
   }
 
   async getTurmaDetalhada(codigoTurma: number): Promise<unknown> {

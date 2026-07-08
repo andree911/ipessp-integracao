@@ -84,6 +84,72 @@ export interface NotaAlunoItem {
   nome: string;
 }
 
+// Retorno de POST /Alunos/ValidarLogin — valida o e-mail/código externo (RA)
+// + senha reais do aluno, os mesmos enviados pela Sophia por e-mail.
+export interface AutenticacaoAlunoApiModelRetorno {
+  acessoValido: boolean;
+  codigoInterno?: string;
+  codigoExterno?: string;
+  tipoAcesso?: string;
+  responsavelFinanceiro?: boolean;
+  responsavelPedagogico?: boolean;
+  msgRetorno?: string;
+}
+
+export interface FrequenciaBaseApiModel {
+  aulasDadas: number;
+  faltas: number;
+  percentualPresenca: number;
+}
+
+export interface FrequenciaCompletaApiModel extends FrequenciaBaseApiModel {
+  tipoLista?: number;
+  cargaHoraria?: number;
+  abono?: number;
+}
+
+export interface FrequenciaEtapaApiModel {
+  numeroEtapa: number;
+  nomeEtapa: string;
+  frequencia: FrequenciaBaseApiModel;
+}
+
+export interface FrequenciaDisciplinaApiModel {
+  codigoDisciplina: number;
+  nomeDisciplina: string;
+  nomeDisciplinaResumido?: string;
+  codigoSetor?: number;
+  nomeSetor?: string;
+  nomeSetorResumido?: string;
+  frequencia: FrequenciaCompletaApiModel;
+  etapas: FrequenciaEtapaApiModel[];
+}
+
+export interface FrequenciaChamadaApiModel {
+  faltas: number;
+  data: string;
+  horarioInicio?: string;
+  horarioFim?: string;
+  mes?: string;
+  disciplina?: string;
+  disciplinaResumido?: string;
+  setor?: string;
+  setorResumido?: string;
+  tipoLista?: number;
+  etapa?: string;
+}
+
+// Campos documentados no swagger pra GET /alunos/Matriculas/{id}/FrequenciaCompleto
+export interface MatriculaFrequenciaApiModel {
+  codigoMatricula: number;
+  nomeAluno: string;
+  turma?: string;
+  tipoLista?: number;
+  frequencia: FrequenciaCompletaApiModel;
+  disciplinas: FrequenciaDisciplinaApiModel[];
+  Chamada?: FrequenciaChamadaApiModel[];
+}
+
 // Campos reais retornados por GET /alunos/{id}/Lancamentos
 export interface LancamentoAlunoApiModel {
   codigo: number;
