@@ -150,6 +150,33 @@ export interface MatriculaFrequenciaApiModel {
   Chamada?: FrequenciaChamadaApiModel[];
 }
 
+// Campos confirmados via chamada real a GET /alunos/Matriculas/{id}/NotasAvaliacoesCompleto
+// (o schema do swagger pra esse endpoint está errado — documenta o DTO de
+// filtro, não a resposta). "etapas" ainda não foi visto preenchido, formato
+// interno desconhecido.
+export interface NotasMatriculaApiModel {
+  codigoAluno: number;
+  nomePeriodo?: string;
+  inicioPeriodo?: string;
+  terminoPeriodo?: string;
+  periodoAtual?: boolean;
+  nomeAluno: string;
+  nomeCurso?: string;
+  nomeTurma?: string;
+  etapas: unknown[];
+}
+
+// Campos confirmados via chamada real a GET /alunos/matriculas/{id}/QuadrosHorarios/Detalhados
+// (sem schema documentado no swagger). "disciplinas" ainda não foi visto
+// preenchido, formato interno desconhecido.
+export interface HorarioMatriculaApiModel {
+  codigoAluno: string;
+  ano?: string;
+  aluno: string;
+  serie?: string;
+  disciplinas: unknown[];
+}
+
 // Campos reais retornados por GET /alunos/{id}/Lancamentos
 export interface LancamentoAlunoApiModel {
   codigo: number;

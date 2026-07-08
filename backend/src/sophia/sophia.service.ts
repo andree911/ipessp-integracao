@@ -10,11 +10,13 @@ import {
   AlunoDetalhadoApiModel,
   AutenticacaoAlunoApiModelRetorno,
   ColaboradorApiModel,
+  HorarioMatriculaApiModel,
   LancamentoAlunoApiModel,
   ListaChamadaItem,
   MatriculaAlunoApiModel,
   MatriculaFrequenciaApiModel,
   MatriculasWrapperApiModel,
+  NotasMatriculaApiModel,
   ResponsavelAlunoApiModel,
 } from './types/sophia.types';
 
@@ -277,19 +279,16 @@ export class SophiaService implements OnModuleInit {
     }
   }
 
-  // Formato de retorno não documentado no swagger (schema aponta pro DTO de
-  // filtro, não pro de resposta) — devolvido cru, o front decide como exibir.
-  async getNotasAvaliacoes(idMatricula: number): Promise<unknown> {
-    return this.get<unknown>(`${this.apiBase}/alunos/Matriculas/${idMatricula}/NotasAvaliacoesCompleto`);
+  async getNotasAvaliacoes(idMatricula: number): Promise<NotasMatriculaApiModel> {
+    return this.get<NotasMatriculaApiModel>(`${this.apiBase}/alunos/Matriculas/${idMatricula}/NotasAvaliacoesCompleto`);
   }
 
   async getFrequenciaCompleta(idMatricula: number): Promise<MatriculaFrequenciaApiModel> {
     return this.get<MatriculaFrequenciaApiModel>(`${this.apiBase}/alunos/Matriculas/${idMatricula}/FrequenciaCompleto`);
   }
 
-  // Resposta "200 Success" sem schema documentado no swagger — devolvido cru.
-  async getHorarioDetalhado(idMatricula: number): Promise<unknown> {
-    return this.get<unknown>(`${this.apiBase}/alunos/matriculas/${idMatricula}/QuadrosHorarios/Detalhados`);
+  async getHorarioDetalhado(idMatricula: number): Promise<HorarioMatriculaApiModel> {
+    return this.get<HorarioMatriculaApiModel>(`${this.apiBase}/alunos/matriculas/${idMatricula}/QuadrosHorarios/Detalhados`);
   }
 
   async postDocumentoCliente(idCliente: number, doc: { descricao: string; url: string; extensao: string }): Promise<unknown> {
