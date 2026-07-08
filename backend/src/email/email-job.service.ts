@@ -130,11 +130,6 @@ export class EmailJobService {
         const tipo = this.calcularTipo(diffDias, diasAntes, diasAposVencimento);
         if (!tipo) continue;
 
-        const jaEnviado = await this.emailLogRepo.findOne({
-          where: { codigoLancamento: String(lancamento.id), tipo, enviado: true },
-        });
-        if (jaEnviado && new Date(jaEnviado.enviadoEm).toDateString() === hoje.toDateString()) continue;
-
         if (!(await this.aindaPendenteNaSophia(cliente, lancamento, cacheAlunos))) {
           totalJaPagos++;
           continue;
