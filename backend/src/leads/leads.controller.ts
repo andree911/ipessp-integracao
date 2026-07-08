@@ -50,11 +50,17 @@ export class LeadsController {
     @Query('ate') ate?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('emailEnviado') emailEnviado?: string,
+    @Query('whatsappEnviado') whatsappEnviado?: string,
+    @Query('respondeu') respondeu?: string,
   ) {
     return this.leadsService.listar({
       status, origem, telefone, de, ate,
       page: page ? Number(page) : undefined,
       limit: limit ? Number(limit) : undefined,
+      emailEnviado: emailEnviado !== undefined ? emailEnviado === 'true' : undefined,
+      whatsappEnviado: whatsappEnviado !== undefined ? whatsappEnviado === 'true' : undefined,
+      respondeu: respondeu !== undefined ? respondeu === 'true' : undefined,
     });
   }
 

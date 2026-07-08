@@ -1,16 +1,19 @@
 import { Injectable, Logger, NotFoundException, Optional } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository, Between, FindOptionsWhere, LessThanOrEqual, In } from 'typeorm';
+import { DataSource, Repository, Between, LessThanOrEqual, MoreThan, Not, IsNull, In } from 'typeorm';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { errMsg } from '../common/err.util';
 import { firstValueFrom } from 'rxjs';
 import { Lead } from './entities/lead.entity';
 import { LeadHistorico } from './entities/lead-historico.entity';
+import { EmailLog } from '../email/entities/email-log.entity';
 import { CriarLeadDto } from './dto/criar-lead.dto';
 import { AtualizarLeadDto } from './dto/atualizar-lead.dto';
 import { MoverEstagioDto } from './dto/mover-estagio.dto';
 import { LeadEmailService } from '../email/lead-email.service';
+
+const TIPOS_EMAIL_LEAD = ['lead_boas_vindas', 'lead_followup', 'lead_cta'];
 
 // Tempo de espera em ms para cada etapa de nurturing
 const ETAPAS_NURTURING = [
@@ -37,6 +40,14 @@ export class LeadsService {
   ) {}
 
   async criar(dto: CriarLeadDto): Promise<Lead> {
+    if (dto.telefone) {
+      const existente = await this.leadRepo.findOne({
+        where: { telefone: dto.telefone, status: Not(In(['perdido', 'matriculado'])) },
+        order: { criadoEm: 'DESC' },
+      });
+      if (existente) return this.atualizarInteresseExistente(existente, dto);
+    }
+
     const lead = this.leadRepo.create({
       nome: dto.nome,
       email: dto.email,
@@ -57,6 +68,29 @@ export class LeadsService {
     return salvo;
   }
 
+  // Telefone já tem um lead ativo (não perdido/matriculado): atualiza em vez de duplicar
+  private async atualizarInteresseExistente(lead: Lead, dto: CriarLeadDto): Promise<Lead> {
+    if (dto.nome) lead.nome = dto.nome;
+    if (dto.email) lead.email = dto.email;
+    if (dto.cursoInteresse) lead.cursoInteresse = dto.cursoInteresse;
+    if (dto.observacao) lead.observacao = dto.observacao;
+
+    if (STATUS_ATIVOS.includes(lead.status)) {
+      lead.etapaNurturing = 0;
+      lead.nurturingPausado = false;
+      lead.proximoContato = new Date(Date.now() + ETAPAS_NURTURING[0]);
+    }
+
+    await this.historicoRepo.save({
+      leadId: lead.id,
+      estagioAnterior: lead.status,
+      estagioNovo: lead.status,
+      observacao: `Novo interesse registrado (origem: ${dto.origem ?? 'site'}) — nurturing reativado`,
+    });
+
+    return this.leadRepo.save(lead);
+  }
+
   async listar(filtros: {
     status?: string;
     origem?: string;
@@ -65,22 +99,43 @@ export class LeadsService {
     ate?: string;
     page?: number;
     limit?: number;
+    emailEnviado?: boolean;
+    whatsappEnviado?: boolean;
+    respondeu?: boolean;
   }): Promise<{ data: Lead[]; total: number; page: number; pages: number }> {
     const page = Math.max(1, filtros.page ?? 1);
     const limit = Math.min(200, Math.max(1, filtros.limit ?? 50));
-    const where: FindOptionsWhere<Lead> = {};
-    if (filtros.status) where.status = filtros.status as Lead['status'];
-    if (filtros.origem) where.origem = filtros.origem as Lead['origem'];
-    if (filtros.telefone) where.telefone = filtros.telefone;
+
+    const qb = this.leadRepo.createQueryBuilder('l');
+    if (filtros.status) qb.andWhere('l.status = :status', { status: filtros.status });
+    if (filtros.origem) qb.andWhere('l.origem = :origem', { origem: filtros.origem });
+    if (filtros.telefone) qb.andWhere('l.telefone = :telefone', { telefone: filtros.telefone });
     if (filtros.de && filtros.ate) {
-      where.criadoEm = Between(new Date(filtros.de), new Date(filtros.ate + 'T23:59:59'));
+      qb.andWhere('l.criadoEm BETWEEN :de AND :ate', {
+        de: new Date(filtros.de),
+        ate: new Date(filtros.ate + 'T23:59:59'),
+      });
     }
-    const [data, total] = await this.leadRepo.findAndCount({
-      where,
-      order: { criadoEm: 'DESC' },
-      take: limit,
-      skip: (page - 1) * limit,
-    });
+    if (filtros.whatsappEnviado !== undefined) {
+      qb.andWhere(filtros.whatsappEnviado ? 'l.etapaNurturing > 0' : 'l.etapaNurturing = 0');
+    }
+    if (filtros.respondeu !== undefined) {
+      qb.andWhere(filtros.respondeu ? 'l.ultimaInteracaoBot IS NOT NULL' : 'l.ultimaInteracaoBot IS NULL');
+    }
+    if (filtros.emailEnviado !== undefined) {
+      const sub = qb.subQuery()
+        .select('1')
+        .from(EmailLog, 'el')
+        .where('el.leadId = l.id')
+        .andWhere('el.enviado = true')
+        .andWhere('el.tipo IN (:...tiposEmailLead)')
+        .getQuery();
+      qb.andWhere(`${filtros.emailEnviado ? 'EXISTS' : 'NOT EXISTS'} ${sub}`, { tiposEmailLead: TIPOS_EMAIL_LEAD });
+    }
+
+    qb.orderBy('l.criadoEm', 'DESC').take(limit).skip((page - 1) * limit);
+
+    const [data, total] = await qb.getManyAndCount();
     return { data, total, page, pages: Math.ceil(total / limit) };
   }
 
@@ -272,7 +327,39 @@ export class LeadsService {
       where: { nurturingPausado: false, status: In(STATUS_ATIVOS) },
     });
 
-    return { total, noMes, porOrigem, funil, taxaConversao, emNurturing };
+    const comWhatsappEnviado = await this.leadRepo.count({ where: { etapaNurturing: MoreThan(0) } });
+    const comResposta = await this.leadRepo.count({ where: { ultimaInteracaoBot: Not(IsNull()) } });
+    const nurturingEsgotado = await this.leadRepo.count({
+      where: {
+        status: In(STATUS_ATIVOS),
+        etapaNurturing: MoreThan(ETAPAS_NURTURING.length - 1),
+        ultimaInteracaoBot: IsNull(),
+      },
+    });
+    const comEmailEnviado = await this.leadRepo
+      .createQueryBuilder('l')
+      .where((qb) => {
+        const sub = qb.subQuery()
+          .select('1')
+          .from(EmailLog, 'el')
+          .where('el.leadId = l.id')
+          .andWhere('el.enviado = true')
+          .andWhere('el.tipo IN (:...tiposEmailLead)')
+          .getQuery();
+        return `EXISTS ${sub}`;
+      })
+      .setParameter('tiposEmailLead', TIPOS_EMAIL_LEAD)
+      .getCount();
+
+    const segmentos = {
+      emailEnviado: comEmailEnviado,
+      whatsappEnviado: comWhatsappEnviado,
+      respondeu: comResposta,
+      matriculado: funil.find(f => f.estagio === 'matriculado')?.total ?? 0,
+      nurturingEsgotadoSemResposta: nurturingEsgotado,
+    };
+
+    return { total, noMes, porOrigem, funil, taxaConversao, emNurturing, segmentos };
   }
 
   async relatorioDiario(): Promise<object> {
