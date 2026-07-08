@@ -1,4 +1,4 @@
-import { Controller, Post, Get, HttpCode, Body, BadRequestException, NotFoundException, InternalServerErrorException, ParseIntPipe } from '@nestjs/common';
+import { Controller, Post, Get, HttpCode, Body, BadRequestException, NotFoundException, InternalServerErrorException, ParseIntPipe, UseGuards } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
@@ -7,7 +7,9 @@ import { EmailService } from './email.service';
 import { EmailLog } from './entities/email-log.entity';
 import { templateLembrete } from './templates/email.templates';
 import { errMsg } from '../common/err.util';
+import { AdminApiKeyGuard } from '../admin/guards/admin-api-key.guard';
 
+@UseGuards(AdminApiKeyGuard)
 @Controller('email')
 export class EmailController {
   constructor(

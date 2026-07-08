@@ -13,11 +13,12 @@ import { LancamentoCache } from '../financeiro/entities/lancamento-cache.entity'
 import { ClienteCache } from '../financeiro/entities/cliente-cache.entity';
 import { SophiaModule } from '../sophia/sophia.module';
 import { FinanceiroModule } from '../financeiro/financeiro.module';
+import { AdminApiKeyGuard } from '../admin/guards/admin-api-key.guard';
 
 @Module({
   imports: [TypeOrmModule.forFeature([EmailLog, Lead, LancamentoCache, ClienteCache]), HttpModule, SophiaModule, FinanceiroModule],
   controllers: [EmailController],
-  providers: [EmailService, EmailJobService, LeadEmailService, WhatsAppService, WhatsAppJobService],
+  providers: [EmailService, EmailJobService, LeadEmailService, WhatsAppService, WhatsAppJobService, AdminApiKeyGuard],
   exports: [EmailService, EmailJobService, LeadEmailService, WhatsAppService],
 })
 export class EmailModule {}
