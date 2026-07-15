@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, Param, ParseIntPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, HttpCode, Param, ParseIntPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { AdminApiKeyGuard } from './guards/admin-api-key.guard';
 import { Lead } from '../leads/entities/lead.entity';
@@ -95,6 +95,30 @@ export class AdminController {
   emailDisparar() {
     void this.emailJobService.runEmailJob('manual');
     return { message: 'Job de emails iniciado manualmente' };
+  }
+
+  // ─── Cancelamento de curso ──────────────────────────────────────────────────
+
+  @Get('cancelamento/buscar-aluno')
+  buscarAlunoCancelamento(@Query('q') q: string) {
+    if (!q?.trim()) return [];
+    return this.financeiroService.buscarAlunos(q);
+  }
+
+  @Get('cancelamento/financeiro')
+  financeiroCancelamento(@Query('ra') ra: string) {
+    if (!ra?.trim()) throw new BadRequestException('Informe o parâmetro ra');
+    return this.financeiroService.getResumoCancelamento(ra);
+  }
+
+  @Post('cancelamento/email')
+  @HttpCode(200)
+  emailCancelamento(@Body('ra') ra: string, @Body('tipo') tipo: 'academico' | 'financeiro') {
+    if (!ra?.trim()) throw new BadRequestException('Informe o campo "ra"');
+    if (tipo !== 'academico' && tipo !== 'financeiro') {
+      throw new BadRequestException('Campo "tipo" deve ser "academico" ou "financeiro"');
+    }
+    return this.emailJobService.enviarCancelamento(ra, tipo);
   }
 
   // ─── Diagnóstico Sophia ─────────────────────────────────────────────────────

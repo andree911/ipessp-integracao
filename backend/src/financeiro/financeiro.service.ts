@@ -26,6 +26,25 @@ export interface FinanceiroCliente {
   pendencias: PendenciaFinanceira[];
 }
 
+export interface ResultadoBuscaAluno {
+  id: number;
+  nomeAluno: string;
+  ra: string | null;
+  cpf: string | null;
+}
+
+export interface ResumoCancelamento {
+  nomeAluno: string;
+  ra: string;
+  emailResponsavel: string | null;
+  valorParcela: number;
+  parcelasEmAberto: number;
+  somaValor: number;
+  parcelasEmAtraso: number;
+  saldoDevedor: number;
+  valorMulta: number;
+}
+
 @Injectable()
 export class FinanceiroService {
   constructor(
@@ -150,6 +169,74 @@ export class FinanceiroService {
     }
 
     return { codigoAluno: cliente.codigoSophia };
+  }
+
+  /** Busca alunos por nome (parcial) ou RA (parcial) — usado no autocomplete da tela de Cancelamentos. */
+  async buscarAlunos(query: string): Promise<ResultadoBuscaAluno[]> {
+    const termo = query.trim();
+    if (!termo) return [];
+
+    const clientes = await this.clienteRepo
+      .createQueryBuilder('c')
+      .where('c.nomeAluno LIKE :termo', { termo: `%${termo}%` })
+      .orWhere('c.ra LIKE :termo', { termo: `%${termo}%` })
+      .orderBy('c.nomeAluno', 'ASC')
+      .take(20)
+      .getMany();
+
+    return clientes.map((c) => ({ id: c.id, nomeAluno: c.nomeAluno, ra: c.ra, cpf: c.cpf }));
+  }
+
+  /**
+   * Resumo financeiro usado na tela de Cancelamentos. "Soma do Valor" inclui
+   * TODAS as parcelas em aberto (futuras + em atraso) — é sobre esse total que
+   * incide a multa rescisória de 10%. "Saldo Devedor" é o subconjunto das
+   * parcelas já vencidas (inadimplência), cobrado à parte, além da multa.
+   */
+  async getResumoCancelamento(ra: string): Promise<ResumoCancelamento> {
+    const cliente = await this.clienteRepo.findOne({ where: { ra } });
+    if (!cliente) {
+      throw new NotFoundException(`Nenhum aluno encontrado para o RA '${ra}'`);
+    }
+
+    const lancamentos = await this.lancamentoRepo.find({
+      where: { codigoCliente: cliente.id, recebido: false },
+    });
+
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+
+    let somaValor = 0;
+    let saldoDevedor = 0;
+    let parcelasEmAtraso = 0;
+
+    for (const l of lancamentos) {
+      const valor = Number(l.valorPrevisto);
+      somaValor += valor;
+
+      const venc = parseDateBR(l.dataVencimento);
+      venc.setHours(0, 0, 0, 0);
+      if (venc.getTime() < hoje.getTime()) {
+        parcelasEmAtraso++;
+        saldoDevedor += valor;
+      }
+    }
+
+    const parcelasEmAberto = lancamentos.length;
+    const valorParcela = parcelasEmAberto > 0 ? somaValor / parcelasEmAberto : 0;
+    const arredondar = (v: number) => Math.round(v * 100) / 100;
+
+    return {
+      nomeAluno: cliente.nomeAluno,
+      ra: cliente.ra ?? ra,
+      emailResponsavel: cliente.emailResponsavel,
+      valorParcela: arredondar(valorParcela),
+      parcelasEmAberto,
+      somaValor: arredondar(somaValor),
+      parcelasEmAtraso,
+      saldoDevedor: arredondar(saldoDevedor),
+      valorMulta: arredondar(somaValor * 0.1),
+    };
   }
 
   async getLancamentosPendentes(): Promise<{ cliente: ClienteCache; lancamento: LancamentoCache }[]> {
