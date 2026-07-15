@@ -22,6 +22,11 @@ export class Lead {
   @Column({ nullable: true })
   cursoInteresse: string;
 
+  // Consentimento explícito para mensagens de WhatsApp marketing (nurturing) —
+  // exigido pela Meta para templates categoria Marketing na Cloud API
+  @Column({ default: false })
+  whatsappOptin: boolean;
+
   @Column({ default: 'site' })
   origem: LeadOrigem;
 

@@ -1,5 +1,5 @@
 import { Transform } from 'class-transformer';
-import { IsEmail, IsNotEmpty, IsOptional, IsString, IsIn, Matches, MaxLength } from 'class-validator';
+import { IsBoolean, IsEmail, IsNotEmpty, IsOptional, IsString, IsIn, Matches, MaxLength } from 'class-validator';
 
 // n8n (via $fromAI) sempre manda string, nunca omite o campo: quando a IA não
 // tem a informação, o valor vem como "". @IsOptional() só ignora null/undefined,
@@ -28,6 +28,10 @@ export class CriarLeadDto {
   @IsString()
   @MaxLength(300)
   cursoInteresse?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  whatsappOptin?: boolean;
 
   @IsOptional()
   @IsIn(['site', 'chatbot', 'whatsapp', 'n8n', 'manual'])

@@ -53,6 +53,7 @@ export class LeadsService {
       email: dto.email,
       telefone: dto.telefone,
       cursoInteresse: dto.cursoInteresse,
+      whatsappOptin: dto.whatsappOptin ?? false,
       origem: (dto.origem as Lead['origem']) ?? 'site',
       observacao: dto.observacao,
       etapaNurturing: 0,
@@ -74,6 +75,8 @@ export class LeadsService {
     if (dto.email) lead.email = dto.email;
     if (dto.cursoInteresse) lead.cursoInteresse = dto.cursoInteresse;
     if (dto.observacao) lead.observacao = dto.observacao;
+    // Explícito (true ou false) — reflete a escolha do checkbox no reenvio, não só concede
+    if (dto.whatsappOptin !== undefined) lead.whatsappOptin = dto.whatsappOptin;
 
     if (STATUS_ATIVOS.includes(lead.status)) {
       lead.etapaNurturing = 0;
