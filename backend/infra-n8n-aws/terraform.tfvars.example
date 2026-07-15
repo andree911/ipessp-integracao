@@ -1,0 +1,30 @@
+# Copie pra terraform.tfvars (já está no .gitignore da raiz do repo? confirme
+# antes de dar `terraform apply` — este arquivo NUNCA deve ser commitado com
+# valores reais preenchidos, só o .example).
+
+aws_region   = "us-east-1"
+project_name = "ipessp-n8n"
+
+# Confira a versão do n8n rodando hoje (rodapé da UI, ou Render > Environment
+# se estiver pinada em algum lugar) antes de aplicar — banco parte vazio, mas
+# os 4 workflows serão reimportados manualmente (ver README, passo 4), então
+# vale usar a mesma versão de n8n pra evitar qualquer diferença de comportamento
+# entre o export antigo e o import novo.
+n8n_image = "docker.io/n8nio/n8n:1.70.0"
+
+n8n_env_secrets = {
+  CORE_API_URL = "https://integracao-sophia-n8n.onrender.com"
+  IA_BEARER_TOKEN = "COLE-AQUI"
+
+  # Z-API — manter enquanto docs/ (Z-API) ainda estiver ativo em paralelo
+  ZAPI_INSTANCE_ID     = "COLE-AQUI"
+  ZAPI_TOKEN           = "COLE-AQUI"
+  ZAPI_CLIENT_TOKEN    = "COLE-AQUI"
+  ZAPI_TELEFONE_EQUIPE = "5511940343994"
+
+  # 360dialog — preencher quando docs-meta/ for pra produção (ver docs-meta/README.md)
+  WHATSAPP_SEND_URL         = "https://waba-v2.360dialog.io/messages"
+  WHATSAPP_AUTH_HEADER_NAME = "D360-API-KEY"
+  WHATSAPP_AUTH_HEADER_VALUE = "COLE-AQUI-QUANDO-TIVER"
+  WHATSAPP_TELEFONE_EQUIPE   = "5511940343994"
+}

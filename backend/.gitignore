@@ -6,3 +6,10 @@ dist/
 data/*.db
 *.tsbuildinfo
 email-preview/
+
+# Terraform (infra-n8n-aws/) — .terraform.lock.hcl NÃO entra aqui, deve ser commitado
+**/.terraform/
+**/terraform.tfstate
+**/terraform.tfstate.backup
+**/terraform.tfvars
+**/*.tfplan
