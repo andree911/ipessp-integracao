@@ -1,0 +1,791 @@
+{
+  "name": "Bot IPESSP WhatsApp (Meta Cloud API)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ipessp-whatsapp-meta",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [-416, 0],
+      "id": "m1a1b1c1-0001-4000-8000-000000000001",
+      "name": "Webhook Mensagens Meta",
+      "webhookId": "m1a1b1c1-0001-4000-8000-000000000001"
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "ipessp-whatsapp-meta",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [-416, 320],
+      "id": "m1a1b1c1-0002-4000-8000-000000000002",
+      "name": "Webhook Verificação Meta",
+      "webhookId": "m1a1b1c1-0002-4000-8000-000000000002"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 3 },
+          "conditions": [
+            {
+              "id": "c1c1c1c1-0001-4000-8000-000000000001",
+              "leftValue": "={{ $json.query['hub.verify_token'] }}",
+              "rightValue": "={{ $env.META_WEBHOOK_VERIFY_TOKEN }}",
+              "operator": { "type": "string", "operation": "equals", "name": "filter.operator.equals" }
+            },
+            {
+              "id": "c1c1c1c1-0001-4000-8000-000000000002",
+              "leftValue": "={{ $json.query['hub.mode'] }}",
+              "rightValue": "subscribe",
+              "operator": { "type": "string", "operation": "equals", "name": "filter.operator.equals" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [-208, 320],
+      "id": "c1c1c1c1-0001-4000-8000-000000000000",
+      "name": "Checar Verify Token"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.query['hub.challenge'] }}",
+        "options": { "responseCode": 200 }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [0, 240],
+      "id": "c1c1c1c1-0003-4000-8000-000000000003",
+      "name": "Responder Challenge"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "Forbidden",
+        "options": { "responseCode": 403 }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [0, 400],
+      "id": "c1c1c1c1-0004-4000-8000-000000000004",
+      "name": "Responder Não Autorizado"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 3 },
+          "conditions": [
+            {
+              "id": "f1f1f1f1-0001-4000-8000-000000000001",
+              "leftValue": "={{ $json.body.entry?.[0]?.changes?.[0]?.value?.messages?.[0] }}",
+              "rightValue": "",
+              "operator": { "type": "string", "operation": "exists", "singleValue": true }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [-208, 0],
+      "id": "f1f1f1f1-0001-4000-8000-000000000000",
+      "name": "Filtrar Eventos de Mensagem"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [0, 80],
+      "id": "f1f1f1f1-0002-4000-8000-000000000002",
+      "name": "Ignorar Evento (status/outros)"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body;\nconst value = body.entry[0].changes[0].value;\nconst msg = value.messages[0];\n\nconst phone = msg.from;\nlet text;\nlet listResponseMessage;\n\nif (msg.type === 'text') {\n  text = { message: msg.text.body };\n} else if (msg.type === 'interactive' && msg.interactive?.type === 'list_reply') {\n  listResponseMessage = { rowId: msg.interactive.list_reply.id, title: msg.interactive.list_reply.title };\n} else if (msg.type === 'interactive' && msg.interactive?.type === 'button_reply') {\n  listResponseMessage = { rowId: msg.interactive.button_reply.id, title: msg.interactive.button_reply.title };\n}\n// outros tipos (image, audio, video, document, location, sticker) ficam sem `text` e sem\n// `listResponseMessage` — caem no fluxo de \"mídia não suportada\" (If1), igual à Z-API\n\nreturn [{ json: { body: { phone, fromMe: false, text, listResponseMessage } } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "id": "n1n1n1n1-0001-4000-8000-000000000001",
+      "name": "Webhook"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 3 },
+          "conditions": [
+            {
+              "id": "acc6de8f-e2d0-4085-acfa-41d00cc7a1b3",
+              "leftValue": "={{ $json.body.fromMe }}",
+              "rightValue": "false",
+              "operator": { "type": "string", "operation": "equals", "name": "filter.operator.equals" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [208, 0],
+      "id": "5295bbf2-ed64-4e33-b671-bbfcf1c5eb74",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.text.message }}",
+        "options": {
+          "systemMessage": "Você é o assistente virtual do IPESSP. Seu nome é \"Pespi\" e você atende via WhatsApp alunos, professores e funcionários.\n\nVocê pode ajudar com:\n1. Financeiro — boletos, parcelas, vencimentos (precisa do CPF)\n2. Secretaria — matrícula, documentos, declarações, prazos\n3. TI / Suporte — acesso ao portal, login, senha, sistemas\n4. Avisos e comunicados da instituição\n5. Calendário acadêmico e eventos\n6. Informações sobre cursos para interessados em matrícula\n\nREGRAS:\n- Seja cordial, objetivo e profissional\n- Se o sistema informar o tipo do usuário (aluno, professor, funcionario), adapte o atendimento ao perfil\n- Se não souber o tipo, pergunte \"Você é aluno, professor?\" e salve com a tool de associar telefone\n- Para consultas financeiras, solicite o CPF se ainda não tiver\n- Os boletos vencem sempre no dia 8, 18 ou 28 do mês, conforme o plano escolhido na matrícula\n- Os planos de pagamento costumam ser em 6, 12 ou 18 parcelas, mas isso varia por curso — use sempre o número exato de parcelas e valor que estiver na descrição retornada pela tool, nunca generalize esses 3 números por cima do dado real\n- Se o usuário perguntar em quantas vezes pode parcelar sem dizer qual curso, NÃO responda um número fixo — pergunte de qual curso ele quer saber, use a tool \"Consultar Cursos\" e informe as opções reais de parcelamento daquele curso\n- Nunca invente informações — use apenas dados das ferramentas\n- Formate valores em R$ e datas no padrão brasileiro\n- Respostas curtas, sem markdown excessivo\n- Para perguntas sobre cursos oferecidos, use a tool \"Consultar Cursos\" — nunca invente nomes de curso\n- Quando a descrição de um curso tiver várias modalidades/turnos com parcelamentos diferentes, cite o número de parcelas e o valor exatamente junto da modalidade a que pertencem, sem misturar o plano de uma modalidade com o nome de outra\n- Duração do curso (em meses) e número de parcelas são coisas diferentes — nunca trate a quantidade de parcelas como se fosse a duração, nem o contrário\n- Se o usuário pedir o boleto em PDF/arquivo (não apenas linha digitável ou PIX), use a tool \"Enviar Boleto PDF\" com o CPF e o codigoBoleto retornado pela consulta financeira, e confirme com uma mensagem curta tipo \"Prontinho, mandei o boleto aqui no WhatsApp!\"\n\nCRM / LEADS:\n- Use a tool \"Verificar Lead CRM\" no início do atendimento para ver se o usuário já é um lead\n- Se for lead com curso de interesse registrado, use esse contexto para personalizar o atendimento\n- Se o lead confirmar interesse real em se matricular, colete CPF e direcione para o fluxo de inscrição\n- Após registrar um novo lead: \"✅ Seus dados foram registrados! Em breve nossa equipe entrará em contato. Se preferir falar agora, chama no WhatsApp: wa.me/5511998917111\"\n\nTI / SUPORTE TÉCNICO - ORIENTAÇÕES ANTES DE ABRIR CHAMADO:\n1. EMAIL INSTITUCIONAL: formato ra[RA]@fipessp.edu.br\n2. SENHA / ACESSO MICROSOFT: redefinição só pelo TI — abrir chamado informando o email institucional\n3. MICROSOFT TEAMS: teams.microsoft.com — login com email institucional + senha Microsoft\n4. ACESSO À AULA: aulas pelo Teams. Teams funcionando mas não acha a turma → falar com o professor\n\nREGRA: tente resolver com as orientações acima antes de abrir qualquer chamado.\n\nATENDIMENTO A PROFESSORES:\n- Quando tipo = professor e perguntar sobre secretaria: use a tool de consultar professor\n- Se não tiver email, pergunte: \"Qual seu email institucional?\" e salve com a tool de associar telefone\n- Professores NÃO consultam financeiro (boletos)\n\nQUANDO NÃO SOUBER RESPONDER:\n- Secretaria: \"Para isso, fale com a Secretaria pelo WhatsApp: wa.me/5511997738431\"\n- TI/Suporte: \"Para isso, fale com o suporte de TI: wa.me/5511968566862\"\n- Financeiro: \"Para isso, fale com o Financeiro pelo WhatsApp: wa.me/5511998393640\""
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [416, -96],
+      "id": "93e71c4e-8ad9-4883-bbba-ca573e5af5a7",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Webhook').first().json.body.phone }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [432, 112],
+      "id": "f38f8a81-9640-435f-8637-8c6e538528cb",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Consulta pendências financeiras pelo CPF do responsável. Use quando o usuário perguntar sobre boletos, mensalidades ou situação financeira.",
+        "url": "={{ $env.CORE_API_URL }}/ia/financeiro",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [{ "name": "cpf", "value": "={{ $fromAI('cpf', 'CPF do responsável financeiro, somente números') }}" }]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}" }]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [576, 112],
+      "id": "2e9a0279-64e1-433d-b6d8-4c8b0265e765",
+      "name": "Consultar Financeiro"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Busca os avisos e comunicados ativos da escola. Use quando o usuário perguntar sobre avisos, comunicados, informações ou novidades da escola.",
+        "url": "={{ $env.CORE_API_URL }}/ia/avisos",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}" }]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [672, 208],
+      "id": "6bc24b09-19cf-4bcc-8724-1d44ead55e71",
+      "name": "Consultar Avisos"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Busca os próximos eventos do calendário escolar. Use quando o usuário perguntar sobre eventos, datas, reuniões, feriados ou agenda da escola.",
+        "url": "={{ $env.CORE_API_URL }}/ia/calendario",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}" }]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [768, 304],
+      "id": "0e0a9dd1-4a94-4d31-b0dc-6af53db5d1ba",
+      "name": "Consultar Calendário"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.WHATSAPP_SEND_URL }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "={{ $env.WHATSAPP_AUTH_HEADER_NAME }}", "value": "={{ $env.WHATSAPP_AUTH_HEADER_VALUE }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ messaging_product: 'whatsapp', to: $('Webhook').item.json.body.phone, type: 'text', text: { body: $json.output } }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [768, -96],
+      "id": "12ad979e-126f-48c9-9ba1-681ae611ce17",
+      "name": "Enviar Resposta WhatsApp"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.CORE_API_URL }}/v1/leads/registrar-interacao-bot",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"telefone\": \"{{ $('Webhook').item.json.body.phone }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [960, -96],
+      "id": "c1d2e3f4-2222-2222-2222-000000000003",
+      "name": "Registrar Interação Bot",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 3 },
+          "conditions": [
+            {
+              "id": "7bcf7305-e89e-4b42-96cb-416ea40410de",
+              "leftValue": "={{ $json.body.text.message }}",
+              "rightValue": "",
+              "operator": { "type": "string", "operation": "exists", "singleValue": true }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [304, -208],
+      "id": "4d8c4981-d2a4-4708-aece-5f8f97909284",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.WHATSAPP_SEND_URL }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "={{ $env.WHATSAPP_AUTH_HEADER_NAME }}", "value": "={{ $env.WHATSAPP_AUTH_HEADER_VALUE }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ messaging_product: 'whatsapp', to: $('Webhook').item.json.body.phone, type: 'text', text: { body: 'Olá! No momento só consigo responder mensagens de texto. Para outras dúvidas, ligue para (11) 99839-3640 ou envie um e-mail para matricula.financeiro@ipessp.edu.br.' } }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [752, -272],
+      "id": "bf3daa82-2ef0-42a1-8f3f-8bd9f6e4f688",
+      "name": "Responder Mídia Não Suportada"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Registra um novo lead/prospecto interessado em cursos do IPESSP. Use quando o usuário demonstrar interesse em se matricular, pedir informações sobre cursos ou pedir para ser contatado. Colete nome e email antes de chamar (telefone já é identificado automaticamente pelo WhatsApp).",
+        "method": "POST",
+        "url": "={{ $env.CORE_API_URL }}/v1/leads",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"nome\": \"{{ $fromAI('nome', 'Nome completo do interessado') }}\",\n  \"email\": \"{{ $fromAI('email', 'Email do interessado, se informado') }}\",\n  \"telefone\": \"{{ $('Webhook').item.json.body.phone }}\",\n  \"cursoInteresse\": \"{{ $fromAI('cursoInteresse', 'Curso ou área de interesse mencionada') }}\",\n  \"origem\": \"chatbot\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [864, 400],
+      "id": "dd93ad17-74ca-48ed-9d0e-70f7dd616e71",
+      "name": "Registrar Lead CRM"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "sabiazinho-4",
+          "mode": "id"
+        },
+        "responsesApiEnabled": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [288, 112],
+      "id": "e470ec20-f620-429d-891e-c9fd6ddca25c",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "hjpnmhjkVj7j9r4Y",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "strict", "version": 3 },
+          "conditions": [
+            {
+              "id": "33162f65-fed3-48a0-832d-6b2029a90ff2",
+              "leftValue": "={{ $json.body.text.message }}",
+              "rightValue": "^(oi|olá|ola|bom dia|boa tarde|boa noite|hi|hello|menu|inicio|início|comecar|começar|ajuda|help|start|opa|eae|ei|hey|tudo bem|td bem)",
+              "operator": { "type": "string", "operation": "regex" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": { "ignoreCase": true }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [400, -496],
+      "id": "0142f6c9-6f74-4cd3-a8d4-92ad1beec7cc",
+      "name": "If2"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.WHATSAPP_SEND_URL }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "={{ $env.WHATSAPP_AUTH_HEADER_NAME }}", "value": "={{ $env.WHATSAPP_AUTH_HEADER_VALUE }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"messaging_product\": \"whatsapp\",\n  \"recipient_type\": \"individual\",\n  \"to\": \"{{ $('Webhook').item.json.body.phone }}\",\n  \"type\": \"interactive\",\n  \"interactive\": {\n    \"type\": \"list\",\n    \"header\": { \"type\": \"text\", \"text\": \"Olá! Sou o Pespi 👋\" },\n    \"body\": { \"text\": \"Assistente virtual do IPESSP. Como posso ajudar?\" },\n    \"action\": {\n      \"button\": \"Ver opções\",\n      \"sections\": [\n        {\n          \"title\": \"Menu Principal\",\n          \"rows\": [\n            {\"id\": \"financeiro\", \"title\": \"💰 Financeiro\", \"description\": \"Boletos e pendências\"},\n            {\"id\": \"secretaria\", \"title\": \"📋 Secretaria\", \"description\": \"Matrícula, documentos e declarações\"},\n            {\"id\": \"ti\", \"title\": \"💻 Suporte TI\", \"description\": \"Acesso, senha e sistemas\"},\n            {\"id\": \"avisos\", \"title\": \"📢 Avisos\", \"description\": \"Comunicados e novidades\"},\n            {\"id\": \"calendario\", \"title\": \"📅 Calendário\", \"description\": \"Datas e agenda escolar\"},\n            {\"id\": \"matricula\", \"title\": \"📝 Matrícula\", \"description\": \"Informações sobre cursos\"}\n          ]\n        }\n      ]\n    }\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [512, -272],
+      "id": "15705528-818b-4218-a921-946f1764aef8",
+      "name": "Enviar Menu Inicial"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 3 },
+          "conditions": [
+            {
+              "id": "75abb9e4-9ccc-4d21-aaae-078a3a477f55",
+              "leftValue": "={{ $json.body.listResponseMessage?.rowId }}",
+              "rightValue": "",
+              "operator": { "type": "string", "operation": "exists", "singleValue": true }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [784, -432],
+      "id": "5d5933cc-9e1f-4e48-be41-774711af500d",
+      "name": "If3"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\nconst sel = data.body.listResponseMessage;\n\nconst contextos = {\n  financeiro: 'O usuário selecionou situação financeira. Solicite o CPF para consultar boletos em aberto.',\n  secretaria: 'O usuário selecionou Secretaria. Pergunte o que precisa: matrícula, documentos, declarações ou outro assunto.',\n  ti: 'O usuário selecionou Suporte TI. Pergunte qual problema está tendo: acesso ao portal, senha, email ou outro sistema.',\n  avisos: 'O usuário selecionou avisos da escola. Mostre os comunicados ativos usando a ferramenta disponível.',\n  calendario: 'O usuário selecionou calendário. Mostre os próximos eventos usando a ferramenta disponível.',\n  matricula: 'O usuário demonstrou interesse em se matricular. Use a tool \"Verificar Lead CRM\" para ver se já está cadastrado. Se não, colete nome completo, email e telefone para registrar o lead.',\n};\n\nconst mensagem = contextos[sel?.rowId] || `O usuário selecionou: ${sel?.title}`;\n\nreturn [{ json: { ...data, body: { ...data.body, text: { message: mensagem } } } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1008, -544],
+      "id": "53bbe2c1-a480-4336-bc5e-c41388de4ca9",
+      "name": "Mapear Seleção do Menu"
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.CORE_API_URL }}/ia/cpf-por-telefone",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [{ "name": "telefone", "value": "={{ $('Webhook').item.json.body.phone }}" }]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}" }]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [608, -592],
+      "id": "b25e373b-72d9-4915-93f2-24d92af55757",
+      "name": "Buscar CPF por Telefone",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const cpfData = $input.first().json;\nconst webhook = $('Webhook').first().json;\nconst msg = webhook.body.text.message;\n\nlet enriched = msg;\n\nif (cpfData.cpf && !cpfData.error && !cpfData.message) {\n  enriched = `[Sistema: CPF: ${cpfData.cpf}${cpfData.nomeResponsavel ? `, responsável: ${cpfData.nomeResponsavel}` : ''}${cpfData.tipo ? `, tipo: ${cpfData.tipo}` : ''}${cpfData.email ? `, email: ${cpfData.email}` : ''}. Use-o diretamente sem pedir ao usuário.]\\n\\n${msg}`;\n}\n\nreturn [{ json: { ...webhook, body: { ...webhook.body, text: { message: enriched } } } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [816, -592],
+      "id": "a32d0ca6-3f5e-45be-96fb-227928b4e666",
+      "name": "Injetar CPF no Contexto"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Salva a associação entre o telefone do usuário e o CPF informado, para não pedir o CPF novamente em futuras conversas. Use SEMPRE após uma consulta financeira bem-sucedida onde o usuário informou o CPF.",
+        "method": "POST",
+        "url": "={{ $env.CORE_API_URL }}/ia/associar-telefone",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"telefone\": \"{{ $('Webhook').item.json.body.phone }}\",\n  \"cpf\": \"{{ $fromAI('cpf', 'CPF informado pelo usuário, somente números') }}\",\n  \"nomeResponsavel\": \"{{ $fromAI('nomeResponsavel', 'Nome do responsável se informado, senão string vazia') }}\",\n  \"tipo\": \"{{ $fromAI('tipo', 'Tipo do usuário: aluno, professor ou funcionario. Pergunte ao usuário caso não saiba.') }}\",\n  \"email\": \"{{ $fromAI('email', 'Email institucional se informado pelo professor, senão string vazia') }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [960, 352],
+      "id": "b56d9a10-4f2c-4eb6-ab34-91a597e9fe7a",
+      "name": "Salvar CPF do Telefone"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Abre um chamado de suporte TI. Use quando o usuário tiver problema com acesso, senha, email ou sistemas. Colete título e descrição antes de chamar.",
+        "method": "POST",
+        "url": "={{ $env.CORE_API_URL }}/v1/ti/chamados",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}" }]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"titulo\": \"{{ $fromAI('titulo', 'Título curto do problema, ex: Sem acesso ao portal') }}\",\n  \"descricao\": \"{{ $fromAI('descricao', 'Descrição detalhada do problema relatado') }}\",\n  \"categoria\": \"{{ $fromAI('categoria', 'Categoria: Hardware, Software, Acesso, Rede, Email ou Outro') }}\",\n  \"prioridade\": \"{{ $fromAI('prioridade', 'Prioridade: baixa, media, alta ou urgente') }}\",\n  \"telefoneSolicitante\": \"{{ $('Webhook').item.json.body.phone }}\",\n  \"criadoPorNome\": \"{{ $fromAI('criadoPorNome', 'Nome do usuário se conhecido, senão string vazia') }}\",\n  \"setor\": \"{{ $fromAI('setor', 'Tipo do usuário: aluno, professor ou funcionario') }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [960, 496],
+      "id": "0265ede2-8d01-4067-a909-994474a35ac0",
+      "name": "Abrir Chamado TI"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Consulta os chamados de TI abertos pelo usuário. Use quando perguntar sobre status de um chamado.",
+        "url": "={{ $env.CORE_API_URL }}/v1/ti/chamados",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [{ "name": "telefone", "value": "={{ $('Webhook').item.json.body.phone }}" }]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}" }]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [1056, 592],
+      "id": "5c5a574a-782e-4406-b0e7-17659206dd06",
+      "name": "Consultar Chamados TI"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Consulta a situação de matrícula do aluno. Use quando perguntar sobre matrícula, curso, turma ou situação escolar.",
+        "url": "={{ $env.CORE_API_URL }}/ia/secretaria",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [{ "name": "cpf", "value": "={{ $fromAI('cpf', 'CPF do aluno ou responsável, somente números') }}" }]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}" }]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [1152, 496],
+      "id": "a72c4c3a-b59c-4b2e-87fd-372a0affbb5d",
+      "name": "Consultar Secretaria"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Consulta as disciplinas do professor. Use quando o professor perguntar sobre suas aulas, horários ou disciplinas.",
+        "url": "={{ $env.CORE_API_URL }}/ia/secretaria/professor",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [{ "name": "email", "value": "={{ $fromAI('email', 'Email institucional do professor') }}" }]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}" }]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [1152, 688],
+      "id": "f23b2ff4-07b2-45e4-9c9e-c60932f641aa",
+      "name": "Consultar Professor"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Retorna a lista de alunos de uma disciplina específica. Use após consultar as disciplinas do professor e ele pedir a lista de alunos de uma delas.",
+        "url": "={{ $env.CORE_API_URL }}/ia/secretaria/professor/alunos",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [{ "name": "disciplinaId", "value": "={{ $fromAI('disciplinaId', 'ID da disciplina retornado pela consulta do professor') }}" }]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}" }]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [1248, 624],
+      "id": "79c261d9-2391-4ada-8708-0499ab7f9fd5",
+      "name": "Listar Alunos da Disciplina"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Verifica se o usuário atual já é um lead no CRM. Use no início do atendimento para personalizar a conversa com o curso de interesse já registrado. Se encontrar, use o cursoInteresse e o status para contextualizar.",
+        "url": "={{ $env.CORE_API_URL }}/v1/leads",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [{ "name": "telefone", "value": "={{ $('Webhook').item.json.body.phone }}" }]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}" }]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [1344, 624],
+      "id": "c1d2e3f4-2222-2222-2222-000000000001",
+      "name": "Verificar Lead CRM"
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.CORE_API_URL }}/ia/cpf-por-telefone",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [{ "name": "telefone", "value": "={{ $('Webhook').item.json.body.phone }}" }]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}" }]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1200, -544],
+      "id": "b25e373b-72d9-4915-93f2-24d92af55758",
+      "name": "Buscar CPF por Telefone (Menu)",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const cpfData = $input.first().json;\nconst mapped = $('Mapear Seleção do Menu').first().json;\nconst msg = mapped.body.text.message;\n\nlet enriched = msg;\n\nif (cpfData.cpf && !cpfData.error && !cpfData.message) {\n  enriched = `[Sistema: CPF: ${cpfData.cpf}${cpfData.nomeResponsavel ? `, responsável: ${cpfData.nomeResponsavel}` : ''}${cpfData.tipo ? `, tipo: ${cpfData.tipo}` : ''}${cpfData.email ? `, email: ${cpfData.email}` : ''}. Use-o diretamente sem pedir ao usuário.]\\n\\n${msg}`;\n}\n\nreturn [{ json: { ...mapped, body: { ...mapped.body, text: { message: enriched } } } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1400, -544],
+      "id": "a32d0ca6-3f5e-45be-96fb-227928b4e667",
+      "name": "Injetar CPF no Menu"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Lista os cursos oferecidos pelo IPESSP (graduação, pós-graduação, cursos livres), incluindo descricao, duracao e precoMensalidade quando cadastrados. Esses três campos podem vir null se ainda não foram preenchidos para aquele curso — nesse caso, NÃO invente o valor; diga que ainda não tem essa informação e ofereça registrar o lead. Use quando o usuário perguntar quais cursos existem ou pedir informações sobre um curso específico, antes de registrar um lead com o curso de interesse.",
+        "url": "={{ $env.CORE_API_URL }}/ia/cursos",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}" }]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [1440, 400],
+      "id": "d4e5f6a7-3333-3333-3333-000000000001",
+      "name": "Consultar Cursos"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Manda o PDF do boleto direto no WhatsApp do usuário. Use SOMENTE quando o usuário pedir explicitamente o boleto em PDF/arquivo (para linha digitável ou PIX copia-e-cola, esses dados já vêm da consulta financeira e não precisam desta tool). Precisa do CPF e do codigoBoleto retornado pela tool de consultar financeiro.",
+        "method": "POST",
+        "url": "={{ $env.CORE_API_URL }}/ia/boleto/enviar",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"cpf\": \"{{ $fromAI('cpf', 'CPF do responsável financeiro, somente números') }}\",\n  \"codigoBoleto\": {{ $fromAI('codigoBoleto', 'Código do boleto retornado pela consulta financeira', 'number') }},\n  \"telefone\": \"{{ $('Webhook').item.json.body.phone }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [1536, 496],
+      "id": "d4e5f6a7-3333-3333-3333-000000000002",
+      "name": "Enviar Boleto PDF"
+    }
+  ],
+  "pinData": {
+    "Webhook Mensagens Meta": [
+      {
+        "json": {
+          "body": {
+            "object": "whatsapp_business_account",
+            "entry": [
+              {
+                "id": "WABA_ID",
+                "changes": [
+                  {
+                    "value": {
+                      "messaging_product": "whatsapp",
+                      "metadata": { "display_phone_number": "5511999999999", "phone_number_id": "PHONE_NUMBER_ID" },
+                      "contacts": [{ "profile": { "name": "Fulano" }, "wa_id": "5511999999999" }],
+                      "messages": [
+                        {
+                          "from": "5511999999999",
+                          "id": "wamid.EXEMPLO",
+                          "timestamp": "1700000000",
+                          "type": "text",
+                          "text": { "body": "Olá bom dia" }
+                        }
+                      ]
+                    },
+                    "field": "messages"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "Webhook": [
+      {
+        "json": {
+          "body": {
+            "phone": "5511999999999",
+            "fromMe": false,
+            "text": { "message": "Olá bom dia" }
+          }
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook Mensagens Meta": { "main": [[{ "node": "Filtrar Eventos de Mensagem", "type": "main", "index": 0 }]] },
+    "Webhook Verificação Meta": { "main": [[{ "node": "Checar Verify Token", "type": "main", "index": 0 }]] },
+    "Checar Verify Token": {
+      "main": [
+        [{ "node": "Responder Challenge", "type": "main", "index": 0 }],
+        [{ "node": "Responder Não Autorizado", "type": "main", "index": 0 }]
+      ]
+    },
+    "Filtrar Eventos de Mensagem": {
+      "main": [
+        [{ "node": "Webhook", "type": "main", "index": 0 }],
+        [{ "node": "Ignorar Evento (status/outros)", "type": "main", "index": 0 }]
+      ]
+    },
+    "Webhook": { "main": [[{ "node": "If", "type": "main", "index": 0 }]] },
+    "If": { "main": [[{ "node": "If1", "type": "main", "index": 0 }]] },
+    "If1": {
+      "main": [
+        [{ "node": "If2", "type": "main", "index": 0 }],
+        [{ "node": "If3", "type": "main", "index": 0 }]
+      ]
+    },
+    "If2": {
+      "main": [
+        [{ "node": "Enviar Menu Inicial", "type": "main", "index": 0 }],
+        [{ "node": "Buscar CPF por Telefone", "type": "main", "index": 0 }]
+      ]
+    },
+    "If3": {
+      "main": [
+        [{ "node": "Mapear Seleção do Menu", "type": "main", "index": 0 }],
+        [{ "node": "Responder Mídia Não Suportada", "type": "main", "index": 0 }]
+      ]
+    },
+    "Mapear Seleção do Menu": { "main": [[{ "node": "Buscar CPF por Telefone (Menu)", "type": "main", "index": 0 }]] },
+    "Buscar CPF por Telefone (Menu)": { "main": [[{ "node": "Injetar CPF no Menu", "type": "main", "index": 0 }]] },
+    "Injetar CPF no Menu": { "main": [[{ "node": "AI Agent", "type": "main", "index": 0 }]] },
+    "Buscar CPF por Telefone": { "main": [[{ "node": "Injetar CPF no Contexto", "type": "main", "index": 0 }]] },
+    "Injetar CPF no Contexto": { "main": [[{ "node": "AI Agent", "type": "main", "index": 0 }]] },
+    "AI Agent": { "main": [[{ "node": "Enviar Resposta WhatsApp", "type": "main", "index": 0 }]] },
+    "Enviar Resposta WhatsApp": { "main": [[{ "node": "Registrar Interação Bot", "type": "main", "index": 0 }]] },
+    "Simple Memory": { "ai_memory": [[{ "node": "AI Agent", "type": "ai_memory", "index": 0 }]] },
+    "OpenAI Chat Model": { "ai_languageModel": [[{ "node": "AI Agent", "type": "ai_languageModel", "index": 0 }]] },
+    "Consultar Financeiro": { "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]] },
+    "Consultar Avisos": { "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]] },
+    "Consultar Calendário": { "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]] },
+    "Registrar Lead CRM": { "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]] },
+    "Salvar CPF do Telefone": { "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]] },
+    "Abrir Chamado TI": { "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]] },
+    "Consultar Chamados TI": { "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]] },
+    "Consultar Secretaria": { "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]] },
+    "Consultar Professor": { "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]] },
+    "Listar Alunos da Disciplina": { "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]] },
+    "Verificar Lead CRM": { "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]] },
+    "Consultar Cursos": { "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]] },
+    "Enviar Boleto PDF": { "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1", "binaryMode": "separate", "availableInMCP": false },
+  "versionId": "d4e5f6a7-b8c9-0123-defa-023456789016",
+  "meta": { "templateCredsSetupCompleted": false },
+  "nodeGroups": [],
+  "id": "GWBxdNDxtAgrI8vkMeta",
+  "tags": []
+}
