@@ -1,0 +1,107 @@
+services:
+  caddy:
+    image: caddy:2
+    container_name: caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - n8n
+      - evolution-api
+
+  postgres-n8n:
+    image: postgres:16
+    container_name: postgres_n8n
+    restart: always
+    environment:
+      POSTGRES_USER: ${N8N_DB_USER}
+      POSTGRES_PASSWORD: ${N8N_DB_PASSWORD}
+      POSTGRES_DB: ${N8N_DB_NAME}
+    volumes:
+      - postgres_n8n_data:/var/lib/postgresql/data
+
+  postgres-evolution:
+    image: postgres:16
+    container_name: postgres_evolution
+    restart: always
+    environment:
+      POSTGRES_USER: ${EVOLUTION_DB_USER}
+      POSTGRES_PASSWORD: ${EVOLUTION_DB_PASSWORD}
+      POSTGRES_DB: ${EVOLUTION_DB_NAME}
+    volumes:
+      - postgres_evolution_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis_evolution
+    restart: always
+    volumes:
+      - redis_data:/data
+
+  n8n:
+    image: n8nio/n8n:1.70.0
+    container_name: n8n
+    restart: always
+    environment:
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres-n8n
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: ${N8N_DB_NAME}
+      DB_POSTGRESDB_USER: ${N8N_DB_USER}
+      DB_POSTGRESDB_PASSWORD: ${N8N_DB_PASSWORD}
+      N8N_HOST: ${N8N_HOST}
+      N8N_PORT: "5678"
+      N8N_PROTOCOL: https
+      WEBHOOK_URL: "https://${N8N_HOST}/"
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
+      N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"
+      GENERIC_TIMEZONE: America/Sao_Paulo
+      CORE_API_URL: ${CORE_API_URL}
+      IA_BEARER_TOKEN: ${IA_BEARER_TOKEN}
+      EVOLUTION_API_URL: "https://${EVOLUTION_HOST}"
+      EVOLUTION_API_KEY: ${EVOLUTION_API_KEY}
+      EVOLUTION_INSTANCE_FINANCEIRO: ${EVOLUTION_INSTANCE_FINANCEIRO}
+      EVOLUTION_INSTANCE_SECRETARIA: ${EVOLUTION_INSTANCE_SECRETARIA}
+      EVOLUTION_INSTANCE_TI: ${EVOLUTION_INSTANCE_TI}
+      EVOLUTION_INSTANCE_MARKETING: ${EVOLUTION_INSTANCE_MARKETING}
+      WHATSAPP_TELEFONE_EQUIPE: ${WHATSAPP_TELEFONE_EQUIPE}
+    volumes:
+      - n8n_data:/home/node/.n8n
+    depends_on:
+      - postgres-n8n
+
+  evolution-api:
+    image: evoapicloud/evolution-api:v2.1.1
+    container_name: evolution_api
+    restart: always
+    environment:
+      AUTHENTICATION_API_KEY: ${EVOLUTION_API_KEY}
+      DATABASE_ENABLED: "true"
+      DATABASE_PROVIDER: postgresql
+      DATABASE_CONNECTION_URI: "postgresql://${EVOLUTION_DB_USER}:${EVOLUTION_DB_PASSWORD}@postgres-evolution:5432/${EVOLUTION_DB_NAME}?schema=public"
+      CACHE_REDIS_ENABLED: "true"
+      CACHE_REDIS_URI: "redis://redis:6379/6"
+      CACHE_LOCAL_ENABLED: "false"
+      WEBHOOK_GLOBAL_ENABLED: "false"
+      SERVER_PORT: "8080"
+      SERVER_URL: "https://${EVOLUTION_HOST}"
+      SERVER_TYPE: http
+    volumes:
+      - evolution_instances:/evolution/instances
+    depends_on:
+      - postgres-evolution
+      - redis
+
+volumes:
+  caddy_data:
+  caddy_config:
+  postgres_n8n_data:
+  postgres_evolution_data:
+  redis_data:
+  n8n_data:
+  evolution_instances:

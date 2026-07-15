@@ -1,0 +1,7 @@
+n8n.ipessp.edu.br {
+	reverse_proxy n8n:5678
+}
+
+evolution.ipessp.edu.br {
+	reverse_proxy evolution-api:8080
+}
