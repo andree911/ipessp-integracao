@@ -57,7 +57,7 @@ services:
       - key: EMAIL_DIAS_RENEGOCIACAO_OVERLAP
         value: "1,3,7"
       - key: EMAIL_ASSETS_BASE_URL
-        sync: false
+        value: https://site-ipessp-frontend.vercel.app
       - key: EMAIL_CRON_HABILITADO
         value: "false"
       - key: EMAIL_LOGO_URL
