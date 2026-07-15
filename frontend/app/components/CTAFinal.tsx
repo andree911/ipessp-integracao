@@ -101,6 +101,7 @@ function maskPhone(raw: string): string {
 
 export default function CTAFinal() {
   const [form, setForm] = useState({ nome: '', email: '', telefone: '', curso: '' });
+  const [whatsappOptin, setWhatsappOptin] = useState(false);
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState('');
@@ -129,6 +130,7 @@ export default function CTAFinal() {
           email: form.email,
           telefone: form.telefone,
           cursoInteresse: form.curso,
+          whatsappOptin,
           origem: 'site',
         }),
       });
@@ -347,6 +349,19 @@ export default function CTAFinal() {
                       ))}
                     </select>
                   </div>
+
+                  {/* Opt-in WhatsApp */}
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={whatsappOptin}
+                      onChange={e => setWhatsappOptin(e.target.checked)}
+                      className="w-4 h-4 mt-0.5 accent-[var(--brand-600)]"
+                    />
+                    <span className="text-xs" style={{ color: 'var(--ink-500)' }}>
+                      Aceito receber novidades e contato sobre cursos pelo WhatsApp
+                    </span>
+                  </label>
 
                   <button
                     type="submit"

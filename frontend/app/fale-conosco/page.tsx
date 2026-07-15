@@ -58,6 +58,7 @@ const inputStyle = {
 
 export default function FaleConosco() {
   const [form, setForm] = useState({ nome: '', email: '', telefone: '', assunto: '', mensagem: '' });
+  const [whatsappOptin, setWhatsappOptin] = useState(false);
   const [enviado, setEnviado] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState('');
@@ -89,6 +90,7 @@ export default function FaleConosco() {
           email: form.email,
           telefone: form.telefone || undefined,
           observacao: [form.assunto, form.mensagem].filter(Boolean).join(' — ') || undefined,
+          whatsappOptin,
           origem: 'site',
         }),
       }).catch(() => {});
@@ -295,6 +297,17 @@ export default function FaleConosco() {
                         onBlur={e => { e.currentTarget.style.borderColor = 'var(--line)'; }}
                       />
                     </div>
+                    <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={whatsappOptin}
+                        onChange={e => setWhatsappOptin(e.target.checked)}
+                        style={{ width: '16px', height: '16px', marginTop: '2px', accentColor: 'var(--brand-600)' }}
+                      />
+                      <span style={{ color: 'var(--ink-500)', fontSize: '0.8rem' }}>
+                        Aceito receber novidades e contato sobre cursos pelo WhatsApp
+                      </span>
+                    </label>
                     {erro && (
                       <p style={{ color: '#b81f1f', fontSize: '0.875rem', background: '#fdf2f2', border: '1px solid #fca5a5', borderRadius: 'var(--radius-sm)', padding: '10px 14px' }}>
                         {erro}
