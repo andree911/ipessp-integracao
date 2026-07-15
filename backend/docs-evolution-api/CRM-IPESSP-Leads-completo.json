@@ -1,50 +1,50 @@
 {
-  "name": "CRM IPESSP — Leads (Meta Cloud API)",
+  "name": "CRM IPESSP — Leads (Evolution API)",
   "nodes": [
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "ipessp-crm-leads-meta",
+        "path": "ipessp-crm-leads-evolution",
         "options": {}
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [0, 0],
-      "id": "86f518b8-eede-41ac-8adc-d9af6c955df4",
+      "id": "e86f518b-eede-41ac-8adc-d9af6c955df4",
       "name": "Webhook Novo Lead",
-      "webhookId": "ipessp-crm-leads-meta"
+      "webhookId": "ipessp-crm-leads-evolution"
     },
     {
       "parameters": {
-        "jsCode": "// Template \"notificacao_novo_lead\" (5 variáveis) — ver docs-meta/README.md\nconst lead = $input.first().json.body;\nconst data = new Date(lead.criadoEm).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });\n\nreturn [{ json: {\n  nome: lead.nome,\n  email: lead.email || 'não informado',\n  telefone: lead.telefone || 'não informado',\n  cursoInteresse: lead.cursoInteresse || 'não informado',\n  origem: `${lead.origem} — ${data}`,\n}}];"
+        "jsCode": "// Evolution API não exige template pré-aprovado — texto livre direto.\nconst lead = $input.first().json.body;\nconst data = new Date(lead.criadoEm).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });\n\nconst mensagem = `🎯 Novo Lead Captado!\\n\\nNome: ${lead.nome}\\nE-mail: ${lead.email || 'não informado'}\\nTelefone: ${lead.telefone || 'não informado'}\\nInteresse: ${lead.cursoInteresse || 'não informado'}\\nOrigem: ${lead.origem} — ${data}`;\n\nreturn [{ json: { mensagem } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [272, 0],
-      "id": "0fe9e60d-c7a2-48bf-b2e9-32c7529f943a",
+      "id": "e0fe9e60d-c7a2-48bf-b2e9-32c7529f943a",
       "name": "Formatar Mensagem Lead"
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.WHATSAPP_SEND_URL }}",
+        "url": "={{ $env.EVOLUTION_API_URL }}/message/sendText/{{ $env.EVOLUTION_INSTANCE_MARKETING }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "={{ $env.WHATSAPP_AUTH_HEADER_NAME }}", "value": "={{ $env.WHATSAPP_AUTH_HEADER_VALUE }}" },
+            { "name": "apikey", "value": "={{ $env.EVOLUTION_API_KEY }}" },
             { "name": "Content-Type", "value": "application/json" }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ messaging_product: 'whatsapp', to: $env.WHATSAPP_TELEFONE_EQUIPE, type: 'template', template: { name: $env.WHATSAPP_TEMPLATE_NOVO_LEAD, language: { code: 'pt_BR' }, components: [{ type: 'body', parameters: [ { type: 'text', text: $json.nome }, { type: 'text', text: $json.email }, { type: 'text', text: $json.telefone }, { type: 'text', text: $json.cursoInteresse }, { type: 'text', text: $json.origem } ] }] } }) }}",
+        "jsonBody": "={{ JSON.stringify({ number: $env.WHATSAPP_TELEFONE_EQUIPE, textMessage: { text: $json.mensagem } }) }}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [528, 0],
-      "id": "43c69e3c-3263-4e6b-8ee0-04936306d0b0",
-      "name": "Notificar Equipe WhatsApp (Template)"
+      "id": "e43c69e3c-3263-4e6b-8ee0-04936306d0b0",
+      "name": "Notificar Equipe WhatsApp"
     },
 
     {
@@ -54,7 +54,7 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [0, 400],
-      "id": "b1c2d3e4-1111-1111-1111-000000000001",
+      "id": "eb1c2d3e-1111-1111-1111-000000000001",
       "name": "Nurturing a cada 30 min"
     },
     {
@@ -69,17 +69,17 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [272, 400],
-      "id": "b1c2d3e4-1111-1111-1111-000000000002",
+      "id": "eb1c2d3e-1111-1111-1111-000000000002",
       "name": "Buscar Prontos para Contato"
     },
     {
       "parameters": {
-        "jsCode": "// Mensagens de nutrição são MARKETING (promocionais) para a Meta — precisam de\n// template categoria \"Marketing\" aprovado E de opt-in explícito do lead para WhatsApp\n// (campo `whatsappOptin`, vem direto do GET /v1/leads/prontos-para-contato).\n// Sem opt-in o lead continua avançando de etapa normalmente — só pula o envio do\n// WhatsApp (ver IF \"Tem Opt-in WhatsApp?\" logo abaixo), pra não ficar preso pra sempre\n// na etapa 0 sendo requisitado a cada 30 min.\n// 3 templates, 2 variáveis cada (nome, curso) — ver docs-meta/README.md.\nconst leads = $input.first().json;\nif (!Array.isArray(leads) || leads.length === 0) return [];\n\nconst templatesPorEtapa = [\n  $env.WHATSAPP_TEMPLATE_NURTURING_1,\n  $env.WHATSAPP_TEMPLATE_NURTURING_2,\n  $env.WHATSAPP_TEMPLATE_NURTURING_3,\n];\n\nreturn leads\n  .filter(lead => lead.telefone)\n  .map(lead => {\n    const idx = Math.min(lead.etapaNurturing ?? 0, templatesPorEtapa.length - 1);\n    return {\n      json: {\n        leadId: lead.id,\n        phone: (lead.telefone || '').replace(/\\D/g, ''),\n        enviarWhatsapp: !!lead.whatsappOptin,\n        templateName: templatesPorEtapa[idx],\n        nome: lead.nome,\n        curso: lead.cursoInteresse || 'nossos cursos',\n      }\n    };\n  });"
+        "jsCode": "// Mensagens de nutrição continuam exigindo opt-in explícito do lead pra WhatsApp\n// (campo `whatsappOptin`, vem direto do GET /v1/leads/prontos-para-contato) — essa\n// regra é nossa, independe do provedor. Sem opt-in o lead continua avançando de\n// etapa normalmente, só não recebe o WhatsApp (ver IF \"Tem Opt-in WhatsApp?\" abaixo).\n// Evolution API não exige template pré-aprovado — texto livre montado aqui direto,\n// mesmo conteúdo que seria submetido como template na versão Meta/360dialog.\nconst leads = $input.first().json;\nif (!Array.isArray(leads) || leads.length === 0) return [];\n\nconst textosPorEtapa = [\n  (nome, curso) => `Olá, ${nome}! 👋 Ficamos felizes com seu interesse no IPESSP, especialmente no curso de ${curso}! Sou a assistente virtual e estou aqui para tirar suas dúvidas. Pode me perguntar qualquer coisa! 📚`,\n  (nome, curso) => `${nome}, vi que você ainda está conhecendo o IPESSP! 🎓 Posso te ajudar com cursos disponíveis, formas de pagamento e próximas turmas de ${curso}. Responda aqui ou fale com nossa equipe!`,\n  (nome, curso) => `⏰ ${nome}, as vagas de ${curso} estão preenchendo! Processo seletivo simples, parcelamento facilitado e certificado reconhecido. Garanta sua vaga: https://ipessp.edu.br/inscricao`,\n];\n\nreturn leads\n  .filter(lead => lead.telefone)\n  .map(lead => {\n    const idx = Math.min(lead.etapaNurturing ?? 0, textosPorEtapa.length - 1);\n    const nome = lead.nome;\n    const curso = lead.cursoInteresse || 'nossos cursos';\n    return {\n      json: {\n        leadId: lead.id,\n        phone: (lead.telefone || '').replace(/\\D/g, ''),\n        enviarWhatsapp: !!lead.whatsappOptin,\n        mensagem: textosPorEtapa[idx](nome, curso),\n      }\n    };\n  });"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [528, 400],
-      "id": "b1c2d3e4-1111-1111-1111-000000000003",
+      "id": "eb1c2d3e-1111-1111-1111-000000000003",
       "name": "Montar Mensagens Nurturing"
     },
     {
@@ -88,7 +88,7 @@
           "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 3 },
           "conditions": [
             {
-              "id": "o1o1o1o1-0001-4000-8000-000000000001",
+              "id": "eo1o1o1o1-0001-4000-8000-000000000001",
               "leftValue": "={{ $json.enviarWhatsapp }}",
               "rightValue": true,
               "operator": { "type": "boolean", "operation": "true", "singleValue": true }
@@ -101,30 +101,30 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [656, 400],
-      "id": "o1o1o1o1-0002-4000-8000-000000000002",
+      "id": "eo1o1o1o1-0002-4000-8000-000000000002",
       "name": "Tem Opt-in WhatsApp?"
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.WHATSAPP_SEND_URL }}",
+        "url": "={{ $env.EVOLUTION_API_URL }}/message/sendText/{{ $env.EVOLUTION_INSTANCE_MARKETING }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "={{ $env.WHATSAPP_AUTH_HEADER_NAME }}", "value": "={{ $env.WHATSAPP_AUTH_HEADER_VALUE }}" },
+            { "name": "apikey", "value": "={{ $env.EVOLUTION_API_KEY }}" },
             { "name": "Content-Type", "value": "application/json" }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ messaging_product: 'whatsapp', to: $json.phone, type: 'template', template: { name: $json.templateName, language: { code: 'pt_BR' }, components: [{ type: 'body', parameters: [ { type: 'text', text: $json.nome }, { type: 'text', text: $json.curso } ] }] } }) }}",
+        "jsonBody": "={{ JSON.stringify({ number: $json.phone, textMessage: { text: $json.mensagem } }) }}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [784, 320],
-      "id": "b1c2d3e4-1111-1111-1111-000000000004",
-      "name": "Enviar WhatsApp Nurturing (Template)",
+      "id": "eb1c2d3e-1111-1111-1111-000000000004",
+      "name": "Enviar WhatsApp Nurturing",
       "onError": "continueRegularOutput"
     },
     {
@@ -140,7 +140,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [1040, 400],
-      "id": "b1c2d3e4-1111-1111-1111-000000000005",
+      "id": "eb1c2d3e-1111-1111-1111-000000000005",
       "name": "Avançar Etapa Nurturing"
     },
 
@@ -151,7 +151,7 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [0, 800],
-      "id": "b1c2d3e4-1111-1111-1111-000000000006",
+      "id": "eb1c2d3e-1111-1111-1111-000000000006",
       "name": "Relatório Diário 08h"
     },
     {
@@ -166,40 +166,40 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [272, 800],
-      "id": "b1c2d3e4-1111-1111-1111-000000000007",
+      "id": "eb1c2d3e-1111-1111-1111-000000000007",
       "name": "Buscar Relatório Diário"
     },
     {
       "parameters": {
-        "jsCode": "// Template \"relatorio_diario_leads\" (3 variáveis) — ver docs-meta/README.md\nconst r = $input.first().json;\n\nreturn [{ json: {\n  novosHoje: String(r.novosHoje),\n  interacoesHoje: String(r.interacoesHoje),\n  convertidosHoje: String(r.convertidosHoje),\n}}];"
+        "jsCode": "const r = $input.first().json;\n\nconst mensagem = `📊 Relatório Diário — IPESSP\\n\\nNovos hoje: ${r.novosHoje}\\nInterações chatbot: ${r.interacoesHoje}\\nConvertidos: ${r.convertidosHoje}`;\n\nreturn [{ json: { mensagem } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [528, 800],
-      "id": "b1c2d3e4-1111-1111-1111-000000000008",
+      "id": "eb1c2d3e-1111-1111-1111-000000000008",
       "name": "Formatar Relatório Diário"
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.WHATSAPP_SEND_URL }}",
+        "url": "={{ $env.EVOLUTION_API_URL }}/message/sendText/{{ $env.EVOLUTION_INSTANCE_MARKETING }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "={{ $env.WHATSAPP_AUTH_HEADER_NAME }}", "value": "={{ $env.WHATSAPP_AUTH_HEADER_VALUE }}" },
+            { "name": "apikey", "value": "={{ $env.EVOLUTION_API_KEY }}" },
             { "name": "Content-Type", "value": "application/json" }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ messaging_product: 'whatsapp', to: $env.WHATSAPP_TELEFONE_EQUIPE, type: 'template', template: { name: $env.WHATSAPP_TEMPLATE_RELATORIO_DIARIO, language: { code: 'pt_BR' }, components: [{ type: 'body', parameters: [ { type: 'text', text: $json.novosHoje }, { type: 'text', text: $json.interacoesHoje }, { type: 'text', text: $json.convertidosHoje } ] }] } }) }}",
+        "jsonBody": "={{ JSON.stringify({ number: $env.WHATSAPP_TELEFONE_EQUIPE, textMessage: { text: $json.mensagem } }) }}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [784, 800],
-      "id": "b1c2d3e4-1111-1111-1111-000000000009",
-      "name": "Enviar Relatório Diário WhatsApp (Template)"
+      "id": "eb1c2d3e-1111-1111-1111-000000000009",
+      "name": "Enviar Relatório Diário WhatsApp"
     },
 
     {
@@ -209,7 +209,7 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [0, 1100],
-      "id": "77bfa841-cb7a-4bf3-a583-086f4b157724",
+      "id": "e77bfa841-cb7a-4bf3-a583-086f4b157724",
       "name": "Relatório Segunda 08h"
     },
     {
@@ -224,40 +224,40 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [272, 1100],
-      "id": "70562b6f-f06a-42de-bc7f-fa0373b68bdc",
+      "id": "e70562b6f-f06a-42de-bc7f-fa0373b68bdc",
       "name": "Buscar Relatório Semanal"
     },
     {
       "parameters": {
-        "jsCode": "// Template \"relatorio_semanal_leads\" (4 variáveis) — ver docs-meta/README.md.\n// O detalhamento por funil/origem não cabe bem em variável de template (texto livre\n// e tamanho variável); ficou de fora da mensagem — quem quiser o detalhe abre o dashboard.\nconst r = $input.first().json;\n\nreturn [{ json: {\n  total: String(r.total),\n  noMes: String(r.noMes),\n  emNurturing: String(r.emNurturing),\n  taxaConversao: String(r.taxaConversao),\n}}];"
+        "jsCode": "// O detalhamento por funil/origem continua fora da mensagem de WhatsApp (fica\n// grande demais pra texto de notificação) — quem quiser o detalhe abre o dashboard.\nconst r = $input.first().json;\n\nconst mensagem = `📊 Relatório Semanal de Leads — IPESSP\\n\\nTotal geral: ${r.total}\\nNovos este mês: ${r.noMes}\\nEm nurturing ativo: ${r.emNurturing}\\nTaxa de conversão: ${r.taxaConversao}`;\n\nreturn [{ json: { mensagem } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [528, 1100],
-      "id": "a59db2ee-a557-4b22-aaf4-1ab5a76a5bae",
+      "id": "ea59db2ee-a557-4b22-aaf4-1ab5a76a5bae",
       "name": "Formatar Relatório Semanal"
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.WHATSAPP_SEND_URL }}",
+        "url": "={{ $env.EVOLUTION_API_URL }}/message/sendText/{{ $env.EVOLUTION_INSTANCE_MARKETING }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "={{ $env.WHATSAPP_AUTH_HEADER_NAME }}", "value": "={{ $env.WHATSAPP_AUTH_HEADER_VALUE }}" },
+            { "name": "apikey", "value": "={{ $env.EVOLUTION_API_KEY }}" },
             { "name": "Content-Type", "value": "application/json" }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ messaging_product: 'whatsapp', to: $env.WHATSAPP_TELEFONE_EQUIPE, type: 'template', template: { name: $env.WHATSAPP_TEMPLATE_RELATORIO_SEMANAL, language: { code: 'pt_BR' }, components: [{ type: 'body', parameters: [ { type: 'text', text: $json.total }, { type: 'text', text: $json.noMes }, { type: 'text', text: $json.emNurturing }, { type: 'text', text: $json.taxaConversao } ] }] } }) }}",
+        "jsonBody": "={{ JSON.stringify({ number: $env.WHATSAPP_TELEFONE_EQUIPE, textMessage: { text: $json.mensagem } }) }}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [784, 1100],
-      "id": "76e1d7ee-13e8-4b2b-a9e4-4785d355b210",
-      "name": "Enviar Relatório Semanal WhatsApp (Template)"
+      "id": "e76e1d7ee-13e8-4b2b-a9e4-4785d355b210",
+      "name": "Enviar Relatório Semanal WhatsApp"
     },
 
     {
@@ -267,7 +267,7 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [0, 1400],
-      "id": "b1c2d3e4-1111-1111-1111-000000000010",
+      "id": "eb1c2d3e-1111-1111-1111-000000000010",
       "name": "Reativar Nurturing 09h"
     },
     {
@@ -283,37 +283,37 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [272, 1400],
-      "id": "b1c2d3e4-1111-1111-1111-000000000011",
+      "id": "eb1c2d3e-1111-1111-1111-000000000011",
       "name": "Reativar Leads Pausados"
     }
   ],
   "pinData": {},
   "connections": {
     "Webhook Novo Lead": { "main": [[{ "node": "Formatar Mensagem Lead", "type": "main", "index": 0 }]] },
-    "Formatar Mensagem Lead": { "main": [[{ "node": "Notificar Equipe WhatsApp (Template)", "type": "main", "index": 0 }]] },
+    "Formatar Mensagem Lead": { "main": [[{ "node": "Notificar Equipe WhatsApp", "type": "main", "index": 0 }]] },
     "Nurturing a cada 30 min": { "main": [[{ "node": "Buscar Prontos para Contato", "type": "main", "index": 0 }]] },
     "Buscar Prontos para Contato": { "main": [[{ "node": "Montar Mensagens Nurturing", "type": "main", "index": 0 }]] },
     "Montar Mensagens Nurturing": { "main": [[{ "node": "Tem Opt-in WhatsApp?", "type": "main", "index": 0 }]] },
     "Tem Opt-in WhatsApp?": {
       "main": [
-        [{ "node": "Enviar WhatsApp Nurturing (Template)", "type": "main", "index": 0 }],
+        [{ "node": "Enviar WhatsApp Nurturing", "type": "main", "index": 0 }],
         [{ "node": "Avançar Etapa Nurturing", "type": "main", "index": 0 }]
       ]
     },
-    "Enviar WhatsApp Nurturing (Template)": { "main": [[{ "node": "Avançar Etapa Nurturing", "type": "main", "index": 0 }]] },
+    "Enviar WhatsApp Nurturing": { "main": [[{ "node": "Avançar Etapa Nurturing", "type": "main", "index": 0 }]] },
     "Relatório Diário 08h": { "main": [[{ "node": "Buscar Relatório Diário", "type": "main", "index": 0 }]] },
     "Buscar Relatório Diário": { "main": [[{ "node": "Formatar Relatório Diário", "type": "main", "index": 0 }]] },
-    "Formatar Relatório Diário": { "main": [[{ "node": "Enviar Relatório Diário WhatsApp (Template)", "type": "main", "index": 0 }]] },
+    "Formatar Relatório Diário": { "main": [[{ "node": "Enviar Relatório Diário WhatsApp", "type": "main", "index": 0 }]] },
     "Relatório Segunda 08h": { "main": [[{ "node": "Buscar Relatório Semanal", "type": "main", "index": 0 }]] },
     "Buscar Relatório Semanal": { "main": [[{ "node": "Formatar Relatório Semanal", "type": "main", "index": 0 }]] },
-    "Formatar Relatório Semanal": { "main": [[{ "node": "Enviar Relatório Semanal WhatsApp (Template)", "type": "main", "index": 0 }]] },
+    "Formatar Relatório Semanal": { "main": [[{ "node": "Enviar Relatório Semanal WhatsApp", "type": "main", "index": 0 }]] },
     "Reativar Nurturing 09h": { "main": [[{ "node": "Reativar Leads Pausados", "type": "main", "index": 0 }]] }
   },
   "active": false,
   "settings": { "executionOrder": "v1", "binaryMode": "separate", "availableInMCP": false },
-  "versionId": "b2c3d4e5-f6a7-8901-bcde-f12345678999",
+  "versionId": "eb2c3d4e-f6a7-8901-bcde-f12345678999",
   "meta": { "templateCredsSetupCompleted": false },
   "nodeGroups": [],
-  "id": "sX3YoEcH7vMPMdKUMeta",
+  "id": "esX3YoEcH7vMPMdKEvol",
   "tags": []
 }

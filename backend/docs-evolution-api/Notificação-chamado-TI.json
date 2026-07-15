@@ -1,18 +1,18 @@
 {
-  "name": "Notificação Chamado TI (Meta Cloud API)",
+  "name": "Notificação Chamado TI (Evolution API)",
   "nodes": [
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "notificacao-chamado-ti-meta",
+        "path": "notificacao-chamado-ti-evolution",
         "options": {}
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [0, 0],
-      "id": "a1b2c3d4-0001-0001-0001-000000000001",
+      "id": "ea1b2c3d-0001-0001-0001-000000000001",
       "name": "Webhook Supabase",
-      "webhookId": "notificacao-chamado-ti-meta"
+      "webhookId": "notificacao-chamado-ti-evolution"
     },
     {
       "parameters": {
@@ -39,46 +39,46 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [220, 0],
-      "id": "a1b2c3d4-0002-0002-0002-000000000002",
+      "id": "ea1b2c3d-0002-0002-0002-000000000002",
       "name": "Validar Notificação"
     },
     {
       "parameters": {
-        "jsCode": "// Templates de mensagem da Meta exigem texto fixo pré-aprovado — a variável {{2}}\n// carrega só a frase que muda por status, dentro do template \"chamado_ti_atualizacao\"\n// (ver docs-meta/README.md para o texto exato a cadastrar/aprovar na Meta).\nconst record = $input.first().json.body.record;\nconst status = record.status;\nconst resolucao = record.resolucao;\nconst titulo = record.titulo;\n\nconst explicacoes = {\n  em_andamento: 'Nossa equipe de TI já está trabalhando nisso. Em breve você terá uma resposta.',\n  aguardando: 'Precisamos de mais informações sobre seu chamado. Entre em contato: wa.me/5511968566862',\n  resolvido: `Resolvido!${resolucao ? ` Solução: ${resolucao}` : ''}`,\n  fechado: `Chamado encerrado.${resolucao ? ` Solução: ${resolucao}` : ''}`,\n};\n\nconst statusMensagem = explicacoes[status];\nif (!statusMensagem) return [];\n\nreturn [{ json: { telefone: record.telefone_solicitante, tituloChamado: titulo, statusMensagem } }];"
+        "jsCode": "// Evolution API não exige template pré-aprovado (não é a Meta oficial) — pode\n// mandar texto livre direto, igual a versão Z-API original.\nconst record = $input.first().json.body.record;\nconst status = record.status;\nconst resolucao = record.resolucao;\nconst titulo = record.titulo;\n\nconst explicacoes = {\n  em_andamento: 'Nossa equipe de TI já está trabalhando nisso. Em breve você terá uma resposta.',\n  aguardando: 'Precisamos de mais informações sobre seu chamado. Entre em contato: wa.me/5511968566862',\n  resolvido: `Resolvido!${resolucao ? ` Solução: ${resolucao}` : ''}`,\n  fechado: `Chamado encerrado.${resolucao ? ` Solução: ${resolucao}` : ''}`,\n};\n\nconst statusMensagem = explicacoes[status];\nif (!statusMensagem) return [];\n\nconst mensagem = `Atualização do seu chamado de TI:\\n\\nAssunto: ${titulo}\\n\\n${statusMensagem}`;\n\nreturn [{ json: { telefone: record.telefone_solicitante, mensagem } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [440, -80],
-      "id": "a1b2c3d4-0003-0003-0003-000000000003",
+      "id": "ea1b2c3d-0003-0003-0003-000000000003",
       "name": "Gerar Mensagem"
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.WHATSAPP_SEND_URL }}",
+        "url": "={{ $env.EVOLUTION_API_URL }}/message/sendText/{{ $env.EVOLUTION_INSTANCE_TI }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "={{ $env.WHATSAPP_AUTH_HEADER_NAME }}", "value": "={{ $env.WHATSAPP_AUTH_HEADER_VALUE }}" },
+            { "name": "apikey", "value": "={{ $env.EVOLUTION_API_KEY }}" },
             { "name": "Content-Type", "value": "application/json" }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ messaging_product: 'whatsapp', to: $json.telefone, type: 'template', template: { name: $env.WHATSAPP_TEMPLATE_CHAMADO_TI, language: { code: 'pt_BR' }, components: [{ type: 'body', parameters: [ { type: 'text', text: $json.tituloChamado }, { type: 'text', text: $json.statusMensagem } ] }] } }) }}",
+        "jsonBody": "={{ JSON.stringify({ number: $json.telefone, textMessage: { text: $json.mensagem } }) }}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [660, -80],
-      "id": "a1b2c3d4-0004-0004-0004-000000000004",
-      "name": "Enviar WhatsApp (Template)"
+      "id": "ea1b2c3d-0004-0004-0004-000000000004",
+      "name": "Enviar WhatsApp"
     }
   ],
   "connections": {
     "Webhook Supabase": { "main": [[{ "node": "Validar Notificação", "type": "main", "index": 0 }]] },
     "Validar Notificação": { "main": [[{ "node": "Gerar Mensagem", "type": "main", "index": 0 }]] },
-    "Gerar Mensagem": { "main": [[{ "node": "Enviar WhatsApp (Template)", "type": "main", "index": 0 }]] }
+    "Gerar Mensagem": { "main": [[{ "node": "Enviar WhatsApp", "type": "main", "index": 0 }]] }
   },
   "active": false,
   "settings": { "executionOrder": "v1" },
