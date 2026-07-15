@@ -4,7 +4,18 @@ import {
   templateLembrete,
   templateVencimentoHoje,
   templateCobranca,
+  templateAviso,
+  templateRenegociacaoOferta,
+  templateRenegociacaoLembrete,
+  emailConfirmacaoMatricula,
 } from '../src/email/templates/email.templates';
+
+function comoDataUri(caminhoRelativo: string): string {
+  const imgPath = path.resolve(__dirname, '../../site-ipessp-frontend/public/images', caminhoRelativo);
+  const ext = path.extname(imgPath).slice(1);
+  const base64 = fs.readFileSync(imgPath).toString('base64');
+  return `data:image/${ext === 'jpg' ? 'jpeg' : ext};base64,${base64}`;
+}
 
 const dadosFake = {
   nomeAluno: 'João da Silva',
@@ -29,12 +40,51 @@ const dadosFake = {
   youtubeUrl: 'https://www.youtube.com/channel/UC7dgP6NBgM9L0m11UbhCyHg',
   linkedinUrl: 'https://www.linkedin.com/company/ipessp---educa-o',
   endereco: 'Rua Dona Antônia de Queirós, 333 – São Paulo, SP',
+  // Embutido como base64 só para preview local — o site novo ainda não está publicado,
+  // então os templates ainda não têm uma URL pública real pra essas imagens.
+  avisoImagemUrl: comoDataUri('hero-aviso.jpg'),
+  renegociacaoOfertaImagemUrl: comoDataUri('hero-renegociacao-oferta.jpg'),
+  renegociacaoLembreteImagemUrl: comoDataUri('hero-renegociacao-lembrete.jpg'),
+  iconesUrls: {
+    telefone:  comoDataUri('icons/icon-telefone.png'),
+    email:     comoDataUri('icons/icon-email.png'),
+    site:      comoDataUri('icons/icon-site.png'),
+    facebook:  comoDataUri('icons/icon-facebook.png'),
+    instagram: comoDataUri('icons/icon-instagram.png'),
+    youtube:   comoDataUri('icons/icon-youtube.png'),
+    linkedin:  comoDataUri('icons/icon-linkedin.png'),
+  },
 };
 
 const templates = [
   { nome: 'lembrete', fn: () => templateLembrete(dadosFake) },
   { nome: 'vencimento_hoje', fn: () => templateVencimentoHoje(dadosFake) },
   { nome: 'cobranca', fn: () => templateCobranca(dadosFake) },
+  { nome: 'aviso', fn: () => templateAviso(dadosFake) },
+  { nome: 'renegociacao_oferta', fn: () => templateRenegociacaoOferta(dadosFake) },
+  { nome: 'renegociacao_lembrete', fn: () => templateRenegociacaoLembrete(dadosFake) },
+  {
+    nome: 'confirmacao_matricula',
+    fn: () => ({
+      subject: `Sua matrícula em Biomedicina — Acesse o link de pagamento`,
+      html: emailConfirmacaoMatricula({
+        nomeAluno: dadosFake.nomeAluno,
+        curso: 'Biomedicina',
+        numeroParcelas: 12,
+        valorParcela: 890,
+        linkPagamento: 'https://mercadopago.com/checkout/exemplo',
+        nomeEscola: dadosFake.nomeEscola,
+        emailEscola: dadosFake.emailEscola,
+        telefoneEscola: dadosFake.telefoneEscola,
+        siteUrl: dadosFake.siteUrl,
+        instagramUrl: dadosFake.instagramUrl,
+        facebookUrl: dadosFake.facebookUrl,
+        youtubeUrl: dadosFake.youtubeUrl,
+        linkedinUrl: dadosFake.linkedinUrl,
+        iconesUrls: dadosFake.iconesUrls,
+      }),
+    }),
+  },
 ];
 
 const outDir = path.resolve(__dirname, '../email-preview');

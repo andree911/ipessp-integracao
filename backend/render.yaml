@@ -52,6 +52,12 @@ services:
         value: "3"
       - key: EMAIL_DIAS_APOS
         value: "1,3,7"
+      - key: EMAIL_DIAS_AVISO
+        value: "10,9,8,7,6,4,3,2,1"
+      - key: EMAIL_DIAS_RENEGOCIACAO_OVERLAP
+        value: "1,3,7"
+      - key: EMAIL_ASSETS_BASE_URL
+        sync: false
       - key: EMAIL_CRON_HABILITADO
         value: "false"
       - key: EMAIL_LOGO_URL

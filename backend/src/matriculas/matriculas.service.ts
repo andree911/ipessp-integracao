@@ -114,6 +114,12 @@ export class MatriculasService {
       const nomeEscola = this.config.get<string>('email.nomeEscola') ?? 'IPESSP';
       const emailEscola = this.config.get<string>('email.emailNotificacoes') ?? '';
       const siteUrl = this.config.get<string>('mercadopago.successUrl');
+      const assetsBaseUrl = this.config.get<string>('email.assetsBaseUrl');
+      const telefoneEscola = this.config.get<string>('email.telefoneEscola');
+      const instagramUrl = this.config.get<string>('email.instagramUrl');
+      const facebookUrl = this.config.get<string>('email.facebookUrl');
+      const youtubeUrl = this.config.get<string>('email.youtubeUrl');
+      const linkedinUrl = this.config.get<string>('email.linkedinUrl');
       try {
         const html = emailConfirmacaoMatricula({
           nomeAluno: dto.aluno.nome,
@@ -123,7 +129,13 @@ export class MatriculasService {
           linkPagamento,
           nomeEscola,
           emailEscola,
+          telefoneEscola,
           siteUrl,
+          assetsBaseUrl,
+          instagramUrl,
+          facebookUrl,
+          youtubeUrl,
+          linkedinUrl,
         });
         await this.email.enviar(
           pagador.email,

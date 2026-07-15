@@ -60,12 +60,13 @@ export class EmailController {
     @Body('cpf') cpf: string,
     @Body('para') para: string,
     @Body('diasSimulados') diasSimulados?: number,
-  ): Promise<{ ok: boolean; aluno: string; tipo: string; lancamento: number }> {
+  ): Promise<{ ok: boolean; enviados: { aluno: string; tipo: string; lancamento: number }[] }> {
     if (!cpf) throw new BadRequestException('Informe o campo "cpf"');
     if (!para) throw new BadRequestException('Informe o campo "para" com o email de destino');
     try {
-      const resultado = await this.jobService.previewPorCpf(cpf, para, diasSimulados);
-      return { ok: true, ...resultado };
+      // Pode vir mais de um resultado no mesmo dia (ex.: lembrete + aviso disparando juntos).
+      const enviados = await this.jobService.previewPorCpf(cpf, para, diasSimulados);
+      return { ok: true, enviados };
     } catch (err: unknown) {
       const msg = errMsg(err);
       if (msg.includes('não encontrado na cache')) throw new NotFoundException(msg);
@@ -80,11 +81,12 @@ export class EmailController {
     @Body('codigoLancamento', ParseIntPipe) codigoLancamento: number,
     @Body('para') para: string,
     @Body('diasSimulados') diasSimulados?: number,
-  ): Promise<{ ok: boolean; aluno: string; tipo: string; lancamento: number }> {
+  ): Promise<{ ok: boolean; enviados: { aluno: string; tipo: string; lancamento: number }[] }> {
     if (!para) throw new BadRequestException('Informe o campo "para" com o email de destino');
     try {
-      const resultado = await this.jobService.previewPorLancamento(codigoLancamento, para, diasSimulados);
-      return { ok: true, ...resultado };
+      // Pode vir mais de um resultado no mesmo dia (ex.: lembrete + aviso disparando juntos).
+      const enviados = await this.jobService.previewPorLancamento(codigoLancamento, para, diasSimulados);
+      return { ok: true, enviados };
     } catch (err: unknown) {
       if ((err as { status?: number }).status === 404) throw err;
       throw new InternalServerErrorException(errMsg(err));

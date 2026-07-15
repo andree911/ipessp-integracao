@@ -35,12 +35,21 @@ export default () => ({
     diasAntes: (process.env.EMAIL_DIAS_ANTES ?? '7,5,3,1')
       .split(',')
       .map((d) => parseInt(d.trim(), 10)),
+    diasAviso: (process.env.EMAIL_DIAS_AVISO ?? '10,9,8,7,6,4,3,2,1')
+      .split(',')
+      .map((d) => parseInt(d.trim(), 10)),
     diasAposVencimento: (process.env.EMAIL_DIAS_APOS ?? '1,2,3,7,8,9,10,12,15,20,25,30')
+      .split(',')
+      .map((d) => parseInt(d.trim(), 10)),
+    diasRenegociacaoOverlap: (process.env.EMAIL_DIAS_RENEGOCIACAO_OVERLAP ?? '1,3,7')
       .split(',')
       .map((d) => parseInt(d.trim(), 10)),
     logoUrl: process.env.EMAIL_LOGO_URL ?? '',
     cronHabilitado: process.env.EMAIL_CRON_HABILITADO ?? 'false',
     siteUrl: process.env.ESCOLA_SITE ?? '',
+    // Domínio do site-ipessp-frontend (hero images e ícones dos templates de
+    // email) — é um deploy separado do ESCOLA_SITE institucional acima.
+    assetsBaseUrl: (process.env.EMAIL_ASSETS_BASE_URL ?? '').replace(/\/$/, ''),
     instagramUrl: process.env.ESCOLA_INSTAGRAM ?? '',
     facebookUrl: process.env.ESCOLA_FACEBOOK ?? '',
     youtubeUrl: process.env.ESCOLA_YOUTUBE ?? '',

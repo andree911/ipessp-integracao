@@ -16,7 +16,13 @@ import {
   templateCobranca,
   templateLembrete,
   templateVencimentoHoje,
+  templateAviso,
+  templateRenegociacaoOferta,
+  templateRenegociacaoLembrete,
+  templateCancelamentoAcademico,
+  templateCancelamentoFinanceiro,
   type EmailData,
+  type CancelamentoEmailData,
 } from './templates/email.templates';
 import { parseDateBR } from '../common/date.util';
 
@@ -25,11 +31,29 @@ const QR_CID = 'qrpix@email';
 const EMAIL_ANTES_TIPO: Record<number, EmailTipo> = {
   7: 'lembrete_7', 5: 'lembrete_5', 3: 'lembrete_3', 1: 'lembrete_1',
 };
+const EMAIL_AVISO_TIPO: Record<number, EmailTipo> = {
+  10: 'aviso_10', 9: 'aviso_9', 8: 'aviso_8', 7: 'aviso_7', 6: 'aviso_6',
+  4: 'aviso_4',   3: 'aviso_3', 2: 'aviso_2', 1: 'aviso_1',
+};
 const EMAIL_APOS_TIPO: Record<number, EmailTipo> = {
   1: 'cobranca_1',   2: 'cobranca_2',  3: 'cobranca_3',  7: 'cobranca_7',
   8: 'cobranca_8',   9: 'cobranca_9',  10: 'cobranca_10', 12: 'cobranca_12',
   15: 'cobranca_15', 20: 'cobranca_20', 25: 'cobranca_25', 30: 'cobranca_30',
 };
+
+function templatePorTipo(tipo: EmailTipo, emailData: EmailData): { subject: string; html: string } {
+  if (tipo === 'vencimento_hoje') return templateVencimentoHoje(emailData);
+  if (tipo === 'renegociacao_oferta') return templateRenegociacaoOferta(emailData);
+  if (tipo === 'renegociacao_lembrete') return templateRenegociacaoLembrete(emailData);
+  if (tipo.startsWith('aviso')) return templateAviso(emailData);
+  if (tipo.startsWith('lembrete')) return templateLembrete(emailData);
+  return templateCobranca(emailData);
+}
+
+/** Sorteio 50/50 entre os dois modelos de renegociação — decisão de negócio: sem ordem fixa. */
+function sortearTipoRenegociacao(): EmailTipo {
+  return Math.random() < 0.5 ? 'renegociacao_oferta' : 'renegociacao_lembrete';
+}
 
 async function gerarQrCode(texto: string): Promise<Buffer | undefined> {
   try {
@@ -84,6 +108,7 @@ export class EmailJobService {
       telefoneEscola: this.config.get<string>('email.telefoneEscola') ?? '',
       logoUrl:        this.config.get<string>('email.logoUrl') || undefined,
       siteUrl:        this.config.get<string>('email.siteUrl') || undefined,
+      assetsBaseUrl:  this.config.get<string>('email.assetsBaseUrl') || undefined,
       instagramUrl:   this.config.get<string>('email.instagramUrl') || undefined,
       facebookUrl:    this.config.get<string>('email.facebookUrl') || undefined,
       youtubeUrl:     this.config.get<string>('email.youtubeUrl') || undefined,
@@ -97,6 +122,41 @@ export class EmailJobService {
         return base ? `${base}/como-pagar` : undefined;
       })(),
     };
+  }
+
+  /**
+   * Dispara o email de cancelamento pro RA informado. `tipo === 'academico'`
+   * escolhe entre os dois textos de cancelamento de matrícula (com/sem
+   * inadimplência) conforme o resumo financeiro atual; `tipo === 'financeiro'`
+   * sempre manda o texto de plano de pagamento quitado.
+   */
+  async enviarCancelamento(ra: string, tipo: 'academico' | 'financeiro'): Promise<{ enviado: boolean; para: string; subject: string }> {
+    const resumo = await this.financeiro.getResumoCancelamento(ra);
+    if (!resumo.emailResponsavel) {
+      throw new Error(`Aluno '${resumo.nomeAluno}' não tem e-mail de responsável cadastrado`);
+    }
+
+    const escola = this.dadosEscola();
+    const emailData: CancelamentoEmailData = {
+      nomeAluno: resumo.nomeAluno,
+      numeroParcelasRestantes: resumo.parcelasEmAberto,
+      valorParcela: resumo.valorParcela,
+      somaValor: resumo.somaValor,
+      valorMulta: resumo.valorMulta,
+      parcelasEmAtraso: resumo.parcelasEmAtraso,
+      saldoDevedor: resumo.saldoDevedor,
+      nomeEscola: escola.nomeEscola,
+      emailEscola: escola.emailEscola,
+      telefoneEscola: escola.telefoneEscola,
+      siteUrl: escola.siteUrl,
+    };
+
+    const template = tipo === 'academico'
+      ? templateCancelamentoAcademico(emailData)
+      : templateCancelamentoFinanceiro(emailData);
+
+    await this.emailService.enviar(resumo.emailResponsavel, template.subject, template.html);
+    return { enviado: true, para: resumo.emailResponsavel, subject: template.subject };
   }
 
   @Cron('0 7,19 * * *', { name: 'email_job', timeZone: 'America/Sao_Paulo' })
@@ -119,7 +179,9 @@ export class EmailJobService {
     this.logger.log('=== Iniciando job de emails ===');
 
     const diasAntes = this.config.get<number[]>('email.diasAntes') ?? [7, 5, 3, 1];
+    const diasAviso = this.config.get<number[]>('email.diasAviso') ?? [10, 9, 8, 7, 6, 4, 3, 2, 1];
     const diasAposVencimento = this.config.get<number[]>('email.diasAposVencimento') ?? [1, 2, 3, 7, 8, 9, 10, 12, 15, 20, 25, 30];
+    const diasRenegociacaoOverlap = this.config.get<number[]>('email.diasRenegociacaoOverlap') ?? [1, 3, 7];
     const escola = this.dadosEscola();
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
@@ -138,15 +200,8 @@ export class EmailJobService {
         venc.setHours(0, 0, 0, 0);
         const diffDias = Math.round((venc.getTime() - hoje.getTime()) / 86_400_000);
 
-        const tipo = this.calcularTipo(diffDias, diasAntes, diasAposVencimento);
-        if (!tipo) continue;
-
-        if (origem === 'manual') {
-          const jaEnviado = await this.emailLogRepo.findOne({
-            where: { codigoLancamento: String(lancamento.id), tipo, enviado: true },
-          });
-          if (jaEnviado && new Date(jaEnviado.enviadoEm).toDateString() === hoje.toDateString()) continue;
-        }
+        const tipos = this.calcularTipos(diffDias, diasAntes, diasAviso, diasAposVencimento, diasRenegociacaoOverlap);
+        if (tipos.length === 0) continue;
 
         if (!(await this.aindaPendenteNaSophia(cliente, lancamento, cacheAlunos))) {
           totalJaPagos++;
@@ -172,32 +227,38 @@ export class EmailJobService {
 
         const qrBuffer = lancamento.codigoPix ? await gerarQrCode(lancamento.codigoPix) : undefined;
 
-        let template: { subject: string; html: string };
-        if (tipo === 'vencimento_hoje') template = templateVencimentoHoje(emailData);
-        else if (tipo.startsWith('lembrete')) template = templateLembrete(emailData);
-        else template = templateCobranca(emailData);
+        for (const tipo of tipos) {
+          if (origem === 'manual') {
+            const jaEnviado = await this.emailLogRepo.findOne({
+              where: { codigoLancamento: String(lancamento.id), tipo, enviado: true },
+            });
+            if (jaEnviado && new Date(jaEnviado.enviadoEm).toDateString() === hoje.toDateString()) continue;
+          }
 
-        const log = this.emailLogRepo.create({
-          codigoLancamento: String(lancamento.id),
-          tipo,
-          destinatario: cliente.emailResponsavel,
-          enviado: false,
-        });
+          const template = templatePorTipo(tipo, emailData);
 
-        try {
-          await this.emailService.enviar(
-            cliente.emailResponsavel, template.subject, template.html,
-            qrBuffer ? [{ cid: QR_CID, buffer: qrBuffer, nome: 'qrpix.png' }] : undefined,
-          );
-          log.enviado = true;
-          totalEnviados++;
-        } catch (err: unknown) {
-          log.erro = errMsg(err);
-          totalErros++;
-          this.logger.error(`Erro ao enviar email para ${cliente.emailResponsavel}: ${errMsg(err)}`);
+          const log = this.emailLogRepo.create({
+            codigoLancamento: String(lancamento.id),
+            tipo,
+            destinatario: cliente.emailResponsavel,
+            enviado: false,
+          });
+
+          try {
+            await this.emailService.enviar(
+              cliente.emailResponsavel, template.subject, template.html,
+              qrBuffer ? [{ cid: QR_CID, buffer: qrBuffer, nome: 'qrpix.png' }] : undefined,
+            );
+            log.enviado = true;
+            totalEnviados++;
+          } catch (err: unknown) {
+            log.erro = errMsg(err);
+            totalErros++;
+            this.logger.error(`Erro ao enviar email para ${cliente.emailResponsavel}: ${errMsg(err)}`);
+          }
+
+          await this.emailLogRepo.save(log);
         }
-
-        await this.emailLogRepo.save(log);
       } catch (err: unknown) {
         this.logger.error(`Erro ao processar lançamento ${lancamento.id}: ${errMsg(err)}`);
       }
@@ -242,12 +303,41 @@ export class EmailJobService {
     }
   }
 
-  /** Mesma regra do job real: só considera dia 0 (vencimento hoje) ou um dos dias configurados em EMAIL_DIAS_ANTES/EMAIL_DIAS_APOS. */
-  private calcularTipo(diffDias: number, diasAntes: number[], diasAposVencimento: number[]): EmailTipo | null {
-    if (diffDias === 0) return 'vencimento_hoje';
-    if (diffDias > 0 && diasAntes.includes(diffDias)) return EMAIL_ANTES_TIPO[diffDias] ?? 'lembrete';
-    if (diffDias < 0 && diasAposVencimento.includes(Math.abs(diffDias))) return EMAIL_APOS_TIPO[Math.abs(diffDias)] ?? 'cobranca';
-    return null;
+  /**
+   * Mesma regra do job real: só considera dia 0 (vencimento hoje) ou um dos
+   * dias configurados em EMAIL_DIAS_ANTES/EMAIL_DIAS_AVISO/EMAIL_DIAS_APOS/
+   * EMAIL_DIAS_RENEGOCIACAO_OVERLAP. Antes do vencimento pode retornar DOIS
+   * tipos no mesmo dia (lembrete + aviso), já que os dias de EMAIL_DIAS_AVISO
+   * propositalmente se sobrepõem aos de EMAIL_DIAS_ANTES em alguns dias (ex.:
+   * 7, 3, 1). Depois do vencimento, a renegociação dispara em todo dia que o
+   * cobranca NÃO cobre (sem teto — inclusive depois do dia 30, já que ali o
+   * cobranca nunca cobre nada) mais os dias de sobreposição configurados em
+   * EMAIL_DIAS_RENEGOCIACAO_OVERLAP — nesses dias de sobreposição, cobranca e
+   * renegociação disparam juntos. Qual dos dois modelos de renegociação
+   * (oferta detalhada ou lembrete direto) sai é sorteado 50/50 a cada disparo.
+   */
+  private calcularTipos(
+    diffDias: number,
+    diasAntes: number[],
+    diasAviso: number[],
+    diasAposVencimento: number[],
+    diasRenegociacaoOverlap: number[],
+  ): EmailTipo[] {
+    if (diffDias === 0) return ['vencimento_hoje'];
+    if (diffDias > 0) {
+      const tipos: EmailTipo[] = [];
+      if (diasAntes.includes(diffDias)) tipos.push(EMAIL_ANTES_TIPO[diffDias] ?? 'lembrete');
+      if (diasAviso.includes(diffDias)) tipos.push(EMAIL_AVISO_TIPO[diffDias] ?? 'aviso');
+      return tipos;
+    }
+
+    const diasAtraso = Math.abs(diffDias);
+    const tipos: EmailTipo[] = [];
+    if (diasAposVencimento.includes(diasAtraso)) tipos.push(EMAIL_APOS_TIPO[diasAtraso] ?? 'cobranca');
+    if (diasRenegociacaoOverlap.includes(diasAtraso) || !diasAposVencimento.includes(diasAtraso)) {
+      tipos.push(sortearTipoRenegociacao());
+    }
+    return tipos;
   }
 
   /**
@@ -271,10 +361,12 @@ export class EmailJobService {
     hoje.setHours(0, 0, 0, 0);
 
     const diasAntes = this.config.get<number[]>('email.diasAntes') ?? [7, 5, 3, 1];
+    const diasAviso = this.config.get<number[]>('email.diasAviso') ?? [10, 9, 8, 7, 6, 4, 3, 2, 1];
     const diasAposVencimento = this.config.get<number[]>('email.diasAposVencimento') ?? [1, 2, 3, 7, 8, 9, 10, 12, 15, 20, 25, 30];
+    const diasRenegociacaoOverlap = this.config.get<number[]>('email.diasRenegociacaoOverlap') ?? [1, 3, 7];
 
-    if (diasSimulados !== undefined && !this.calcularTipo(diasSimulados, diasAntes, diasAposVencimento)) {
-      throw new Error(`O dia simulado (${diasSimulados}) não está em EMAIL_DIAS_ANTES/EMAIL_DIAS_APOS — nenhum email real seria disparado nesse marco.`);
+    if (diasSimulados !== undefined && this.calcularTipos(diasSimulados, diasAntes, diasAviso, diasAposVencimento, diasRenegociacaoOverlap).length === 0) {
+      throw new Error(`O dia simulado (${diasSimulados}) não está em EMAIL_DIAS_ANTES/EMAIL_DIAS_AVISO/EMAIL_DIAS_APOS, e (se for atraso) já está coberto só pelo cobranca — nenhum email real seria disparado nesse marco.`);
     }
 
     const pendentes = await this.financeiro.getLancamentosPendentes();
@@ -288,8 +380,8 @@ export class EmailJobService {
       venc.setHours(0, 0, 0, 0);
       const diffDias = Math.round((venc.getTime() - hoje.getTime()) / 86_400_000);
       if (diasSimulados !== undefined && diffDias !== diasSimulados) continue;
-      const tipo = this.calcularTipo(diffDias, diasAntes, diasAposVencimento);
-      if (!tipo) continue;
+      const tipos = this.calcularTipos(diffDias, diasAntes, diasAviso, diasAposVencimento, diasRenegociacaoOverlap);
+      if (tipos.length === 0) continue;
       if (!(await this.aindaPendenteNaSophia(cliente, lancamento, cacheAlunos))) continue;
 
       const emailData: EmailData = {
@@ -311,22 +403,22 @@ export class EmailJobService {
 
       const qrBuffer = lancamento.codigoPix ? await gerarQrCode(lancamento.codigoPix) : undefined;
 
-      let template: { subject: string; html: string };
-      if (tipo === 'vencimento_hoje') template = templateVencimentoHoje(emailData);
-      else if (tipo.startsWith('lembrete')) template = templateLembrete(emailData);
-      else template = templateCobranca(emailData);
+      for (const tipo of tipos) {
+        const template = templatePorTipo(tipo, emailData);
 
-      await this.emailService.enviar(
-        destinatario, `[PREVIEW] ${template.subject} — ${cliente.nomeAluno}`, template.html,
-        qrBuffer ? [{ cid: QR_CID, buffer: qrBuffer, nome: 'qrpix.png' }] : undefined,
-      );
-      resultados.push({ aluno: cliente.nomeAluno, tipo, lancamento: lancamento.id });
+        await this.emailService.enviar(
+          destinatario, `[PREVIEW] ${template.subject} — ${cliente.nomeAluno}`, template.html,
+          qrBuffer ? [{ cid: QR_CID, buffer: qrBuffer, nome: 'qrpix.png' }] : undefined,
+        );
+
+        resultados.push({ aluno: cliente.nomeAluno, tipo, lancamento: lancamento.id });
+      }
     }
 
     if (resultados.length === 0) {
       const motivo = diasSimulados !== undefined
         ? `Nenhuma pendência está exatamente ${diasSimulados} dia(s) em relação ao vencimento hoje (ou as que estão já foram pagas na Sophia).`
-        : 'Nenhuma pendência hoje bate exatamente com os dias configurados (EMAIL_DIAS_ANTES/EMAIL_DIAS_APOS), ou as que bateriam já estão pagas na Sophia.';
+        : 'Nenhuma pendência hoje bate exatamente com os dias configurados (EMAIL_DIAS_ANTES/EMAIL_DIAS_AVISO/EMAIL_DIAS_APOS), ou as que bateriam já estão pagas na Sophia.';
       throw new Error(
         motivo +
         ' Nenhum email real seria disparado agora. Use /email/test/cpf ou /email/test/lancamento pra testar um aluno específico mesmo assim.',
@@ -344,7 +436,7 @@ export class EmailJobService {
    * hoje. Se o dia simulado não estiver em EMAIL_DIAS_ANTES/EMAIL_DIAS_APOS,
    * dá erro (mesma regra do job real — não geraria email nenhum).
    */
-  async previewPorCpf(cpf: string, destinatario: string, diasSimulados?: number): Promise<{ aluno: string; tipo: string; lancamento: number }> {
+  async previewPorCpf(cpf: string, destinatario: string, diasSimulados?: number): Promise<{ aluno: string; tipo: string; lancamento: number }[]> {
     const escola = this.dadosEscola();
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
@@ -356,26 +448,27 @@ export class EmailJobService {
     const pend = dados.pendencias[0];
 
     const diasAntes = this.config.get<number[]>('email.diasAntes') ?? [7, 5, 3, 1];
+    const diasAviso = this.config.get<number[]>('email.diasAviso') ?? [10, 9, 8, 7, 6, 4, 3, 2, 1];
     const diasAposVencimento = this.config.get<number[]>('email.diasAposVencimento') ?? [1, 2, 3, 7, 8, 9, 10, 12, 15, 20, 25, 30];
+    const diasRenegociacaoOverlap = this.config.get<number[]>('email.diasRenegociacaoOverlap') ?? [1, 3, 7];
 
     let venc: Date;
     let diffDias: number;
-    let tipo: EmailTipo;
     if (diasSimulados !== undefined) {
       diffDias = diasSimulados;
       venc = new Date(hoje.getTime() + diasSimulados * 86_400_000);
-      const tipoSimulado = this.calcularTipo(diffDias, diasAntes, diasAposVencimento);
-      if (!tipoSimulado) {
-        throw new Error(`O dia simulado (${diasSimulados}) não está em EMAIL_DIAS_ANTES/EMAIL_DIAS_APOS — nenhum email real seria disparado nesse marco.`);
-      }
-      tipo = tipoSimulado;
     } else {
       venc = parseDateBR(pend.vencimento);
       venc.setHours(0, 0, 0, 0);
       diffDias = Math.round((venc.getTime() - hoje.getTime()) / 86_400_000);
-      if (diffDias === 0) tipo = 'vencimento_hoje';
-      else if (diffDias < 0) tipo = 'cobranca';
-      else tipo = 'lembrete';
+    }
+
+    let tipos = this.calcularTipos(diffDias, diasAntes, diasAviso, diasAposVencimento, diasRenegociacaoOverlap);
+    if (diasSimulados !== undefined && tipos.length === 0) {
+      throw new Error(`O dia simulado (${diasSimulados}) não está em EMAIL_DIAS_ANTES/EMAIL_DIAS_AVISO/EMAIL_DIAS_APOS, e (se for atraso) já está coberto só pelo cobranca — nenhum email real seria disparado nesse marco.`);
+    }
+    if (tipos.length === 0) {
+      tipos = [diffDias === 0 ? 'vencimento_hoje' : diffDias < 0 ? 'cobranca' : 'lembrete'];
     }
 
     const emailData: EmailData = {
@@ -396,21 +489,21 @@ export class EmailJobService {
     };
 
     const qrBuffer = pend.codigoPix ? await gerarQrCode(pend.codigoPix) : undefined;
+    const resultados: { aluno: string; tipo: string; lancamento: number }[] = [];
 
-    let template: { subject: string; html: string };
-    if (tipo === 'vencimento_hoje') template = templateVencimentoHoje(emailData);
-    else if (tipo.startsWith('lembrete')) template = templateLembrete(emailData);
-    else template = templateCobranca(emailData);
-
-    await this.emailService.enviar(
-      destinatario, `[PREVIEW] ${template.subject}`, template.html,
-      qrBuffer ? [{ cid: QR_CID, buffer: qrBuffer, nome: 'qrpix.png' }] : undefined,
-    );
-    return { aluno: dados.nomeAluno, tipo, lancamento: pend.codigo };
+    for (const tipo of tipos) {
+      const template = templatePorTipo(tipo, emailData);
+      await this.emailService.enviar(
+        destinatario, `[PREVIEW] ${template.subject}`, template.html,
+        qrBuffer ? [{ cid: QR_CID, buffer: qrBuffer, nome: 'qrpix.png' }] : undefined,
+      );
+      resultados.push({ aluno: dados.nomeAluno, tipo, lancamento: pend.codigo });
+    }
+    return resultados;
   }
 
   /** `diasSimulados` — ver comentário de previewPorCpf, mesma convenção e comportamento. */
-  async previewPorLancamento(codigoLancamento: number, destinatario: string, diasSimulados?: number): Promise<{ aluno: string; tipo: string; lancamento: number }> {
+  async previewPorLancamento(codigoLancamento: number, destinatario: string, diasSimulados?: number): Promise<{ aluno: string; tipo: string; lancamento: number }[]> {
     const escola = this.dadosEscola();
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
@@ -426,26 +519,27 @@ export class EmailJobService {
     }
 
     const diasAntes = this.config.get<number[]>('email.diasAntes') ?? [7, 5, 3, 1];
+    const diasAviso = this.config.get<number[]>('email.diasAviso') ?? [10, 9, 8, 7, 6, 4, 3, 2, 1];
     const diasAposVencimento = this.config.get<number[]>('email.diasAposVencimento') ?? [1, 2, 3, 7, 8, 9, 10, 12, 15, 20, 25, 30];
+    const diasRenegociacaoOverlap = this.config.get<number[]>('email.diasRenegociacaoOverlap') ?? [1, 3, 7];
 
     let venc: Date;
     let diffDias: number;
-    let tipo: EmailTipo;
     if (diasSimulados !== undefined) {
       diffDias = diasSimulados;
       venc = new Date(hoje.getTime() + diasSimulados * 86_400_000);
-      const tipoSimulado = this.calcularTipo(diffDias, diasAntes, diasAposVencimento);
-      if (!tipoSimulado) {
-        throw new Error(`O dia simulado (${diasSimulados}) não está em EMAIL_DIAS_ANTES/EMAIL_DIAS_APOS — nenhum email real seria disparado nesse marco.`);
-      }
-      tipo = tipoSimulado;
     } else {
       venc = parseDateBR(lancamento.dataVencimento);
       venc.setHours(0, 0, 0, 0);
       diffDias = Math.round((venc.getTime() - hoje.getTime()) / 86_400_000);
-      if (diffDias === 0) tipo = 'vencimento_hoje';
-      else if (diffDias < 0) tipo = 'cobranca';
-      else tipo = 'lembrete';
+    }
+
+    let tipos = this.calcularTipos(diffDias, diasAntes, diasAviso, diasAposVencimento, diasRenegociacaoOverlap);
+    if (diasSimulados !== undefined && tipos.length === 0) {
+      throw new Error(`O dia simulado (${diasSimulados}) não está em EMAIL_DIAS_ANTES/EMAIL_DIAS_AVISO/EMAIL_DIAS_APOS, e (se for atraso) já está coberto só pelo cobranca — nenhum email real seria disparado nesse marco.`);
+    }
+    if (tipos.length === 0) {
+      tipos = [diffDias === 0 ? 'vencimento_hoje' : diffDias < 0 ? 'cobranca' : 'lembrete'];
     }
 
     const emailData: EmailData = {
@@ -466,16 +560,16 @@ export class EmailJobService {
     };
 
     const qrBuffer = lancamento.codigoPix ? await gerarQrCode(lancamento.codigoPix) : undefined;
+    const resultados: { aluno: string; tipo: string; lancamento: number }[] = [];
 
-    let template: { subject: string; html: string };
-    if (tipo === 'vencimento_hoje') template = templateVencimentoHoje(emailData);
-    else if (tipo.startsWith('lembrete')) template = templateLembrete(emailData);
-    else template = templateCobranca(emailData);
-
-    await this.emailService.enviar(
-      destinatario, `[PREVIEW] ${template.subject}`, template.html,
-      qrBuffer ? [{ cid: QR_CID, buffer: qrBuffer, nome: 'qrpix.png' }] : undefined,
-    );
-    return { aluno: cliente.nomeAluno, tipo, lancamento: lancamento.id };
+    for (const tipo of tipos) {
+      const template = templatePorTipo(tipo, emailData);
+      await this.emailService.enviar(
+        destinatario, `[PREVIEW] ${template.subject}`, template.html,
+        qrBuffer ? [{ cid: QR_CID, buffer: qrBuffer, nome: 'qrpix.png' }] : undefined,
+      );
+      resultados.push({ aluno: cliente.nomeAluno, tipo, lancamento: lancamento.id });
+    }
+    return resultados;
   }
 }

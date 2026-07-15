@@ -10,6 +10,12 @@ export type EmailTipo =
   | 'cobranca_1'  | 'cobranca_2'  | 'cobranca_3'  | 'cobranca_7'
   | 'cobranca_8'  | 'cobranca_9'  | 'cobranca_10' | 'cobranca_12'
   | 'cobranca_15' | 'cobranca_20' | 'cobranca_25' | 'cobranca_30'
+  // ── Email — aviso formal, antes do vencimento ─────────────────────────────────
+  | 'aviso' | 'aviso_1' | 'aviso_2' | 'aviso_3' | 'aviso_4'
+  | 'aviso_6' | 'aviso_7' | 'aviso_8' | 'aviso_9' | 'aviso_10'
+  // ── Email — renegociação, depois do vencimento (dias fora do cobranca_*
+  // + sobreposição em EMAIL_DIAS_RENEGOCIACAO_OVERLAP; sem teto de dias) ────────
+  | 'renegociacao_oferta' | 'renegociacao_lembrete'
   // ── Leads ────────────────────────────────────────────────────────────────────
   | 'lead_boas_vindas'
   | 'lead_followup'

@@ -27,22 +27,58 @@ export interface EmailData {
   linkPortalAluno?: string;
   linkSegundaVia?: string;
   linkComoAcessar?: string;
+  avisoImagemUrl?: string;
+  renegociacaoOfertaImagemUrl?: string;
+  renegociacaoLembreteImagemUrl?: string;
+  iconesUrls?: Partial<Record<IconeNome, string>>;
+  /**
+   * Base pra imagens/ícones que vivem no site-ipessp-frontend (hero-*.jpg,
+   * icons/*.png) — esse frontend é publicado num domínio PRÓPRIO, diferente
+   * do `siteUrl` (que é o link "visite nosso site" institucional, ex.:
+   * ipessp.edu.br). Sem isso, as URLs geradas por padrão apontam pro domínio
+   * errado e as imagens não carregam.
+   */
+  assetsBaseUrl?: string;
 }
+
+type IconeNome = 'telefone' | 'email' | 'site' | 'facebook' | 'instagram' | 'youtube' | 'linkedin';
 
 const COR = '#7C2529';
 // Cor de sobreposição escura equivalente a rgba(0,0,0,0.18) sobre #7C2529
 // necessária porque Outlook não suporta rgba()
 const COR_DARK = '#661E22';
 
+// ─── Ícones (PNG hospedados, círculo branco + glifo) ─────────────────────────
+// Imagem de verdade em vez de fonte de ícone ou SVG ao vivo — as duas opções
+// têm suporte muito inconsistente entre clientes de email (especialmente
+// Outlook desktop). PNG funciona em todos, igual logo/fotos deste arquivo.
+
+interface IconContatoData {
+  siteUrl?: string;
+  assetsBaseUrl?: string;
+  iconesUrls?: Partial<Record<IconeNome, string>>;
+}
+
+// Base dos assets (site-ipessp-frontend) tem prioridade sobre o siteUrl
+// institucional — são domínios diferentes. Usa || (não ??) porque string
+// vazia (env var não setada) também deve cair pro próximo fallback.
+function assetsBase(data: IconContatoData): string {
+  return data.assetsBaseUrl || data.siteUrl || 'https://www.ipessp.edu.br';
+}
+
+function iconUrl(data: IconContatoData, nome: IconeNome): string {
+  return data.iconesUrls?.[nome] ?? `${assetsBase(data)}/images/icons/icon-${nome}.png`;
+}
+
 // ─── 1. Cabeçalho: logo + contatos ───────────────────────────────────────────
 
 function cabecalho(data: EmailData): string {
   const tel = (data.telefoneEscola ?? '').replace(/\D/g, '');
 
-  const contatoLinha = (badge: string, texto: string, url: string): string => `
+  const contatoLinha = (icone: 'telefone' | 'email' | 'site', texto: string, url: string): string => `
   <tr>
-    <td width="52" align="center" valign="middle" style="width:52px;min-width:52px;padding:3px 0;">
-      <span style="display:inline-block;background:#ffffff;width:46px;text-align:center;padding:3px 0;border-radius:4px;font-size:9px;font-weight:bold;color:${COR};font-family:Arial,sans-serif;white-space:nowrap;letter-spacing:0.5px;">${badge}</span>
+    <td width="24" align="center" valign="middle" style="width:24px;min-width:24px;padding:3px 0;">
+      <img src="${iconUrl(data, icone)}" width="18" height="18" alt="" style="width:18px;height:18px;display:block;border:0;">
     </td>
     <td valign="middle" style="padding:3px 0 3px 6px;text-align:left;">
       <a href="${url}" target="_blank" style="text-decoration:none;">
@@ -52,9 +88,9 @@ function cabecalho(data: EmailData): string {
   </tr>`;
 
   const linhas: string[] = [];
-  if (data.telefoneEscola) linhas.push(contatoLinha('TEL',    data.telefoneEscola, `tel:+55${tel}`));
-  if (data.emailEscola)    linhas.push(contatoLinha('E-MAIL', data.emailEscola,    `mailto:${data.emailEscola}`));
-  if (data.siteUrl)        linhas.push(contatoLinha('SITE',   data.siteUrl.replace(/^https?:\/\/(www\.)?/, ''), data.siteUrl));
+  if (data.telefoneEscola) linhas.push(contatoLinha('telefone', data.telefoneEscola, `tel:+55${tel}`));
+  if (data.emailEscola)    linhas.push(contatoLinha('email',    data.emailEscola,    `mailto:${data.emailEscola}`));
+  if (data.siteUrl)        linhas.push(contatoLinha('site',     data.siteUrl.replace(/^https?:\/\/(www\.)?/, ''), data.siteUrl));
 
   const logoHtml = data.logoUrl
     ? (data.siteUrl
@@ -86,8 +122,18 @@ function cabecalho(data: EmailData): string {
 // Técnica "faux border": td externo vermelho com padding:2px cria a borda
 // compatível com Outlook (sem border-radius no desktop, mas borda vermelha ✅)
 
-function cartaoResumo(data: EmailData): string {
-  const temMeta = data.codigoMatricula || data.curso || data.competencia;
+interface CartaoResumoOpcoes {
+  mostrarAluno?: boolean;
+  mostrarRA?: boolean;
+  labelTotal?: string;
+}
+
+function cartaoResumo(data: EmailData, opcoes?: CartaoResumoOpcoes): string {
+  const mostrarAluno = opcoes?.mostrarAluno ?? true;
+  const mostrarRA = opcoes?.mostrarRA ?? true;
+  const labelTotal = opcoes?.labelTotal ?? 'Total a pagar';
+  const temRA = mostrarRA && !!data.codigoMatricula;
+  const temMeta = temRA || data.curso || data.competencia;
 
   const lbl = (txt: string, mt = '0'): string =>
     `<span class="dm-t3" style="display:block;font-size:10px;color:#888;font-weight:bold;text-transform:uppercase;letter-spacing:0.8px;font-family:Arial,sans-serif;margin-top:${mt};margin-bottom:2px;">${txt}</span>`;
@@ -97,20 +143,20 @@ function cartaoResumo(data: EmailData): string {
       <td class="dm-bdr" style="padding:14px 20px;border-bottom:1px solid #e8e8e8;">
         <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
           <td valign="top">
-            ${data.codigoMatricula ? `
+            ${temRA ? `
               ${lbl('C&#243;digo do Aluno / RA')}
               <span class="dm-t1" style="font-size:14px;color:#222;font-weight:bold;font-family:Arial,sans-serif;">${data.codigoMatricula}</span>
             ` : ''}
             ${data.curso ? `
-              ${lbl('Curso', data.codigoMatricula ? '8px' : '0')}
+              ${lbl('Curso', temRA ? '8px' : '0')}
               <span class="dm-t2" style="font-size:13px;color:#444;font-family:Arial,sans-serif;">${data.curso}</span>
             ` : ''}
-            ${data.competencia && !data.codigoMatricula && !data.curso ? `
+            ${data.competencia && !temRA && !data.curso ? `
               ${lbl('Compet&#234;ncia')}
               <span class="dm-t2" style="font-size:13px;color:#444;font-family:Arial,sans-serif;">${data.competencia}</span>
             ` : ''}
           </td>
-          ${data.competencia && (data.codigoMatricula || data.curso) ? `
+          ${data.competencia && (temRA || data.curso) ? `
           <td valign="top" align="center" style="padding:0 12px;">
             ${lbl('Refer&#234;ncia')}
             <span class="dm-t2" style="font-size:13px;color:#444;font-family:Arial,sans-serif;">${data.competencia}</span>
@@ -123,7 +169,7 @@ function cartaoResumo(data: EmailData): string {
       </td>
     </tr>` : '';
 
-  const linhaAluno = `
+  const linhaAluno = mostrarAluno ? `
     <tr>
       <td class="dm-bdr" style="padding:14px 20px;border-bottom:1px solid #e8e8e8;">
         <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
@@ -138,7 +184,17 @@ function cartaoResumo(data: EmailData): string {
           </td>` : ''}
         </tr></table>
       </td>
-    </tr>`;
+    </tr>` : (!temMeta ? `
+    <tr>
+      <td class="dm-bdr" style="padding:14px 20px;border-bottom:1px solid #e8e8e8;">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+          <td align="right">
+            ${lbl('Vencimento')}
+            <span class="dm-t1" style="font-size:15px;color:#222;font-weight:bold;font-family:Arial,sans-serif;">${data.vencimento}</span>
+          </td>
+        </tr></table>
+      </td>
+    </tr>` : '');
 
   const linhaDescricao = data.descricao ? `
     <tr>
@@ -152,7 +208,7 @@ function cartaoResumo(data: EmailData): string {
     <tr>
       <td bgcolor="${COR}" style="background-color:${COR};padding:16px 20px;">
         <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-          <td style="font-size:15px;font-weight:bold;color:#ffffff;font-family:Arial,sans-serif;">Total a pagar</td>
+          <td style="font-size:15px;font-weight:bold;color:#ffffff;font-family:Arial,sans-serif;">${labelTotal}</td>
           <td align="right" style="font-size:26px;font-weight:bold;color:#ffffff;font-family:Arial,sans-serif;line-height:1;">${data.valor}</td>
         </tr></table>
       </td>
@@ -382,22 +438,28 @@ function botaoPrincipal(url: string): string {
 
 // ─── 10. Rodapé ───────────────────────────────────────────────────────────────
 
-function redesSociais(data: EmailData): string {
-  const redes: Array<{ cor: string; gradient?: string; vmlCor2?: string; letra: string; fs: number; inset: number; nome: string; url: string }> = [];
-  if (data.facebookUrl)  redes.push({ cor: '#ffffff', letra: 'f',  fs: 18, inset: 9,  nome: 'Facebook',  url: data.facebookUrl });
-  if (data.instagramUrl) redes.push({ cor: '#ffffff', letra: 'ig', fs: 11, inset: 11, nome: 'Instagram', url: data.instagramUrl });
-  if (data.youtubeUrl)   redes.push({ cor: '#ffffff', letra: 'yt', fs: 11, inset: 11, nome: 'YouTube',   url: data.youtubeUrl });
-  if (data.linkedinUrl)  redes.push({ cor: '#ffffff', letra: 'in', fs: 14, inset: 11, nome: 'LinkedIn',  url: data.linkedinUrl });
+interface RedesSociaisData extends IconContatoData {
+  facebookUrl?: string;
+  instagramUrl?: string;
+  youtubeUrl?: string;
+  linkedinUrl?: string;
+}
+
+function redesSociais(data: RedesSociaisData): string {
+  const redes: Array<{ icone: IconeNome; nome: string; url: string }> = [];
+  if (data.facebookUrl)  redes.push({ icone: 'facebook',  nome: 'Facebook',  url: data.facebookUrl });
+  if (data.instagramUrl) redes.push({ icone: 'instagram', nome: 'Instagram', url: data.instagramUrl });
+  if (data.youtubeUrl)   redes.push({ icone: 'youtube',   nome: 'YouTube',   url: data.youtubeUrl });
+  if (data.linkedinUrl)  redes.push({ icone: 'linkedin',  nome: 'LinkedIn',  url: data.linkedinUrl });
   if (redes.length === 0) return '';
 
   return `
   <table cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 8px;">
     <tr>
-      ${redes.map(({ cor, gradient, vmlCor2, letra, fs, inset, nome, url }) => `
+      ${redes.map(({ icone, nome, url }) => `
       <td style="padding:0 8px;text-align:center;">
         <a href="${url}" target="_blank" style="text-decoration:none;">
-          <!--[if mso]><v:oval xmlns:v="urn:schemas-microsoft-com:vml" style="width:40px;height:40px;" stroked="false"><v:fill type="solid" color="${COR}"/><v:textbox inset="0,${inset}px,0,0" style="mso-fit-shape-to-text:false;"><center><span style="font-family:Arial;font-size:${fs}px;font-weight:bold;color:#ffffff;">${letra}</span></center></v:textbox></v:oval><![endif]-->
-          <!--[if !mso]><!--><span style="display:inline-block;width:40px;height:40px;${gradient ? `background:${gradient}` : `background-color:${cor}`};border-radius:50%;text-align:center;line-height:40px;font-size:${fs}px;font-weight:bold;color:${COR};font-family:Arial,sans-serif;">${letra}</span><!--<![endif]-->
+          <img src="${iconUrl(data, icone)}" width="40" height="40" alt="${nome}" style="width:40px;height:40px;display:block;border:0;border-radius:50%;">
         </a>
         <p style="margin:4px 0 0;font-size:9px;color:rgba(255,255,255,0.6);font-family:Arial,sans-serif;">${nome}</p>
       </td>`).join('')}
@@ -440,10 +502,40 @@ function rodape(data: EmailData): string {
   </tr>`;
 }
 
+// ─── Imagem de destaque ────────────────────────────────────────────────────────
+// O texto/selo já vem cravado na própria imagem (gerada via script, foto +
+// gradiente + texto compostos em um único JPEG), então aqui é só uma <img>
+// normal — sem position:absolute, sem ressalva de Outlook.
+
+function imagemDestaque(url: string): string {
+  return `
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 24px;">
+    <tr>
+      <td style="line-height:0;border-radius:12px;overflow:hidden;">
+        <img src="${url}" width="600" alt="" style="width:100%;max-width:600px;height:auto;display:block;border:0;border-radius:12px;">
+      </td>
+    </tr>
+  </table>`;
+}
+
 // ─── Base ─────────────────────────────────────────────────────────────────────
 
-function base(subject: string, introTitulo: string, descParagrafo: string, nota: string, data: EmailData, preheader = ''): string {
+interface BaseOpcoes {
+  ocultarPagamento?: boolean;
+  resumoOpcoes?: CartaoResumoOpcoes;
+  heroImagemUrl?: string;
+  botaoAntesSeguranca?: boolean;
+}
+
+// Mesma linha fina usada entre as linhas do card de resumo (RA/Descrição/etc.).
+const divisoria = `
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 22px;">
+    <tr><td style="border-top:1px solid #e8e8e8;font-size:0;line-height:0;">&nbsp;</td></tr>
+  </table>`;
+
+function base(subject: string, introTitulo: string, descParagrafo: string, nota: string, data: EmailData, preheader = '', opcoes?: BaseOpcoes): string {
   const comoAcessarUrl = data.linkComoAcessar ?? data.linkPortalAluno ?? '#';
+  const ocultarPagamento = opcoes?.ocultarPagamento ?? false;
 
   return `<!DOCTYPE html>
 <html lang="pt-BR" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
@@ -488,14 +580,18 @@ ${preheader ? `<div style="display:none;font-size:1px;color:#f0f2f5;line-height:
       <tr>
         <td bgcolor="#ffffff" class="body-pad dm-card" style="background-color:#ffffff;padding:32px 40px 20px;">
 
+          <!-- Imagem de destaque (opcional) -->
+          ${opcoes?.heroImagemUrl ? imagemDestaque(opcoes.heroImagemUrl) : ''}
+
           <!-- 2. Saudação -->
           <p class="dm-t1" style="margin:0 0 6px;font-size:16px;font-weight:bold;color:#222222;font-family:Arial,sans-serif;">${introTitulo}</p>
           <p style="margin:0 0 18px;font-size:17px;font-weight:bold;color:${COR};text-transform:uppercase;font-family:Arial,sans-serif;">${data.nomeResponsavel},</p>
           <p class="dm-t2" style="margin:0 0 4px;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">${descParagrafo}</p>
 
           <!-- 3. Card de resumo -->
-          ${cartaoResumo(data)}
+          ${cartaoResumo(data, opcoes?.resumoOpcoes)}
 
+          ${ocultarPagamento ? '' : `
           <!-- 4. Intro de pagamento -->
           ${introsPagamento()}
 
@@ -507,12 +603,21 @@ ${preheader ? `<div style="display:none;font-size:1px;color:#f0f2f5;line-height:
 
           <!-- 7. Dois CTAs lado a lado -->
           ${doisCtas(data)}
+          `}
 
+          ${opcoes?.botaoAntesSeguranca ? `
+          <!-- 9. Botão CTA principal -->
+          ${botaoPrincipal(comoAcessarUrl)}
+          ${divisoria}
+          <!-- 8. Aviso de segurança -->
+          ${avisoSeguranca(data)}
+          ` : `
           <!-- 8. Aviso de segurança -->
           ${avisoSeguranca(data)}
 
           <!-- 9. Botão CTA principal -->
           ${botaoPrincipal(comoAcessarUrl)}
+          `}
 
           <!-- Nota de rodapé do corpo -->
           ${nota}
@@ -532,7 +637,7 @@ ${preheader ? `<div style="display:none;font-size:1px;color:#f0f2f5;line-height:
 
 // ─── Email para o aluno: confirmação de matrícula + link de pagamento ────────
 
-export interface ConfirmacaoMatriculaData {
+export interface ConfirmacaoMatriculaData extends RedesSociaisData {
   nomeAluno: string;
   curso: string;
   numeroParcelas: number;
@@ -623,18 +728,27 @@ export function emailConfirmacaoMatricula(d: ConfirmacaoMatriculaData): string {
           </p>
 
           ${d.emailEscola || d.telefoneEscola ? `
-          <p style="margin:20px 0 0;font-size:13px;color:#555;line-height:1.7;">
-            Dúvidas? Entre em contato conosco:
-            ${d.telefoneEscola ? `<br><strong>${d.telefoneEscola}</strong>` : ''}
-            ${d.emailEscola ? `<br><a href="mailto:${d.emailEscola}" style="color:${COR};">${d.emailEscola}</a>` : ''}
-          </p>` : ''}
+          <p style="margin:20px 0 8px;font-size:13px;color:#555;">Dúvidas? Entre em contato conosco:</p>
+          <table cellpadding="0" cellspacing="0" border="0">
+            ${d.telefoneEscola ? `
+            <tr>
+              <td width="22" valign="middle" style="padding:3px 0;"><img src="${iconUrl(d, 'telefone')}" width="16" height="16" alt="" style="width:16px;height:16px;display:block;border:0;"></td>
+              <td valign="middle" style="padding:3px 0 3px 6px;font-size:13px;color:#555;"><strong>${d.telefoneEscola}</strong></td>
+            </tr>` : ''}
+            ${d.emailEscola ? `
+            <tr>
+              <td width="22" valign="middle" style="padding:3px 0;"><img src="${iconUrl(d, 'email')}" width="16" height="16" alt="" style="width:16px;height:16px;display:block;border:0;"></td>
+              <td valign="middle" style="padding:3px 0 3px 6px;font-size:13px;"><a href="mailto:${d.emailEscola}" style="color:${COR};text-decoration:none;">${d.emailEscola}</a></td>
+            </tr>` : ''}
+          </table>` : ''}
         </td>
       </tr>
 
       <!-- rodapé -->
       <tr>
-        <td bgcolor="${COR}" style="background-color:${COR};padding:16px 32px;">
-          <p style="margin:0;font-size:11px;color:rgba(255,255,255,0.7);">
+        <td bgcolor="${COR}" style="background-color:${COR};padding:16px 32px;" align="center">
+          ${redesSociais(d)}
+          <p style="margin:0;font-size:11px;color:rgba(255,255,255,0.7);text-align:center;">
             ${d.nomeEscola}${d.siteUrl ? ` · <a href="${d.siteUrl}" style="color:rgba(255,255,255,0.7);">${d.siteUrl.replace(/^https?:\/\/(www\.)?/, '')}</a>` : ''}
           </p>
         </td>
@@ -722,6 +836,297 @@ export function templateCobranca(data: EmailData): { subject: string; html: stri
   </p>`;
 
   return { subject, html: base(subject, 'Cobran&#231;a em aberto.', desc, nota, data, preheader) };
+}
+
+// ─── Aviso formal (antes do vencimento, em paralelo ao lembrete) ─────────────
+// Dispara nos dias que o lembrete NÃO cobre (preenchendo o intervalo de 10 a 1
+// dia antes do vencimento) e também nos dias "padrão" 7, 3 e 1 — que já têm
+// lembrete — como um reforço mais formal no mesmo dia. O dia 5 é exceção:
+// só recebe o lembrete, sem aviso.
+
+const SUBJECTS_AVISO: Record<number, string> = {
+  10: 'IPESSP - Aviso: sua mensalidade vence em 10 dias',
+  9:  'IPESSP - Aviso: sua mensalidade vence em 9 dias',
+  8:  'IPESSP - Aviso: sua mensalidade vence em 8 dias',
+  7:  'IPESSP - Aviso Importante: vencimento em 7 dias',
+  6:  'IPESSP - Aviso: sua mensalidade vence em 6 dias',
+  4:  'IPESSP - Aviso: sua mensalidade vence em 4 dias',
+  3:  'IPESSP - Aviso Importante: vencimento em 3 dias',
+  2:  'IPESSP - Aviso: sua mensalidade vence em 2 dias',
+  1:  'IPESSP - Aviso Importante: vencimento amanhã',
+};
+
+export function templateAviso(data: EmailData): { subject: string; html: string } {
+  const subject = SUBJECTS_AVISO[data.diasRestantes ?? 0]
+    ?? `IPESSP - Aviso: sua mensalidade vence em ${data.diasRestantes} dias`;
+  const preheader = `Vence em ${data.vencimento}. Regularize e evite restrições no acesso aos serviços.`;
+
+  const desc = `Este &#233; um aviso importante: o boleto do(a) aluno(a) <strong>${data.nomeAluno}</strong>
+    vence em <strong style="color:${COR};">${data.diasRestantes} dia${data.diasRestantes === 1 ? '' : 's'}</strong>,
+    no dia <strong>${data.vencimento}</strong>.
+    Regularize o pagamento at&#233; a data de vencimento para evitar a suspens&#227;o de servi&#231;os
+    e o encaminhamento para medidas de cobran&#231;a.`;
+
+  const nota = `
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:12px 0 0;">
+    <tr>
+      <td bgcolor="#fff8e1" style="background-color:#fff8e1;border-radius:10px;padding:16px 18px;">
+        <p style="margin:0;font-size:12px;color:#7a5200;line-height:1.7;font-family:Arial,sans-serif;">
+          <strong>Importante:</strong> se o pagamento j&#225; foi efetuado, desconsidere este aviso.
+          Caso esteja com dificuldades para regularizar, entre em contato com o setor financeiro
+          antes do vencimento dos pr&#243;ximos prazos &#8212; estamos &#224; disposi&#231;&#227;o para buscar uma solu&#231;&#227;o.
+        </p>
+      </td>
+    </tr>
+  </table>`;
+
+  return {
+    subject,
+    html: base(subject, 'Aviso importante sobre sua mensalidade.', desc, nota, data, preheader, {
+      ocultarPagamento: true,
+      resumoOpcoes: { mostrarAluno: false, mostrarRA: false, labelTotal: 'Valor da mensalidade' },
+      heroImagemUrl: data.avisoImagemUrl ?? `${assetsBase(data)}/images/hero-aviso.jpg`,
+      botaoAntesSeguranca: true,
+    }),
+  };
+}
+
+// ─── Renegociação — oferta detalhada (inspirado no modelo Nubank) ────────────
+// Primeiro contato de renegociação: mais longo, explica os benef&#237;cios e o
+// passo a passo. Dias de disparo a definir (provavelmente ap&#243;s os marcos
+// j&#225; cobertos pelo templateCobranca).
+
+export function templateRenegociacaoOferta(data: EmailData): { subject: string; html: string } {
+  const subject = 'IPESSP - Condições especiais para regularizar sua mensalidade';
+  const preheader = `Descontos e parcelamento facilitado para regularizar o quanto antes.`;
+
+  const desc = `Sabemos que &#224;s vezes as coisas n&#227;o saem como planejado.
+    Preparamos condi&#231;&#245;es especiais para o(a) aluno(a) <strong>${data.nomeAluno}</strong>
+    regularizar a mensalidade em aberto.`;
+
+  const beneficios = `
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 22px;">
+    <tr>
+      <td style="padding:0 0 12px;">
+        <span style="font-size:14px;color:#444;font-family:Arial,sans-serif;line-height:1.6;">
+          <strong style="color:${COR};">Condi&#231;&#245;es especiais:</strong> desconto e parcelamento facilitado pensados pra caber no seu momento.
+        </span>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <span style="font-size:14px;color:#444;font-family:Arial,sans-serif;line-height:1.6;">
+          <strong style="color:${COR};">Continue estudando:</strong> ao regularizar, seu acesso aos servi&#231;os acad&#234;micos segue normalmente.
+        </span>
+      </td>
+    </tr>
+  </table>`;
+
+  const nota = `
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:12px 0 0;border-radius:10px;overflow:hidden;">
+    <tr>
+      <td width="4" bgcolor="#f0a500" style="background-color:#f0a500;padding:0;font-size:0;line-height:0;">&nbsp;</td>
+      <td bgcolor="#fff8e1" style="background-color:#fff8e1;padding:16px 18px;">
+        <p style="margin:0 0 8px;font-size:13px;font-weight:bold;color:#7a5200;font-family:Arial,sans-serif;">
+          Funciona assim:
+        </p>
+        <p style="margin:0 0 8px;font-size:12px;color:#7a5200;line-height:1.7;font-family:Arial,sans-serif;">
+          <strong>1. Acesse o portal ou fale com o financeiro</strong> e escolha a condi&#231;&#227;o que fizer mais sentido pra voc&#234;.
+        </p>
+        <p style="margin:0;font-size:12px;color:#7a5200;line-height:1.7;font-family:Arial,sans-serif;">
+          <strong>2. Ap&#243;s a confirma&#231;&#227;o do pagamento</strong>, sua situa&#231;&#227;o &#233; regularizada em at&#233; 7 dias &#250;teis.
+        </p>
+      </td>
+    </tr>
+  </table>`;
+
+  return {
+    subject,
+    html: base(subject, 'Ainda d&#225; tempo de regularizar com condi&#231;&#245;es especiais.', desc + beneficios, nota, data, preheader, {
+      ocultarPagamento: true,
+      resumoOpcoes: { mostrarAluno: false, mostrarRA: false, labelTotal: 'Valor em aberto' },
+      heroImagemUrl: data.renegociacaoOfertaImagemUrl ?? `${assetsBase(data)}/images/hero-renegociacao-oferta.jpg`,
+      botaoAntesSeguranca: true,
+    }),
+  };
+}
+
+// ─── Renegociação — lembrete direto (inspirado no modelo Itaú) ───────────────
+// Segundo contato, mais curto e direto, pra quem n&#227;o respondeu &#224; oferta
+// detalhada acima. Dias de disparo a definir.
+
+export function templateRenegociacaoLembrete(data: EmailData): { subject: string; html: string } {
+  const subject = 'IPESSP - Já conferiu a solução para o seu atraso?';
+  const preheader = `Condições facilitadas pra regularizar sua mensalidade. Fale com a gente.`;
+
+  const desc = `Sabemos que nem sempre &#233; f&#225;cil manter tudo em dia.
+    Para ajudar o(a) aluno(a) <strong>${data.nomeAluno}</strong> a se reorganizar,
+    preparamos condi&#231;&#245;es facilitadas de pagamento.`;
+
+  const nota = `<p style="margin:12px 0 0;font-size:12px;color:#999;line-height:1.7;font-family:Arial,sans-serif;">
+    Se voc&#234; j&#225; regularizou sua situa&#231;&#227;o, desconsidere esta mensagem.
+    Precisa de ajuda? Fale com o setor financeiro${data.telefoneEscola ? ` pelo telefone ${data.telefoneEscola}` : ''}${data.emailEscola ? ` ou pelo e-mail ${data.emailEscola}` : ''}.
+  </p>`;
+
+  return {
+    subject,
+    html: base(subject, 'J&#225; conferiu a solu&#231;&#227;o para o seu atraso?', desc, nota, data, preheader, {
+      ocultarPagamento: true,
+      resumoOpcoes: { mostrarAluno: false, mostrarRA: false, labelTotal: 'Valor em aberto' },
+      heroImagemUrl: data.renegociacaoLembreteImagemUrl ?? `${assetsBase(data)}/images/hero-renegociacao-lembrete.jpg`,
+      botaoAntesSeguranca: true,
+    }),
+  };
+}
+
+// ─── Emails de cancelamento (Acadêmico / Financeiro) ──────────────────────────
+
+export interface CancelamentoEmailData {
+  nomeAluno: string;
+  numeroParcelasRestantes: number;
+  valorParcela: number;
+  somaValor: number;
+  valorMulta: number;
+  parcelasEmAtraso: number;
+  saldoDevedor: number;
+  nomeEscola: string;
+  emailEscola?: string;
+  telefoneEscola?: string;
+  siteUrl?: string;
+}
+
+function layoutSimples(opts: {
+  nomeEscola: string;
+  tituloCabecalho: string;
+  saudacao: string;
+  corpo: string;
+  emailEscola?: string;
+  telefoneEscola?: string;
+  siteUrl?: string;
+}): string {
+  const contatos = [
+    opts.siteUrl ? `<a href="${opts.siteUrl}" style="color:rgba(255,255,255,0.7);">${opts.siteUrl.replace(/^https?:\/\/(www\.)?/, '')}</a>` : '',
+    opts.emailEscola ? `<a href="mailto:${opts.emailEscola}" style="color:rgba(255,255,255,0.7);">${opts.emailEscola}</a>` : '',
+    opts.telefoneEscola ?? '',
+  ].filter(Boolean).join(' &#183; ');
+
+  return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>body{margin:0;padding:0;background:#f0f2f5;font-family:Arial,sans-serif;}</style>
+</head>
+<body style="margin:0;padding:0;background:#f0f2f5;">
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f0f2f5;padding:28px 8px;">
+  <tr><td align="center">
+    <table width="600" cellpadding="0" cellspacing="0" border="0"
+      style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;">
+
+      <tr>
+        <td bgcolor="${COR}" style="background-color:${COR};padding:28px 32px;">
+          <p style="margin:0;font-size:22px;font-weight:bold;color:#ffffff;font-family:Arial,sans-serif;">${opts.nomeEscola}</p>
+          <p style="margin:4px 0 0;font-size:13px;color:rgba(255,255,255,0.8);font-family:Arial,sans-serif;">${opts.tituloCabecalho}</p>
+        </td>
+      </tr>
+
+      <tr>
+        <td style="padding:32px 40px;">
+          <p style="margin:0 0 18px;font-size:15px;font-weight:bold;color:${COR};text-transform:uppercase;font-family:Arial,sans-serif;">${opts.saudacao}</p>
+          ${opts.corpo}
+        </td>
+      </tr>
+
+      <tr>
+        <td bgcolor="${COR}" style="background-color:${COR};padding:16px 32px;">
+          <p style="margin:0;font-size:11px;color:rgba(255,255,255,0.7);font-family:Arial,sans-serif;">${opts.nomeEscola}${contatos ? ` &#183; ${contatos}` : ''}</p>
+        </td>
+      </tr>
+
+    </table>
+  </td></tr>
+</table>
+</body></html>`;
+}
+
+const fmtMoeda = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+/** Disparado ao marcar o check "Acadêmico" — escolhe entre os dois textos conforme haja (ou não) parcelas em atraso. */
+export function templateCancelamentoAcademico(d: CancelamentoEmailData): { subject: string; html: string } {
+  const primeiroNome = d.nomeAluno.split(' ')[0];
+  const temInadimplencia = d.parcelasEmAtraso > 0;
+
+  const subject = temInadimplencia
+    ? 'IPESSP - Cancelamento de Matrícula Concluído - Pendência Financeira'
+    : 'IPESSP - Cancelamento de Matrícula Concluído';
+
+  const paragrafoInadimplencia = temInadimplencia ? `
+    <p style="margin:0 0 18px;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
+      Al&#233;m disso, informamos que h&#225; um saldo devedor referente a
+      <strong>${d.parcelasEmAtraso} parcela${d.parcelasEmAtraso === 1 ? '' : 's'} em atraso</strong>,
+      totalizando <strong style="color:${COR};">${fmtMoeda(d.saldoDevedor)}</strong>, que tamb&#233;m dever&#225; ser quitado.
+    </p>` : '';
+
+  const corpo = `
+    <p style="margin:0 0 18px;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
+      Informamos que o cancelamento de sua matr&#237;cula foi conclu&#237;do com sucesso.
+    </p>
+    <p style="margin:0 0 8px;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
+      Contudo, conforme previsto em contrato, ser&#225; necess&#225;rio o pagamento de uma multa rescis&#243;ria
+      correspondente a 10% do valor das parcelas remanescentes do plano de pagamento.
+    </p>
+    <p style="margin:0 0 18px;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
+      No seu caso, restavam <strong>${d.numeroParcelasRestantes} parcela${d.numeroParcelasRestantes === 1 ? '' : 's'}</strong>
+      no valor de <strong>${fmtMoeda(d.valorParcela)}</strong> cada, totalizando <strong>${fmtMoeda(d.somaValor)}</strong>.
+      Assim, a multa contratual corresponde a <strong style="color:${COR};">${fmtMoeda(d.valorMulta)}</strong>.
+    </p>
+    ${paragrafoInadimplencia}
+    <p style="margin:0 0 18px;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
+      Ressaltamos que, caso retorne &#224;s aulas dentro do per&#237;odo de at&#233; 6 meses, o valor pago a t&#237;tulo
+      de multa ser&#225; abatido nas mensalidades do novo plano de pagamento.
+    </p>
+    <p style="margin:0;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
+      Permanecemos &#224; disposi&#231;&#227;o para quaisquer esclarecimentos ou orienta&#231;&#245;es sobre a forma de pagamento.
+    </p>`;
+
+  return {
+    subject,
+    html: layoutSimples({
+      nomeEscola: d.nomeEscola,
+      tituloCabecalho: 'Cancelamento de Matrícula',
+      saudacao: `Prezado(a) ${primeiroNome},`,
+      corpo,
+      emailEscola: d.emailEscola,
+      telefoneEscola: d.telefoneEscola,
+      siteUrl: d.siteUrl,
+    }),
+  };
+}
+
+/** Disparado ao marcar o check "Financeiro" — plano de pagamento já sem multa/inadimplência pendente. */
+export function templateCancelamentoFinanceiro(d: CancelamentoEmailData): { subject: string; html: string } {
+  const corpo = `
+    <p style="margin:0 0 18px;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
+      Informamos que o cancelamento do plano de pagamento financeiro foi realizado com sucesso, sem a necessidade
+      de cobran&#231;a de multas ou parcelas em atraso.
+    </p>
+    <p style="margin:0 0 18px;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
+      Dessa forma, n&#227;o h&#225; pend&#234;ncias vinculadas ao referido plano, e o processo encontra-se devidamente conclu&#237;do.
+    </p>
+    <p style="margin:0;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
+      Permanecemos &#224; disposi&#231;&#227;o para quaisquer esclarecimentos.
+    </p>`;
+
+  return {
+    subject: 'IPESSP - Cancelamento do Plano de Pagamento Concluído',
+    html: layoutSimples({
+      nomeEscola: d.nomeEscola,
+      tituloCabecalho: 'Cancelamento do Plano de Pagamento',
+      saudacao: 'Prezados(as),',
+      corpo,
+      emailEscola: d.emailEscola,
+      telefoneEscola: d.telefoneEscola,
+      siteUrl: d.siteUrl,
+    }),
+  };
 }
 
 // ─── Email interno: relatório de nova matrícula para o financeiro ─────────────
