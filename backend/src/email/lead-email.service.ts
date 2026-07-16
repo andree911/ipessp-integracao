@@ -7,30 +7,22 @@ import { errMsg } from '../common/err.util';
 import { EmailService } from './email.service';
 import { EmailLog } from './entities/email-log.entity';
 import { Lead } from '../leads/entities/lead.entity';
+import { baseConteudoLivre, botaoCta, MarcaEmailData } from './templates/email.templates';
 
-const SITE_URL = 'https://ipessp.edu.br';
-const COR = '#C8102E';
-
-const REDES = [
-  { letra: 'ig', nome: 'Instagram', url: 'https://www.instagram.com/ipessp/' },
-  { letra: 'in', nome: 'LinkedIn',  url: 'https://www.linkedin.com/company/ipessp---educa-o/' },
-  { letra: 'f',  nome: 'Facebook',  url: 'https://www.facebook.com/ipesspedu/' },
-  { letra: 'yt', nome: 'YouTube',   url: 'https://www.youtube.com/channel/UC7dgP6NBgM9L0m11UbhCyHg' },
-];
+const SITE_URL_FALLBACK = 'https://ipessp.edu.br';
+const WHATSAPP_EQUIPE_URL = 'https://wa.me/5511976922127';
+const COR_WHATSAPP = '#25D366';
 
 @Injectable()
 export class LeadEmailService {
   private readonly logger = new Logger(LeadEmailService.name);
-  private readonly logoUrl: string;
 
   constructor(
     @InjectRepository(EmailLog) private readonly logRepo: Repository<EmailLog>,
     @InjectRepository(Lead) private readonly leadRepo: Repository<Lead>,
     private readonly emailService: EmailService,
     private readonly config: ConfigService,
-  ) {
-    this.logoUrl = this.config.get<string>('EMAIL_LOGO_URL') ?? '';
-  }
+  ) {}
 
   async enviarBoasVindas(lead: Lead): Promise<void> {
     if (!lead.email) return;
@@ -102,153 +94,59 @@ export class LeadEmailService {
   }
 
   // ─── Templates ───────────────────────────────────────────────────────────────
+  // Reusam o mesmo cabeçalho/rodapé/cor institucional dos templates financeiros
+  // (`baseConteudoLivre` em email.templates.ts) em vez de manter um layout
+  // próprio — mesma identidade visual em todo email enviado pela escola.
 
-  private botaoHtml(url: string, texto: string, cor: string, largura = 200): string {
-    return `
-    <!--[if mso]>
-    <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word"
-      href="${url}" style="height:48px;v-text-anchor:middle;width:${largura}px;" arcsize="8%"
-      strokecolor="${cor}" fillcolor="${cor}">
-      <w:anchorlock/>
-      <center style="color:#ffffff;font-family:Arial,sans-serif;font-size:15px;font-weight:bold;">${texto}</center>
-    </v:roundrect>
-    <![endif]-->
-    <!--[if !mso]><!-->
-    <a href="${url}" target="_blank"
-      style="display:inline-block;background-color:${cor};color:#ffffff;font-size:15px;font-weight:bold;text-decoration:none;padding:14px 32px;border-radius:6px;font-family:Arial,sans-serif;mso-hide:all;">
-      ${texto}
-    </a>
-    <!--<![endif]-->`;
-  }
-
-  private cabecalhoHtml(subtitulo?: string): string {
-    const logoBlock = this.logoUrl
-      ? `<table cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;">
-           <tr>
-             <td align="center" bgcolor="#ffffff"
-               style="background-color:#ffffff;border-radius:10px;padding:8px 18px;line-height:0;
-                      mso-border-top-alt:solid #ffffff 1pt;mso-border-right-alt:solid #ffffff 1pt;
-                      mso-border-bottom-alt:solid #ffffff 1pt;mso-border-left-alt:solid #ffffff 1pt;">
-               <a href="${SITE_URL}" target="_blank" style="display:block;line-height:0;border:0;text-decoration:none;">
-                 <img src="${this.logoUrl}" alt="IPESSP" height="48"
-                   style="height:48px;width:auto;display:block;border:0;">
-               </a>
-             </td>
-           </tr>
-         </table>`
-      : `<span style="font-size:24px;font-weight:bold;color:#ffffff;font-family:Arial,sans-serif;">IPESSP</span>`;
-
-    return `
-  <tr>
-    <td bgcolor="${COR}" style="background-color:${COR};padding:28px 40px;text-align:center;">
-      ${logoBlock}
-      ${subtitulo ? `<p style="color:#ffcccc;margin:10px 0 0;font-size:13px;font-family:Arial,sans-serif;">${subtitulo}</p>` : ''}
-    </td>
-  </tr>`;
-  }
-
-  private redesSociaisHtml(): string {
-    return `
-    <table cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto 16px;">
-      <tr>
-        ${REDES.map(({ letra, nome, url }) => {
-          const fs = letra.length > 1 ? 11 : 16;
-          const inset = letra.length > 1 ? 11 : 9;
-          return `
-        <td style="padding:0 6px;text-align:center;">
-          <a href="${url}" target="_blank" style="text-decoration:none;">
-            <!--[if mso]><v:oval xmlns:v="urn:schemas-microsoft-com:vml" style="width:36px;height:36px;" fillcolor="${COR}" stroked="false"><v:textbox inset="0,${inset}px,0,0" style="mso-fit-shape-to-text:false;"><center><span style="font-family:Arial;font-size:${fs}px;font-weight:bold;color:#ffffff;">${letra}</span></center></v:textbox></v:oval><![endif]-->
-            <!--[if !mso]><!--><span style="display:inline-block;width:36px;height:36px;background:${COR};border-radius:50%;text-align:center;line-height:36px;font-size:${fs}px;font-weight:bold;color:#ffffff;font-family:Arial,sans-serif;">${letra}</span><!--<![endif]-->
-          </a>
-          <p style="margin:4px 0 0;font-size:9px;color:#aaa;font-family:Arial,sans-serif;">${nome}</p>
-        </td>`;
-        }).join('')}
-      </tr>
-    </table>`;
-  }
-
-  private rodapeHtml(): string {
-    const logoBlock = this.logoUrl
-      ? `<table cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto 16px;">
-           <tr>
-             <td align="center" bgcolor="#ffffff"
-               style="background-color:#ffffff;border-radius:10px;padding:6px 14px;line-height:0;
-                      mso-border-top-alt:solid #ffffff 1pt;mso-border-right-alt:solid #ffffff 1pt;
-                      mso-border-bottom-alt:solid #ffffff 1pt;mso-border-left-alt:solid #ffffff 1pt;">
-               <a href="${SITE_URL}" target="_blank" style="display:block;line-height:0;border:0;text-decoration:none;">
-                 <img src="${this.logoUrl}" alt="IPESSP" height="36"
-                   style="height:36px;width:auto;display:block;border:0;">
-               </a>
-             </td>
-           </tr>
-         </table>`
-      : `<p style="font-size:16px;font-weight:bold;color:#888;font-family:Arial,sans-serif;margin:0 0 16px;">IPESSP</p>`;
-
-    return `
-  <tr>
-    <td bgcolor="#f8f8f8" style="background-color:#f8f8f8;padding:28px 40px;text-align:center;border-top:1px solid #eeeeee;">
-      ${logoBlock}
-      ${this.redesSociaisHtml()}
-      <p style="color:#aaa;font-size:11px;margin:0;font-family:Arial,sans-serif;">
-        IPESSP &middot; S&atilde;o Paulo, SP &middot;
-        <a href="mailto:contato@ipessp.edu.br" style="color:#aaa;text-decoration:none;">contato@ipessp.edu.br</a>
-      </p>
-    </td>
-  </tr>`;
-  }
-
-  private wrapEmail(conteudo: string, subtitulo?: string): string {
-    return `<!DOCTYPE html>
-<html lang="pt-BR" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<!--[if mso]>
-<xml><o:OfficeDocumentSettings><o:AllowPNG/><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml>
-<![endif]-->
-</head>
-<body bgcolor="#f5f5f5" style="margin:0;padding:0;background-color:#f5f5f5;font-family:Arial,sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f5f5f5"
-  style="background-color:#f5f5f5;">
-  <tr><td align="center" style="padding:40px 16px;">
-    <table width="580" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff"
-      style="background-color:#ffffff;border-radius:8px;">
-      ${this.cabecalhoHtml(subtitulo)}
-      <tr><td bgcolor="#ffffff" style="background-color:#ffffff;padding:40px;">${conteudo}</td></tr>
-      ${this.rodapeHtml()}
-    </table>
-  </td></tr>
-</table>
-</body></html>`;
+  /** Mesmos campos lidos por EmailJobService.dadosEscola(), sem os links financeiros. */
+  private dadosMarca(): MarcaEmailData {
+    return {
+      nomeEscola:     this.config.get<string>('email.nomeEscola') ?? 'Escola',
+      emailEscola:    this.config.get<string>('email.from') || undefined,
+      telefoneEscola: this.config.get<string>('email.telefoneEscola') || undefined,
+      logoUrl:        this.config.get<string>('email.logoUrl') || undefined,
+      siteUrl:        this.config.get<string>('email.siteUrl') || undefined,
+      assetsBaseUrl:  this.config.get<string>('email.assetsBaseUrl') || undefined,
+      instagramUrl:   this.config.get<string>('email.instagramUrl') || undefined,
+      facebookUrl:    this.config.get<string>('email.facebookUrl') || undefined,
+      youtubeUrl:     this.config.get<string>('email.youtubeUrl') || undefined,
+      linkedinUrl:    this.config.get<string>('email.linkedinUrl') || undefined,
+      cnpj:           this.config.get<string>('email.cnpj') || undefined,
+      endereco:       this.config.get<string>('email.endereco') || undefined,
+    };
   }
 
   private templateBoasVindas(nome: string, curso?: string): string {
+    const marca = this.dadosMarca();
     const cursoTexto = curso ? ` no curso <strong>${curso}</strong>` : '';
-    return this.wrapEmail(`
-    <h2 style="color:#1a1a1a;font-size:20px;margin:0 0 16px;font-family:Arial,sans-serif;">Ol&aacute;, ${nome}!</h2>
-    <p style="color:#444;line-height:1.7;margin:0 0 16px;font-family:Arial,sans-serif;">Ficamos muito felizes com seu interesse${cursoTexto} no IPESSP. Nossa equipe j&aacute; foi notificada e entrar&aacute; em contato em breve.</p>
-    <p style="color:#444;line-height:1.7;margin:0 0 24px;font-family:Arial,sans-serif;">Enquanto isso, que tal conhecer mais sobre nossos cursos e estrutura?</p>
-    ${this.botaoHtml(SITE_URL, 'Ver nossos cursos', COR, 220)}`);
+    const corpo = `
+    <p style="margin:0 0 6px;font-size:16px;font-weight:bold;color:#222222;font-family:Arial,sans-serif;">Recebemos seu interesse no IPESSP.</p>
+    <p style="margin:0 0 18px;font-size:17px;font-weight:bold;color:#7C2529;text-transform:uppercase;font-family:Arial,sans-serif;">${nome},</p>
+    <p style="margin:0 0 24px;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">Ficamos muito felizes com seu interesse${cursoTexto} no IPESSP. Nossa equipe já foi notificada e entrará em contato em breve. Enquanto isso, que tal conhecer mais sobre nossos cursos e estrutura?</p>
+    ${botaoCta('Ver nossos cursos', marca.siteUrl ?? SITE_URL_FALLBACK)}`;
+    return baseConteudoLivre('Bem-vindo(a) ao IPESSP', marca, corpo, `Ficamos felizes com seu interesse${cursoTexto ? ' no curso escolhido' : ''}. Nossa equipe já foi notificada.`);
   }
 
   private templateFollowUp(nome: string, curso?: string): string {
+    const marca = this.dadosMarca();
     const cursoTexto = curso ? `sobre o curso <strong>${curso}</strong>` : 'sobre nossos cursos';
-    return this.wrapEmail(`
-    <h2 style="color:#1a1a1a;font-size:19px;margin:0 0 16px;font-family:Arial,sans-serif;">Ainda com d&uacute;vidas, ${nome}?</h2>
-    <p style="color:#444;line-height:1.7;margin:0 0 16px;font-family:Arial,sans-serif;">Notamos que voc&ecirc; demonstrou interesse ${cursoTexto}. Nossa equipe est&aacute; pronta para responder todas as suas perguntas sobre processo seletivo, valores e estrutura.</p>
-    <p style="color:#444;line-height:1.7;margin:0 0 24px;font-family:Arial,sans-serif;">Fale conosco pelo WhatsApp &mdash; &eacute; r&aacute;pido e sem compromisso!</p>
-    ${this.botaoHtml('https://wa.me/5511976922127', 'Falar pelo WhatsApp', '#25D366', 240)}`);
+    const corpo = `
+    <p style="margin:0 0 6px;font-size:16px;font-weight:bold;color:#222222;font-family:Arial,sans-serif;">Ainda com dúvidas?</p>
+    <p style="margin:0 0 18px;font-size:17px;font-weight:bold;color:#7C2529;text-transform:uppercase;font-family:Arial,sans-serif;">${nome},</p>
+    <p style="margin:0 0 24px;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">Notamos que você demonstrou interesse ${cursoTexto}. Nossa equipe está pronta para responder todas as suas perguntas sobre processo seletivo, valores e estrutura. Fale conosco pelo WhatsApp — é rápido e sem compromisso!</p>
+    ${botaoCta('Falar pelo WhatsApp', WHATSAPP_EQUIPE_URL, COR_WHATSAPP)}`;
+    return baseConteudoLivre('Ainda pensando? Podemos ajudar', marca, corpo, `Nossa equipe está pronta pra responder suas perguntas ${cursoTexto.replace(/<\/?strong>/g, '')}.`);
   }
 
   private templateCta(nome: string, curso?: string): string {
+    const marca = this.dadosMarca();
     const cursoTexto = curso ? ` para o curso de ${curso}` : '';
-    return this.wrapEmail(`
-    <h2 style="color:#1a1a1a;font-size:19px;margin:0 0 16px;font-family:Arial,sans-serif;">${nome}, as inscri&ccedil;&otilde;es est&atilde;o abertas!</h2>
-    <p style="color:#444;line-height:1.7;margin:0 0 16px;font-family:Arial,sans-serif;">As vagas${cursoTexto} est&atilde;o preenchendo rapidamente. Garanta a sua agora e d&ecirc; o pr&oacute;ximo passo na sua carreira com o suporte de um dos melhores institutos de S&atilde;o Paulo.</p>
-    <p style="margin:0 0 24px;">
-      ${this.botaoHtml(`${SITE_URL}/inscricao`, 'Fazer minha inscri&ccedil;&atilde;o agora', COR, 280)}
-    </p>
-    <p style="color:#888;font-size:13px;margin:0;font-family:Arial,sans-serif;">D&uacute;vidas? Responda este e-mail ou fale conosco no WhatsApp.</p>`,
-    'Vagas limitadas');
+    const corpo = `
+    <p style="margin:0 0 6px;font-size:16px;font-weight:bold;color:#222222;font-family:Arial,sans-serif;">As inscrições estão abertas!</p>
+    <p style="margin:0 0 18px;font-size:17px;font-weight:bold;color:#7C2529;text-transform:uppercase;font-family:Arial,sans-serif;">${nome},</p>
+    <p style="margin:0 0 24px;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">As vagas${cursoTexto} estão preenchendo rapidamente. Garanta a sua agora e dê o próximo passo na sua carreira com o suporte de um dos melhores institutos de São Paulo.</p>
+    ${botaoCta('Fazer minha inscrição agora', `${marca.siteUrl ?? SITE_URL_FALLBACK}/inscricao`)}
+    <p style="margin:12px 0 0;font-size:12px;color:#999;line-height:1.7;font-family:Arial,sans-serif;">Dúvidas? Responda este e-mail ou fale conosco no WhatsApp.</p>`;
+    return baseConteudoLivre('Última chamada: inscrições abertas', marca, corpo, `As vagas${cursoTexto} estão preenchendo rapidamente. Garanta a sua agora.`);
   }
 }

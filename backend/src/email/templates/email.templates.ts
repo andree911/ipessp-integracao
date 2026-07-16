@@ -1,20 +1,17 @@
-export interface EmailData {
-  nomeAluno: string;
-  nomeResponsavel: string;
-  descricao: string;
-  valor: string;
-  vencimento: string;
-  diasRestantes?: number;
-  diasAtraso?: number;
-  codigoBarras?: string;
-  urlBoleto?: string;
-  codigoPix?: string;
+type IconeNome = 'telefone' | 'email' | 'site' | 'facebook' | 'instagram' | 'youtube' | 'linkedin';
+
+/**
+ * Identidade da escola (logo, contatos, redes sociais) usada no cabeçalho e
+ * rodapé — comum a QUALQUER email, não só aos financeiros. Extraída como
+ * base de `EmailData` pra poder ser reusada por templates de conteúdo livre
+ * (ex.: emails de lead/marketing) sem herdar os campos específicos de
+ * cobrança/matrícula.
+ */
+export interface MarcaEmailData {
   nomeEscola: string;
-  emailEscola: string;
+  emailEscola?: string;
   telefoneEscola?: string;
   logoUrl?: string;
-  competencia?: string;
-  codigoMatricula?: string;
   siteUrl?: string;
   instagramUrl?: string;
   facebookUrl?: string;
@@ -22,14 +19,6 @@ export interface EmailData {
   linkedinUrl?: string;
   cnpj?: string;
   endereco?: string;
-  curso?: string;
-  qrCodeUrl?: string;
-  linkPortalAluno?: string;
-  linkSegundaVia?: string;
-  linkComoAcessar?: string;
-  avisoImagemUrl?: string;
-  renegociacaoOfertaImagemUrl?: string;
-  renegociacaoLembreteImagemUrl?: string;
   iconesUrls?: Partial<Record<IconeNome, string>>;
   /**
    * Base pra imagens/ícones que vivem no site-ipessp-frontend (hero-*.jpg,
@@ -41,7 +30,29 @@ export interface EmailData {
   assetsBaseUrl?: string;
 }
 
-type IconeNome = 'telefone' | 'email' | 'site' | 'facebook' | 'instagram' | 'youtube' | 'linkedin';
+export interface EmailData extends MarcaEmailData {
+  nomeAluno: string;
+  nomeResponsavel: string;
+  descricao: string;
+  valor: string;
+  vencimento: string;
+  emailEscola: string;
+  diasRestantes?: number;
+  diasAtraso?: number;
+  codigoBarras?: string;
+  urlBoleto?: string;
+  codigoPix?: string;
+  competencia?: string;
+  codigoMatricula?: string;
+  curso?: string;
+  qrCodeUrl?: string;
+  linkPortalAluno?: string;
+  linkSegundaVia?: string;
+  linkComoAcessar?: string;
+  avisoImagemUrl?: string;
+  renegociacaoOfertaImagemUrl?: string;
+  renegociacaoLembreteImagemUrl?: string;
+}
 
 const COR = '#7C2529';
 // Cor de sobreposição escura equivalente a rgba(0,0,0,0.18) sobre #7C2529
@@ -72,7 +83,7 @@ function iconUrl(data: IconContatoData, nome: IconeNome): string {
 
 // ─── 1. Cabeçalho: logo + contatos ───────────────────────────────────────────
 
-function cabecalho(data: EmailData): string {
+function cabecalho(data: MarcaEmailData): string {
   const tel = (data.telefoneEscola ?? '').replace(/\D/g, '');
 
   const contatoLinha = (icone: 'telefone' | 'email' | 'site', texto: string, url: string): string => `
@@ -281,7 +292,7 @@ function secaoPix(data: EmailData): string {
               <table width="100%" cellpadding="0" cellspacing="0" border="0">
                 <tr>
                   <td bgcolor="${COR_DARK}" style="background-color:${COR_DARK};border-radius:8px;padding:14px 16px;">
-                    <p style="margin:0 0 6px;font-size:10px;color:#ffb3be;font-weight:bold;text-transform:uppercase;letter-spacing:1px;font-family:Arial,sans-serif;">Pix copia e cola <span style="font-weight:normal;letter-spacing:0;">(clique para selecionar)</span></p>
+                    <p style="margin:0 0 6px;font-size:10px;color:#ffb3be;font-weight:bold;text-transform:uppercase;letter-spacing:1px;font-family:Arial,sans-serif;">Pix copia e cola <span style="font-weight:normal;letter-spacing:0;">(mantenha pressionado ou clique e arraste para selecionar)</span></p>
                     <p style="margin:0;font-size:12px;color:#ffffff;font-family:'Courier New',Courier,monospace;word-break:break-all;line-height:1.8;cursor:pointer;-webkit-user-select:all;-moz-user-select:all;user-select:all;">${data.codigoPix}</p>
                   </td>
                 </tr>
@@ -309,7 +320,7 @@ function secaoBoleto(codigo: string): string {
         <table width="100%" cellpadding="0" cellspacing="0" border="0">
           <tr>
             <td bgcolor="${COR_DARK}" style="background-color:${COR_DARK};border-radius:8px;padding:14px 16px;">
-              <p style="margin:0 0 6px;font-size:10px;color:#ffb3be;font-weight:bold;text-transform:uppercase;letter-spacing:1px;font-family:Arial,sans-serif;">Linha Digit&#225;vel <span style="font-weight:normal;letter-spacing:0;">(clique para selecionar)</span></p>
+              <p style="margin:0 0 6px;font-size:10px;color:#ffb3be;font-weight:bold;text-transform:uppercase;letter-spacing:1px;font-family:Arial,sans-serif;">Linha Digit&#225;vel <span style="font-weight:normal;letter-spacing:0;">(mantenha pressionado ou clique e arraste para selecionar)</span></p>
               <p style="margin:0;font-size:13px;color:#ffffff;font-family:'Courier New',Courier,monospace;word-break:break-all;line-height:1.9;cursor:pointer;-webkit-user-select:all;-moz-user-select:all;user-select:all;">${codigo}</p>
             </td>
           </tr>
@@ -326,10 +337,12 @@ function doisCtas(data: EmailData): string {
   const portalUrl = data.linkPortalAluno ?? data.siteUrl ?? '#';
   const segundaUrl = data.linkSegundaVia ?? data.urlBoleto ?? portalUrl;
 
-  const botaoCta = (url: string): string => `
+  // Mesma família de raio (8px) do botão principal (`botaoPrincipal`) e do
+  // `botaoCta` usado nos emails de lead — antes era pílula (20px), destoava.
+  const miniBotao = (url: string): string => `
     <!--[if mso]>
     <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word"
-      href="${url}" style="height:38px;v-text-anchor:middle;width:200px;" arcsize="50%"
+      href="${url}" style="height:38px;v-text-anchor:middle;width:200px;" arcsize="12%"
       strokecolor="${COR}" fillcolor="${COR}">
       <w:anchorlock/>
       <center style="color:#ffffff;font-family:Arial,sans-serif;font-size:13px;font-weight:bold;">Clique aqui</center>
@@ -337,7 +350,7 @@ function doisCtas(data: EmailData): string {
     <![endif]-->
     <!--[if !mso]><!-->
     <a href="${url}" target="_blank"
-      style="display:inline-block;background-color:${COR};color:#ffffff;font-size:13px;font-weight:bold;text-decoration:none;padding:10px 22px;border-radius:20px;font-family:Arial,sans-serif;mso-hide:all;">
+      style="display:inline-block;background-color:${COR};color:#ffffff;font-size:13px;font-weight:bold;text-decoration:none;padding:10px 22px;border-radius:8px;font-family:Arial,sans-serif;mso-hide:all;">
       Clique aqui
     </a>
     <!--<![endif]-->`;
@@ -357,7 +370,7 @@ function doisCtas(data: EmailData): string {
           <tr>
             <td bgcolor="#ffffff" class="dm-inset" style="background-color:#ffffff;padding:14px 16px 16px;">
               <p class="dm-t2" style="margin:0 0 14px;font-size:13px;color:#444;line-height:1.5;font-family:Arial,sans-serif;">${texto}</p>
-              ${botaoCta(url)}
+              ${miniBotao(url)}
             </td>
           </tr>
         </table>
@@ -427,8 +440,37 @@ function botaoPrincipal(url: string): string {
         <![endif]-->
         <!--[if !mso]><!-->
         <a href="${url}" target="_blank"
-           style="display:block;background-color:${COR};color:#ffffff;font-size:14px;font-weight:bold;text-decoration:none;padding:18px 24px;border-radius:10px;font-family:Arial,sans-serif;text-align:center;letter-spacing:1.5px;mso-hide:all;">
+           style="display:block;background-color:${COR};color:#ffffff;font-size:14px;font-weight:bold;text-decoration:none;padding:18px 24px;border-radius:8px;font-family:Arial,sans-serif;text-align:center;letter-spacing:1.5px;mso-hide:all;">
           VEJA COMO ACESSAR SUA FATURA
+        </a>
+        <!--<![endif]-->
+      </td>
+    </tr>
+  </table>`;
+}
+
+/**
+ * Botão CTA genérico (mesmo desenho de `botaoPrincipal`, texto/cor livres) —
+ * usado pelos templates de conteúdo livre (`baseConteudoLivre`), que não têm
+ * um único CTA fixo como "VEJA COMO ACESSAR SUA FATURA".
+ */
+export function botaoCta(texto: string, url: string, cor: string = COR): string {
+  return `
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 8px;">
+    <tr>
+      <td align="center">
+        <!--[if mso]>
+        <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word"
+          href="${url}" style="height:48px;v-text-anchor:middle;width:280px;" arcsize="12%"
+          strokecolor="${cor}" fillcolor="${cor}">
+          <w:anchorlock/>
+          <center style="color:#ffffff;font-family:Arial,sans-serif;font-size:15px;font-weight:bold;">${texto}</center>
+        </v:roundrect>
+        <![endif]-->
+        <!--[if !mso]><!-->
+        <a href="${url}" target="_blank"
+           style="display:inline-block;background-color:${cor};color:#ffffff;font-size:15px;font-weight:bold;text-decoration:none;padding:14px 32px;border-radius:8px;font-family:Arial,sans-serif;mso-hide:all;">
+          ${texto}
         </a>
         <!--<![endif]-->
       </td>
@@ -467,7 +509,7 @@ function redesSociais(data: RedesSociaisData): string {
   </table>`;
 }
 
-function rodape(data: EmailData): string {
+function rodape(data: MarcaEmailData): string {
   const ano = new Date().getFullYear();
   const tel = (data.telefoneEscola ?? '').replace(/\D/g, '');
   const infos: string[] = [];
@@ -507,15 +549,24 @@ function rodape(data: EmailData): string {
 // gradiente + texto compostos em um único JPEG), então aqui é só uma <img>
 // normal — sem position:absolute, sem ressalva de Outlook.
 
-function imagemDestaque(url: string): string {
+// Foto em largura total, encostada no cabeçalho colorido acima e no bloco
+// branco de texto abaixo (sem margem, sem raio de borda próprio) — lê como
+// "um card só", no estilo dos emails de banco (Nubank/Itaú) que inspiraram
+// esses templates. O raio de borda do card inteiro (`overflow:hidden` no
+// wrapper) já cuida dos cantos arredondados no topo/rodapé; essa faixa fica
+// reta de propósito.
+//
+// `alt` é uma legenda curta, não o headline: essas fotos não têm mais texto
+// gravado no JPEG (decisão consciente) — a mensagem principal vira o
+// `introTitulo` real em HTML logo abaixo (ver `base()`), que continua
+// visível mesmo com o cliente de email bloqueando imagens por padrão.
+function heroFullBleed(url: string, alt: string): string {
   return `
-  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 24px;">
-    <tr>
-      <td style="line-height:0;border-radius:12px;overflow:hidden;">
-        <img src="${url}" width="600" alt="" style="width:100%;max-width:600px;height:auto;display:block;border:0;border-radius:12px;">
-      </td>
-    </tr>
-  </table>`;
+  <tr>
+    <td style="line-height:0;">
+      <img src="${url}" width="600" alt="${alt}" style="width:100%;max-width:600px;height:auto;display:block;border:0;">
+    </td>
+  </tr>`;
 }
 
 // ─── Base ─────────────────────────────────────────────────────────────────────
@@ -524,6 +575,8 @@ interface BaseOpcoes {
   ocultarPagamento?: boolean;
   resumoOpcoes?: CartaoResumoOpcoes;
   heroImagemUrl?: string;
+  /** Legenda curta (não o headline) — ver comentário de `heroFullBleed`. */
+  heroImagemAlt?: string;
   botaoAntesSeguranca?: boolean;
 }
 
@@ -536,6 +589,7 @@ const divisoria = `
 function base(subject: string, introTitulo: string, descParagrafo: string, nota: string, data: EmailData, preheader = '', opcoes?: BaseOpcoes): string {
   const comoAcessarUrl = data.linkComoAcessar ?? data.linkPortalAluno ?? '#';
   const ocultarPagamento = opcoes?.ocultarPagamento ?? false;
+  const temHero = !!opcoes?.heroImagemUrl;
 
   return `<!DOCTYPE html>
 <html lang="pt-BR" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
@@ -576,15 +630,15 @@ ${preheader ? `<div style="display:none;font-size:1px;color:#f0f2f5;line-height:
       <!-- 1. Cabeçalho -->
       ${cabecalho(data)}
 
+      <!-- Imagem de destaque em largura total (opcional) -->
+      ${temHero ? heroFullBleed(opcoes!.heroImagemUrl!, opcoes!.heroImagemAlt ?? '') : ''}
+
       <!-- 2–9. Corpo -->
       <tr>
         <td bgcolor="#ffffff" class="body-pad dm-card" style="background-color:#ffffff;padding:32px 40px 20px;">
 
-          <!-- Imagem de destaque (opcional) -->
-          ${opcoes?.heroImagemUrl ? imagemDestaque(opcoes.heroImagemUrl) : ''}
-
-          <!-- 2. Saudação -->
-          <p class="dm-t1" style="margin:0 0 6px;font-size:16px;font-weight:bold;color:#222222;font-family:Arial,sans-serif;">${introTitulo}</p>
+          <!-- 2. Saudação — headline maior quando vem logo depois da foto, pra ler como manchete -->
+          <p class="dm-t1" style="margin:0 0 ${temHero ? '16px' : '8px'};font-size:${temHero ? '23px' : '16px'};font-weight:bold;color:#222222;line-height:1.3;font-family:Arial,sans-serif;">${introTitulo}</p>
           <p style="margin:0 0 18px;font-size:17px;font-weight:bold;color:${COR};text-transform:uppercase;font-family:Arial,sans-serif;">${data.nomeResponsavel},</p>
           <p class="dm-t2" style="margin:0 0 4px;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">${descParagrafo}</p>
 
@@ -626,6 +680,63 @@ ${preheader ? `<div style="display:none;font-size:1px;color:#f0f2f5;line-height:
       </tr>
 
       <!-- 10. Rodapé vermelho -->
+      ${rodape(data)}
+
+    </table>
+  </td></tr>
+</table>
+</body>
+</html>`;
+}
+
+/**
+ * Mesmo cabeçalho/rodapé/wrapper de `base()` (logo, cor institucional,
+ * contatos, redes sociais), mas sem nenhuma das seções financeiras
+ * (card de resumo, PIX, boleto, aviso de segurança) — pro corpo livre de
+ * emails não-transacionais (boas-vindas de lead, follow-up, CTA de
+ * campanha etc.), que só precisam de texto + botão.
+ */
+export function baseConteudoLivre(subject: string, data: MarcaEmailData, corpoHtml: string, preheader = ''): string {
+  return `<!DOCTYPE html>
+<html lang="pt-BR" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <meta name="supported-color-schemes" content="light">
+  <!--[if gte mso 9]><xml><o:OfficeDocumentSettings><o:AllowPNG/><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml><![endif]-->
+  <title>${subject}</title>
+  <style>
+    body { margin: 0 !important; padding: 0 !important; background-color: #f0f2f5 !important; }
+    table { border-collapse: collapse; }
+    @media only screen and (max-width: 480px) {
+      .wrapper  { width: 100% !important; }
+      .body-pad { padding: 24px 16px 16px !important; }
+      .hdr-logo { display: block !important; width: 100% !important; text-align: left !important; padding-bottom: 12px !important; }
+      .hdr-info { display: block !important; width: 100% !important; text-align: right !important; }
+    }
+  </style>
+</head>
+<body style="margin:0;padding:0;background-color:#f0f2f5;" bgcolor="#f0f2f5">
+${preheader ? `<div style="display:none;font-size:1px;color:#f0f2f5;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">${preheader}&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;</div>` : ''}
+<table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f0f2f5"
+  style="background-color:#f0f2f5;padding:28px 8px;">
+  <tr><td align="center">
+
+    <table width="600" cellpadding="0" cellspacing="0" border="0" class="wrapper"
+      style="max-width:600px;width:100%;background-color:#ffffff;border-radius:16px;overflow:hidden;">
+
+      <!-- 1. Cabeçalho -->
+      ${cabecalho(data)}
+
+      <!-- Corpo livre -->
+      <tr>
+        <td bgcolor="#ffffff" class="body-pad" style="background-color:#ffffff;padding:32px 40px;">
+          ${corpoHtml}
+        </td>
+      </tr>
+
+      <!-- Rodapé -->
       ${rodape(data)}
 
     </table>
@@ -868,9 +979,10 @@ export function templateAviso(data: EmailData): { subject: string; html: string 
     e o encaminhamento para medidas de cobran&#231;a.`;
 
   const nota = `
-  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:12px 0 0;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:12px 0 0;border-radius:10px;overflow:hidden;">
     <tr>
-      <td bgcolor="#fff8e1" style="background-color:#fff8e1;border-radius:10px;padding:16px 18px;">
+      <td width="4" bgcolor="#f0a500" style="background-color:#f0a500;padding:0;font-size:0;line-height:0;">&nbsp;</td>
+      <td bgcolor="#fff8e1" style="background-color:#fff8e1;padding:16px 18px;">
         <p style="margin:0;font-size:12px;color:#7a5200;line-height:1.7;font-family:Arial,sans-serif;">
           <strong>Importante:</strong> se o pagamento j&#225; foi efetuado, desconsidere este aviso.
           Caso esteja com dificuldades para regularizar, entre em contato com o setor financeiro
@@ -886,6 +998,7 @@ export function templateAviso(data: EmailData): { subject: string; html: string 
       ocultarPagamento: true,
       resumoOpcoes: { mostrarAluno: false, mostrarRA: false, labelTotal: 'Valor da mensalidade' },
       heroImagemUrl: data.avisoImagemUrl ?? `${assetsBase(data)}/images/hero-aviso.jpg`,
+      heroImagemAlt: 'Retrato de estudante do IPESSP',
       botaoAntesSeguranca: true,
     }),
   };
@@ -946,6 +1059,7 @@ export function templateRenegociacaoOferta(data: EmailData): { subject: string; 
       ocultarPagamento: true,
       resumoOpcoes: { mostrarAluno: false, mostrarRA: false, labelTotal: 'Valor em aberto' },
       heroImagemUrl: data.renegociacaoOfertaImagemUrl ?? `${assetsBase(data)}/images/hero-renegociacao-oferta.jpg`,
+      heroImagemAlt: 'Dois estudantes do IPESSP conversando',
       botaoAntesSeguranca: true,
     }),
   };
@@ -974,6 +1088,7 @@ export function templateRenegociacaoLembrete(data: EmailData): { subject: string
       ocultarPagamento: true,
       resumoOpcoes: { mostrarAluno: false, mostrarRA: false, labelTotal: 'Valor em aberto' },
       heroImagemUrl: data.renegociacaoLembreteImagemUrl ?? `${assetsBase(data)}/images/hero-renegociacao-lembrete.jpg`,
+      heroImagemAlt: 'Retrato de estudante do IPESSP',
       botaoAntesSeguranca: true,
     }),
   };
