@@ -1,4 +1,5 @@
 import { BadRequestException, Body, Controller, Get, HttpCode, Param, ParseIntPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { AdminApiKeyGuard } from './guards/admin-api-key.guard';
 import { Lead } from '../leads/entities/lead.entity';
@@ -20,6 +21,7 @@ export class AdminController {
     private readonly financeiroService: FinanceiroService,
     private readonly emailJobService: EmailJobService,
     private readonly sophia: SophiaService,
+    private readonly config: ConfigService,
   ) {}
 
   // ─── Leads / CRM ─────────────────────────────────────────────────────────────
@@ -152,5 +154,20 @@ export class AdminController {
   @Get('sophia/horario')
   diagnosticoHorario(@Query('matricula', ParseIntPipe) matricula: number) {
     return this.sophia.getHorarioDetalhado(matricula);
+  }
+
+  // ─── Diagnóstico WhatsApp ───────────────────────────────────────────────────
+  // Só booleanos (presença/valor de flag) — nunca os valores das credenciais.
+  @Get('whatsapp/status')
+  diagnosticoWhatsappStatus() {
+    return {
+      wppCronHabilitado: this.config.get<string>('evolution.cronHabilitado') === 'true',
+      evolutionApiUrlConfigurada: !!this.config.get<string>('evolution.apiUrl'),
+      evolutionApiKeyConfigurada: !!this.config.get<string>('evolution.apiKey'),
+      evolutionInstanceFinanceiroConfigurada: !!this.config.get<string>('evolution.instanceFinanceiro'),
+      telefoneFinanceiroConfigurado: !!this.config.get<string>('evolution.telefoneFinanceiro'),
+      diasAntes: this.config.get<number[]>('evolution.diasAntes'),
+      diasApos: this.config.get<number[]>('evolution.diasApos'),
+    };
   }
 }
