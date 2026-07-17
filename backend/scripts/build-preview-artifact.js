@@ -8,20 +8,36 @@ const files = {
   lembrete: fs.readFileSync(path.join(dir, 'lembrete.html'), 'utf8'),
   hoje: fs.readFileSync(path.join(dir, 'vencimento_hoje.html'), 'utf8'),
   cobranca: fs.readFileSync(path.join(dir, 'cobranca.html'), 'utf8'),
+  cobrancaQr: fs.readFileSync(path.join(dir, 'cobranca_com_qr_real.html'), 'utf8'),
   aviso: fs.readFileSync(path.join(dir, 'aviso.html'), 'utf8'),
   renegOferta: fs.readFileSync(path.join(dir, 'renegociacao_oferta.html'), 'utf8'),
   renegLembrete: fs.readFileSync(path.join(dir, 'renegociacao_lembrete.html'), 'utf8'),
   confirmacao: fs.readFileSync(path.join(dir, 'confirmacao_matricula.html'), 'utf8'),
+  relatorioInterno: fs.readFileSync(path.join(dir, 'relatorio_matricula_interno.html'), 'utf8'),
+  cancAcademicoComDivida: fs.readFileSync(path.join(dir, 'cancelamento_academico_com_divida.html'), 'utf8'),
+  cancAcademicoSemDivida: fs.readFileSync(path.join(dir, 'cancelamento_academico_sem_divida.html'), 'utf8'),
+  cancFinanceiro: fs.readFileSync(path.join(dir, 'cancelamento_financeiro.html'), 'utf8'),
+  leadBoasVindas: fs.readFileSync(path.join(dir, 'lead_boas_vindas.html'), 'utf8'),
+  leadFollowup: fs.readFileSync(path.join(dir, 'lead_followup.html'), 'utf8'),
+  leadCta: fs.readFileSync(path.join(dir, 'lead_cta.html'), 'utf8'),
 };
 
 const subjects = {
   lembrete: 'IPESSP - Sua Parcela Vence em Breve',
   hoje: 'IPESSP - Vencimento da sua parcela',
   cobranca: 'IPESSP - Mensalidade em atraso — 5 dias',
+  cobrancaQr: 'IPESSP - Mensalidade em atraso — 5 dias (QR PIX real)',
   aviso: 'IPESSP - Aviso Importante: vencimento em 3 dias',
   renegOferta: 'IPESSP - Condições especiais para regularizar sua mensalidade',
   renegLembrete: 'IPESSP - Já conferiu a solução para o seu atraso?',
   confirmacao: 'Sua matrícula em Biomedicina — Acesse o link de pagamento',
+  relatorioInterno: '(interno — sem assunto de e-mail, usado só como corpo de notificação)',
+  cancAcademicoComDivida: 'IPESSP - Cancelamento de Matrícula Concluído - Pendência Financeira',
+  cancAcademicoSemDivida: 'IPESSP - Cancelamento de Matrícula Concluído',
+  cancFinanceiro: 'IPESSP - Cancelamento do Plano de Pagamento Concluído',
+  leadBoasVindas: 'Bem-vindo(a) ao IPESSP — seu futuro começa aqui!',
+  leadFollowup: 'Ainda pensando? Podemos ajudar — IPESSP',
+  leadCta: 'Última chamada: inscrições abertas no IPESSP',
 };
 
 function esc(s) {
@@ -153,6 +169,19 @@ const shell = `<!doctype html>
     background: color-mix(in srgb, var(--accent) 8%, var(--panel));
   }
   .tab.active .stage { color: var(--accent); }
+  .nav-group-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    margin: 14px 0 -2px;
+    padding: 0 2px;
+  }
+  .nav-group-label:first-child { margin-top: 0; }
+  @media (max-width: 760px) {
+    .nav-group-label { display: none; }
+  }
   main {
     border: 1px solid var(--line);
     background: var(--panel);
@@ -210,13 +239,14 @@ const shell = `<!doctype html>
 
 <div class="shell">
   <header>
-    <p class="eyebrow">scripts/preview-email.ts &middot; dados fake</p>
-    <h1>Templates do ciclo de cobrança</h1>
-    <p>Renderização real dos 7 templates com os dados de teste do script. Aviso e as duas renegociações disparam depois/antes do vencimento conforme os dias configurados (ver <code>EMAIL_DIAS_AVISO</code> / <code>EMAIL_DIAS_RENEGOCIACAO_OVERLAP</code>). Cabeçalho e rodapé agora usam ícones reais (PNG hospedado) em todos os templates, inclusive na confirmação de matrícula.</p>
+    <p class="eyebrow">scripts/preview-email*.ts &middot; dados fake &middot; gerado por scripts/build-preview-artifact.js</p>
+    <h1>Templates de e-mail transacional</h1>
+    <p>Renderização real dos 15 templates com dados de teste: ciclo de cobrança (lembrete, vencimento, cobrança, aviso, renegociação), matrícula (confirmação + notificação interna) e nutrição de leads. Cabeçalho/rodapé usam ícones reais (PNG hospedado). Logo carregada via URL externa pode não aparecer aqui por causa do bloqueio de imagens remotas do artifact.</p>
   </header>
 
   <div class="layout">
     <nav>
+      <p class="nav-group-label">Ciclo de cobrança</p>
       <button class="tab active" data-tab="lembrete">
         <span class="stage">Antes</span>
         <span class="label">Lembrete (D-3)</span>
@@ -228,6 +258,10 @@ const shell = `<!doctype html>
       <button class="tab" data-tab="cobranca">
         <span class="stage">Depois</span>
         <span class="label">Cobrança (5d atraso)</span>
+      </button>
+      <button class="tab" data-tab="cobrancaQr">
+        <span class="stage">Depois</span>
+        <span class="label">Cobrança (QR PIX real)</span>
       </button>
       <button class="tab" data-tab="aviso">
         <span class="stage">Paralelo</span>
@@ -241,9 +275,43 @@ const shell = `<!doctype html>
         <span class="stage">Renegociação</span>
         <span class="label">Lembrete direto</span>
       </button>
+
+      <p class="nav-group-label">Matrícula</p>
       <button class="tab" data-tab="confirmacao">
-        <span class="stage">Matrícula</span>
-        <span class="label">Confirmação</span>
+        <span class="stage">Aluno</span>
+        <span class="label">Confirmação de matrícula</span>
+      </button>
+      <button class="tab" data-tab="relatorioInterno">
+        <span class="stage">Interno</span>
+        <span class="label">Notificação de nova matrícula</span>
+      </button>
+
+      <p class="nav-group-label">Cancelamento</p>
+      <button class="tab" data-tab="cancAcademicoComDivida">
+        <span class="stage">Acadêmico</span>
+        <span class="label">Com dívida em aberto</span>
+      </button>
+      <button class="tab" data-tab="cancAcademicoSemDivida">
+        <span class="stage">Acadêmico</span>
+        <span class="label">Sem dívida em aberto</span>
+      </button>
+      <button class="tab" data-tab="cancFinanceiro">
+        <span class="stage">Financeiro</span>
+        <span class="label">Plano de pagamento</span>
+      </button>
+
+      <p class="nav-group-label">Leads / CRM</p>
+      <button class="tab" data-tab="leadBoasVindas">
+        <span class="stage">Nutrição</span>
+        <span class="label">Boas-vindas</span>
+      </button>
+      <button class="tab" data-tab="leadFollowup">
+        <span class="stage">Nutrição</span>
+        <span class="label">Follow-up</span>
+      </button>
+      <button class="tab" data-tab="leadCta">
+        <span class="stage">Nutrição</span>
+        <span class="label">CTA final</span>
       </button>
     </nav>
 
@@ -259,17 +327,25 @@ const shell = `<!doctype html>
   </div>
 
   <footer>
-    Dados de teste: aluno João da Silva, responsável Maria da Silva, mensalidade R$ 850,00 (Junho/2026), vencimento 15/06/2026. Logo carregada via URL externa pode não aparecer aqui por causa do bloqueio de imagens remotas do artifact.
+    Dados de teste: aluno João da Silva, responsável Maria da Silva, mensalidade R$ 850,00 (Junho/2026), vencimento 15/06/2026, curso Biomedicina.
   </footer>
 </div>
 
 <template id="tpl-lembrete">${esc(files.lembrete)}</template>
 <template id="tpl-hoje">${esc(files.hoje)}</template>
 <template id="tpl-cobranca">${esc(files.cobranca)}</template>
+<template id="tpl-cobrancaQr">${esc(files.cobrancaQr)}</template>
 <template id="tpl-aviso">${esc(files.aviso)}</template>
 <template id="tpl-renegOferta">${esc(files.renegOferta)}</template>
 <template id="tpl-renegLembrete">${esc(files.renegLembrete)}</template>
 <template id="tpl-confirmacao">${esc(files.confirmacao)}</template>
+<template id="tpl-relatorioInterno">${esc(files.relatorioInterno)}</template>
+<template id="tpl-cancAcademicoComDivida">${esc(files.cancAcademicoComDivida)}</template>
+<template id="tpl-cancAcademicoSemDivida">${esc(files.cancAcademicoSemDivida)}</template>
+<template id="tpl-cancFinanceiro">${esc(files.cancFinanceiro)}</template>
+<template id="tpl-leadBoasVindas">${esc(files.leadBoasVindas)}</template>
+<template id="tpl-leadFollowup">${esc(files.leadFollowup)}</template>
+<template id="tpl-leadCta">${esc(files.leadCta)}</template>
 
 <script>
   const subjects = ${JSON.stringify(subjects)};
