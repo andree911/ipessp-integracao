@@ -62,11 +62,11 @@ export default () => ({
   n8n: {
     leadsWebhookUrl: process.env.N8N_LEADS_WEBHOOK_URL ?? '',
   },
-  evolution: {
-    apiUrl: process.env.EVOLUTION_API_URL ?? '',
-    apiKey: process.env.EVOLUTION_API_KEY ?? '',
-    instanceFinanceiro: process.env.EVOLUTION_INSTANCE_FINANCEIRO ?? '',
-    telefoneFinanceiro: process.env.WHATSAPP_TELEFONE_FINANCEIRO ?? '',
+  zapi: {
+    instanceId: process.env.ZAPI_INSTANCE_ID ?? '',
+    token: process.env.ZAPI_TOKEN ?? '',
+    clientToken: process.env.ZAPI_CLIENT_TOKEN ?? '',
+    telefoneFinanceiro: process.env.ZAPI_TELEFONE_FINANCEIRO ?? '',
     cronHabilitado: process.env.WPP_CRON_HABILITADO ?? 'false',
     diasAntes: (process.env.WPP_DIAS_ANTES ?? '7,5,3,1')
       .split(',')

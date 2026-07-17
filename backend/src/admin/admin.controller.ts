@@ -161,13 +161,13 @@ export class AdminController {
   @Get('whatsapp/status')
   diagnosticoWhatsappStatus() {
     return {
-      wppCronHabilitado: this.config.get<string>('evolution.cronHabilitado') === 'true',
-      evolutionApiUrlConfigurada: !!this.config.get<string>('evolution.apiUrl'),
-      evolutionApiKeyConfigurada: !!this.config.get<string>('evolution.apiKey'),
-      evolutionInstanceFinanceiroConfigurada: !!this.config.get<string>('evolution.instanceFinanceiro'),
-      telefoneFinanceiroConfigurado: !!this.config.get<string>('evolution.telefoneFinanceiro'),
-      diasAntes: this.config.get<number[]>('evolution.diasAntes'),
-      diasApos: this.config.get<number[]>('evolution.diasApos'),
+      wppCronHabilitado: this.config.get<string>('zapi.cronHabilitado') === 'true',
+      zapiInstanceIdConfigurada: !!this.config.get<string>('zapi.instanceId'),
+      zapiTokenConfigurada: !!this.config.get<string>('zapi.token'),
+      zapiClientTokenConfigurada: !!this.config.get<string>('zapi.clientToken'),
+      telefoneFinanceiroConfigurado: !!this.config.get<string>('zapi.telefoneFinanceiro'),
+      diasAntes: this.config.get<number[]>('zapi.diasAntes'),
+      diasApos: this.config.get<number[]>('zapi.diasApos'),
     };
   }
 }

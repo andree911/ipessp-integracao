@@ -159,7 +159,7 @@ export class MercadoPagoController {
       ? `✅ Cliente já criado no Sophia — código *${codigoClienteSophia}*. Só efetivar a matrícula.`
       : `⚠️ Falha ao criar cliente automaticamente no Sophia: ${erroSophia}. Cadastre manualmente com os dados abaixo.`;
 
-    const telefoneFinanceiro = this.config.get<string>('evolution.telefoneFinanceiro');
+    const telefoneFinanceiro = this.config.get<string>('zapi.telefoneFinanceiro');
     if (telefoneFinanceiro) {
       const msg = [
         `✅ *Pagamento aprovado — registrar matrícula no Sophia*`,

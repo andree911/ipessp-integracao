@@ -111,15 +111,15 @@ export class WhatsAppJobService {
 
   @Cron('0 8 * * *', { name: 'wpp_job', timeZone: 'America/Sao_Paulo' })
   async runWhatsAppJob(): Promise<void> {
-    if (this.config.get<string>('evolution.cronHabilitado') !== 'true') {
+    if (this.config.get<string>('zapi.cronHabilitado') !== 'true') {
       this.logger.warn('Job de WhatsApp desabilitado (WPP_CRON_HABILITADO=false)');
       return;
     }
 
     this.logger.log('=== Iniciando job de WhatsApp ===');
 
-    const diasAntes: number[] = this.config.get<number[]>('evolution.diasAntes') ?? [7, 5, 3, 1];
-    const diasApos: number[]  = this.config.get<number[]>('evolution.diasApos')  ?? [1, 2, 3, 7, 8, 9, 10, 12, 15, 20];
+    const diasAntes: number[] = this.config.get<number[]>('zapi.diasAntes') ?? [7, 5, 3, 1];
+    const diasApos: number[]  = this.config.get<number[]>('zapi.diasApos')  ?? [1, 2, 3, 7, 8, 9, 10, 12, 15, 20];
     const portalLink =
       this.config.get<string>('email.linkPortalAluno') ||
       this.config.get<string>('email.siteUrl') ||
