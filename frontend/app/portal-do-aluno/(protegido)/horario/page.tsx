@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { CampoGenerico } from '../../_lib/campo-generico';
 
 interface Matricula {
   codigo: number;
@@ -13,25 +14,6 @@ interface HorarioResposta {
   aluno: string;
   serie?: string;
   disciplinas: unknown[];
-}
-
-// Formato interno de cada item de "disciplinas" ainda não confirmado com
-// dados reais (a Sophia só devolveu array vazio até agora) — renderiza de
-// forma genérica pra não quebrar quando vier preenchido.
-function DisciplinaGenerica({ item }: { item: unknown }) {
-  if (typeof item !== 'object' || item === null) {
-    return <p className="text-sm" style={{ color: 'var(--ink-900)' }}>{String(item)}</p>;
-  }
-  return (
-    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-      {Object.entries(item as Record<string, unknown>).map(([k, v]) => (
-        <div key={k} className="contents">
-          <span style={{ color: 'var(--ink-500)' }}>{k}</span>
-          <span style={{ color: 'var(--ink-900)' }}>{typeof v === 'object' ? JSON.stringify(v) : String(v)}</span>
-        </div>
-      ))}
-    </div>
-  );
 }
 
 export default function HorarioPage() {
@@ -107,7 +89,7 @@ export default function HorarioPage() {
             <div className="flex flex-col gap-2">
               {dados.disciplinas.map((disciplina, i) => (
                 <div key={i} className="p-3 rounded-lg border" style={{ borderColor: 'var(--line)' }}>
-                  <DisciplinaGenerica item={disciplina} />
+                  <CampoGenerico item={disciplina} />
                 </div>
               ))}
             </div>

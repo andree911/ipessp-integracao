@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { CampoGenerico } from '../../_lib/campo-generico';
 
 interface Matricula {
   codigo: number;
@@ -24,25 +25,6 @@ function formatarData(iso?: string): string | null {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return null;
   return d.toLocaleDateString('pt-BR');
-}
-
-// Formato interno de cada item de "etapas" ainda não confirmado com dados
-// reais (a Sophia só devolveu array vazio até agora) — renderiza de forma
-// genérica pra não quebrar quando vier preenchido.
-function EtapaGenerica({ item }: { item: unknown }) {
-  if (typeof item !== 'object' || item === null) {
-    return <p className="text-sm" style={{ color: 'var(--ink-900)' }}>{String(item)}</p>;
-  }
-  return (
-    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-      {Object.entries(item as Record<string, unknown>).map(([k, v]) => (
-        <div key={k} className="contents">
-          <span style={{ color: 'var(--ink-500)' }}>{k}</span>
-          <span style={{ color: 'var(--ink-900)' }}>{typeof v === 'object' ? JSON.stringify(v) : String(v)}</span>
-        </div>
-      ))}
-    </div>
-  );
 }
 
 export default function NotasPage() {
@@ -127,7 +109,7 @@ export default function NotasPage() {
             <div className="flex flex-col gap-2">
               {dados.etapas.map((etapa, i) => (
                 <div key={i} className="p-3 rounded-lg border" style={{ borderColor: 'var(--line)' }}>
-                  <EtapaGenerica item={etapa} />
+                  <CampoGenerico item={etapa} />
                 </div>
               ))}
             </div>
