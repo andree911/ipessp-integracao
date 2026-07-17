@@ -138,6 +138,7 @@ export class EmailJobService {
 
     const escola = this.dadosEscola();
     const emailData: CancelamentoEmailData = {
+      ...escola,
       nomeAluno: resumo.nomeAluno,
       numeroParcelasRestantes: resumo.parcelasEmAberto,
       valorParcela: resumo.valorParcela,
@@ -145,10 +146,6 @@ export class EmailJobService {
       valorMulta: resumo.valorMulta,
       parcelasEmAtraso: resumo.parcelasEmAtraso,
       saldoDevedor: resumo.saldoDevedor,
-      nomeEscola: escola.nomeEscola,
-      emailEscola: escola.emailEscola,
-      telefoneEscola: escola.telefoneEscola,
-      siteUrl: escola.siteUrl,
     };
 
     const template = tipo === 'academico'

@@ -15,6 +15,12 @@ const dadosEscola = {
   emailEscola: 'matricula.financeiro@ipessp.edu.br',
   telefoneEscola: '(11) 99839-3640',
   siteUrl: 'https://www.ipessp.edu.br',
+  logoUrl: 'https://oylhowadealxvsmdhmzc.supabase.co/storage/v1/object/public/assets/logo.png',
+  instagramUrl: 'https://www.instagram.com/ipessp/',
+  facebookUrl: 'https://www.facebook.com/pages/Ipessp/209464852483898',
+  youtubeUrl: 'https://www.youtube.com/channel/UC7dgP6NBgM9L0m11UbhCyHg',
+  linkedinUrl: 'https://www.linkedin.com/company/ipessp---educa-o',
+  endereco: 'Rua Dona Antônia de Queirós, 333 – São Paulo, SP',
 };
 
 const cancelamentos = [

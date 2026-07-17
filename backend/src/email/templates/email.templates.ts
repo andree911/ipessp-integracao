@@ -425,7 +425,7 @@ function avisoSeguranca(data: EmailData): string {
 
 // ─── 9. Botão CTA principal ───────────────────────────────────────────────────
 
-function botaoPrincipal(url: string): string {
+function botaoPrincipal(url: string, texto: string = 'VEJA COMO ACESSAR SUA FATURA'): string {
   return `
   <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 8px;">
     <tr>
@@ -435,13 +435,13 @@ function botaoPrincipal(url: string): string {
           href="${url}" style="height:54px;v-text-anchor:middle;width:520px;" arcsize="8%"
           strokecolor="${COR}" fillcolor="${COR}">
           <w:anchorlock/>
-          <center style="color:#ffffff;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;letter-spacing:1.5px;">VEJA COMO ACESSAR SUA FATURA</center>
+          <center style="color:#ffffff;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;letter-spacing:1.5px;">${texto}</center>
         </v:roundrect>
         <![endif]-->
         <!--[if !mso]><!-->
         <a href="${url}" target="_blank"
            style="display:block;background-color:${COR};color:#ffffff;font-size:14px;font-weight:bold;text-decoration:none;padding:18px 24px;border-radius:8px;font-family:Arial,sans-serif;text-align:center;letter-spacing:1.5px;mso-hide:all;">
-          VEJA COMO ACESSAR SUA FATURA
+          ${texto}
         </a>
         <!--<![endif]-->
       </td>
@@ -578,6 +578,8 @@ interface BaseOpcoes {
   /** Legenda curta (não o headline) — ver comentário de `heroFullBleed`. */
   heroImagemAlt?: string;
   botaoAntesSeguranca?: boolean;
+  /** Texto do botão CTA principal — default 'VEJA COMO ACESSAR SUA FATURA' (ver `botaoPrincipal`). */
+  textoBotaoPrincipal?: string;
 }
 
 // Mesma linha fina usada entre as linhas do card de resumo (RA/Descrição/etc.).
@@ -660,8 +662,9 @@ ${preheader ? `<div style="display:none;font-size:1px;color:#f0f2f5;line-height:
           `}
 
           ${opcoes?.botaoAntesSeguranca ? `
+          ${divisoria}
           <!-- 9. Botão CTA principal -->
-          ${botaoPrincipal(comoAcessarUrl)}
+          ${botaoPrincipal(comoAcessarUrl, opcoes?.textoBotaoPrincipal)}
           ${divisoria}
           <!-- 8. Aviso de segurança -->
           ${avisoSeguranca(data)}
@@ -670,7 +673,7 @@ ${preheader ? `<div style="display:none;font-size:1px;color:#f0f2f5;line-height:
           ${avisoSeguranca(data)}
 
           <!-- 9. Botão CTA principal -->
-          ${botaoPrincipal(comoAcessarUrl)}
+          ${botaoPrincipal(comoAcessarUrl, opcoes?.textoBotaoPrincipal)}
           `}
 
           <!-- Nota de rodapé do corpo -->
@@ -1061,6 +1064,7 @@ export function templateRenegociacaoOferta(data: EmailData): { subject: string; 
       heroImagemUrl: data.renegociacaoOfertaImagemUrl ?? `${assetsBase(data)}/images/hero-renegociacao-oferta.jpg`,
       heroImagemAlt: 'Dois estudantes do IPESSP conversando',
       botaoAntesSeguranca: true,
+      textoBotaoPrincipal: 'CLIQUE AQUI PARA NEGOCIAR SEUS DÉBITOS',
     }),
   };
 }
@@ -1090,13 +1094,14 @@ export function templateRenegociacaoLembrete(data: EmailData): { subject: string
       heroImagemUrl: data.renegociacaoLembreteImagemUrl ?? `${assetsBase(data)}/images/hero-renegociacao-lembrete.jpg`,
       heroImagemAlt: 'Retrato de estudante do IPESSP',
       botaoAntesSeguranca: true,
+      textoBotaoPrincipal: 'CLIQUE AQUI PARA NEGOCIAR SEUS DÉBITOS',
     }),
   };
 }
 
 // ─── Emails de cancelamento (Acadêmico / Financeiro) ──────────────────────────
 
-export interface CancelamentoEmailData {
+export interface CancelamentoEmailData extends MarcaEmailData {
   nomeAluno: string;
   numeroParcelasRestantes: number;
   valorParcela: number;
@@ -1104,74 +1109,19 @@ export interface CancelamentoEmailData {
   valorMulta: number;
   parcelasEmAtraso: number;
   saldoDevedor: number;
-  nomeEscola: string;
-  emailEscola?: string;
-  telefoneEscola?: string;
-  siteUrl?: string;
-}
-
-function layoutSimples(opts: {
-  nomeEscola: string;
-  tituloCabecalho: string;
-  saudacao: string;
-  corpo: string;
-  emailEscola?: string;
-  telefoneEscola?: string;
-  siteUrl?: string;
-}): string {
-  const contatos = [
-    opts.siteUrl ? `<a href="${opts.siteUrl}" style="color:rgba(255,255,255,0.7);">${opts.siteUrl.replace(/^https?:\/\/(www\.)?/, '')}</a>` : '',
-    opts.emailEscola ? `<a href="mailto:${opts.emailEscola}" style="color:rgba(255,255,255,0.7);">${opts.emailEscola}</a>` : '',
-    opts.telefoneEscola ?? '',
-  ].filter(Boolean).join(' &#183; ');
-
-  return `<!DOCTYPE html>
-<html lang="pt-BR">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<style>body{margin:0;padding:0;background:#f0f2f5;font-family:Arial,sans-serif;}</style>
-</head>
-<body style="margin:0;padding:0;background:#f0f2f5;">
-<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f0f2f5;padding:28px 8px;">
-  <tr><td align="center">
-    <table width="600" cellpadding="0" cellspacing="0" border="0"
-      style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;">
-
-      <tr>
-        <td bgcolor="${COR}" style="background-color:${COR};padding:28px 32px;">
-          <p style="margin:0;font-size:22px;font-weight:bold;color:#ffffff;font-family:Arial,sans-serif;">${opts.nomeEscola}</p>
-          <p style="margin:4px 0 0;font-size:13px;color:rgba(255,255,255,0.8);font-family:Arial,sans-serif;">${opts.tituloCabecalho}</p>
-        </td>
-      </tr>
-
-      <tr>
-        <td style="padding:32px 40px;">
-          <p style="margin:0 0 18px;font-size:15px;font-weight:bold;color:${COR};text-transform:uppercase;font-family:Arial,sans-serif;">${opts.saudacao}</p>
-          ${opts.corpo}
-        </td>
-      </tr>
-
-      <tr>
-        <td bgcolor="${COR}" style="background-color:${COR};padding:16px 32px;">
-          <p style="margin:0;font-size:11px;color:rgba(255,255,255,0.7);font-family:Arial,sans-serif;">${opts.nomeEscola}${contatos ? ` &#183; ${contatos}` : ''}</p>
-        </td>
-      </tr>
-
-    </table>
-  </td></tr>
-</table>
-</body></html>`;
 }
 
 const fmtMoeda = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+/** Título unificado dos 3 emails de cancelamento (acadêmico com/sem dívida, financeiro). */
+const SUBJECT_CANCELAMENTO = 'Confirmação de trancamento de matrícula - Setor Financeiro IPESSP';
 
 /** Disparado ao marcar o check "Acadêmico" — escolhe entre os dois textos conforme haja (ou não) parcelas em atraso. */
 export function templateCancelamentoAcademico(d: CancelamentoEmailData): { subject: string; html: string } {
   const primeiroNome = d.nomeAluno.split(' ')[0];
   const temInadimplencia = d.parcelasEmAtraso > 0;
 
-  const subject = temInadimplencia
-    ? 'IPESSP - Cancelamento de Matrícula Concluído - Pendência Financeira'
-    : 'IPESSP - Cancelamento de Matrícula Concluído';
+  const saudacao = `<p style="margin:0 0 18px;font-size:17px;font-weight:bold;color:${COR};text-transform:uppercase;font-family:Arial,sans-serif;">Prezado(a) ${primeiroNome},</p>`;
 
   const paragrafoInadimplencia = temInadimplencia ? `
     <p style="margin:0 0 18px;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
@@ -1203,21 +1153,15 @@ export function templateCancelamentoAcademico(d: CancelamentoEmailData): { subje
     </p>`;
 
   return {
-    subject,
-    html: layoutSimples({
-      nomeEscola: d.nomeEscola,
-      tituloCabecalho: 'Cancelamento de Matrícula',
-      saudacao: `Prezado(a) ${primeiroNome},`,
-      corpo,
-      emailEscola: d.emailEscola,
-      telefoneEscola: d.telefoneEscola,
-      siteUrl: d.siteUrl,
-    }),
+    subject: SUBJECT_CANCELAMENTO,
+    html: baseConteudoLivre(SUBJECT_CANCELAMENTO, d, saudacao + corpo),
   };
 }
 
 /** Disparado ao marcar o check "Financeiro" — plano de pagamento já sem multa/inadimplência pendente. */
 export function templateCancelamentoFinanceiro(d: CancelamentoEmailData): { subject: string; html: string } {
+  const saudacao = `<p style="margin:0 0 18px;font-size:17px;font-weight:bold;color:${COR};text-transform:uppercase;font-family:Arial,sans-serif;">Prezados(as),</p>`;
+
   const corpo = `
     <p style="margin:0 0 18px;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
       Informamos que o cancelamento do plano de pagamento financeiro foi realizado com sucesso, sem a necessidade
@@ -1231,16 +1175,8 @@ export function templateCancelamentoFinanceiro(d: CancelamentoEmailData): { subj
     </p>`;
 
   return {
-    subject: 'IPESSP - Cancelamento do Plano de Pagamento Concluído',
-    html: layoutSimples({
-      nomeEscola: d.nomeEscola,
-      tituloCabecalho: 'Cancelamento do Plano de Pagamento',
-      saudacao: 'Prezados(as),',
-      corpo,
-      emailEscola: d.emailEscola,
-      telefoneEscola: d.telefoneEscola,
-      siteUrl: d.siteUrl,
-    }),
+    subject: SUBJECT_CANCELAMENTO,
+    html: baseConteudoLivre(SUBJECT_CANCELAMENTO, d, saudacao + corpo),
   };
 }
 
