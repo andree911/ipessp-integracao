@@ -221,6 +221,14 @@ Protegido por `AdminApiKeyGuard` + `ThrottlerGuard` (30 req/min).
 | `GET /v1/admin/email/status` | Se o cron de e-mails de cobrança está habilitado |
 | `POST /v1/admin/email/toggle` | Liga/desliga o cron de e-mails |
 | `POST /v1/admin/email/disparar` | Dispara o job de e-mails manualmente |
+| `GET /v1/admin/cancelamento/buscar-aluno?q=` | Busca aluno por nome/RA no cache local (autocomplete da tela de Cancelamentos) |
+| `GET /v1/admin/cancelamento/financeiro?ra=` | Resumo financeiro pra cancelamento (multa, saldo devedor) |
+| `POST /v1/admin/cancelamento/email` | Envia e-mail de cancelamento (acadêmico/financeiro) |
+| `GET /v1/admin/sophia/buscar-por-nome?nome=` | Busca aluno direto na Sophia por nome — devolve `codigo` (o que os 3 endpoints abaixo esperam) ao lado de `codigoExterno` (RA) |
+| `GET /v1/admin/sophia/matriculas?aluno=` | Matrículas de um aluno (usa `codigo`, não RA) |
+| `GET /v1/admin/sophia/notas?matricula=` | Notas/avaliações de uma matrícula — endpoint não documentado de forma confiável no swagger da Sophia |
+| `GET /v1/admin/sophia/horario?matricula=` | Quadro de horários de uma matrícula — idem, não documentado no swagger |
+| `GET /v1/admin/whatsapp/status` | Diagnóstico: se o cron de WhatsApp está habilitado e se as credenciais Z-API estão configuradas (só booleanos, nunca os valores) |
 
 ---
 

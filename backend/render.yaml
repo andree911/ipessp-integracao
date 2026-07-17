@@ -78,3 +78,17 @@ services:
         sync: false
       - key: SITE_URL
         value: https://www.ipessp.edu.br
+      - key: ZAPI_INSTANCE_ID
+        sync: false
+      - key: ZAPI_TOKEN
+        sync: false
+      - key: ZAPI_CLIENT_TOKEN
+        sync: false
+      - key: ZAPI_TELEFONE_FINANCEIRO
+        sync: false
+      - key: WPP_CRON_HABILITADO
+        sync: false
+      - key: WPP_DIAS_ANTES
+        sync: false
+      - key: WPP_DIAS_APOS
+        sync: false
