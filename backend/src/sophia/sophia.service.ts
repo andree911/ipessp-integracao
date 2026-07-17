@@ -119,10 +119,11 @@ export class SophiaService implements OnModuleInit {
     }
   }
 
-  async getAlunos(pagina = 1, tamanhoPagina = 100): Promise<AlunoApiModel[]> {
+  async getAlunos(pagina = 1, tamanhoPagina = 100, nome?: string): Promise<AlunoApiModel[]> {
     return this.get<AlunoApiModel[]>(`${this.apiBase}/Alunos`, {
       Pagina: pagina,
       TamanhoPagina: tamanhoPagina,
+      ...(nome ? { Nome: nome } : {}),
     });
   }
 
