@@ -5,10 +5,3 @@ dist/
 .env.*.local
 data/*.db
 *.tsbuildinfo
-
-# Terraform (infra-n8n-aws/) — .terraform.lock.hcl NÃO entra aqui, deve ser commitado
-**/.terraform/
-**/terraform.tfstate
-**/terraform.tfstate.backup
-**/terraform.tfvars
-**/*.tfplan
