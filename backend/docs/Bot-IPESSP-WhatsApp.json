@@ -128,7 +128,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ phone: $('Webhook').item.json.body.phone, message: $json.output }) }}",
+        "jsonBody": "={{ JSON.stringify({ phone: $('Webhook').item.json.body.phone, message: $json.output, delayMessage: Math.floor(Math.random() * 4) + 2, delayTyping: Math.floor(Math.random() * 5) + 4 }) }}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -195,7 +195,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"phone\": \"{{ $('Webhook').item.json.body.phone }}\",\n  \"message\": \"Olá! No momento só consigo responder mensagens de texto. Para outras dúvidas, ligue para (11) 99839-3640 ou envie um e-mail para matricula.financeiro@ipessp.edu.br.\"\n}",
+        "jsonBody": "={{ JSON.stringify({ phone: $('Webhook').item.json.body.phone, message: ['Olá! No momento só consigo responder mensagens de texto. Para outras dúvidas, ligue para (11) 99839-3640 ou envie um e-mail para matricula.financeiro@ipessp.edu.br.', 'Oi! Por aqui eu só entendo mensagens de texto por enquanto. Pode escrever o que precisa, ou ligar pra (11) 99839-3640 / matricula.financeiro@ipessp.edu.br.'][Math.floor(Math.random() * 2)], delayMessage: Math.floor(Math.random() * 4) + 2, delayTyping: Math.floor(Math.random() * 5) + 4 }) }}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -281,7 +281,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"phone\": \"{{ $('Webhook').item.json.body.phone }}\",\n  \"title\": \"Olá! Sou o Pespi 👋\",\n  \"description\": \"Assistente virtual do IPESSP. Como posso ajudar?\",\n  \"buttonLabel\": \"Ver opções\",\n  \"sections\": [\n    {\n      \"title\": \"Menu Principal\",\n      \"rows\": [\n        {\"id\": \"financeiro\", \"title\": \"💰 Situação financeira\", \"description\": \"Boletos e pendências\"},\n        {\"id\": \"secretaria\", \"title\": \"📋 Secretaria\", \"description\": \"Matrícula, documentos e declarações\"},\n        {\"id\": \"ti\", \"title\": \"💻 Suporte TI\", \"description\": \"Acesso, senha e sistemas\"},\n        {\"id\": \"avisos\", \"title\": \"📢 Avisos\", \"description\": \"Comunicados e novidades\"},\n        {\"id\": \"calendario\", \"title\": \"📅 Calendário\", \"description\": \"Datas e agenda escolar\"},\n        {\"id\": \"matricula\", \"title\": \"📝 Quero me matricular\", \"description\": \"Informações sobre cursos\"}\n      ]\n    }\n  ]\n}",
+        "jsonBody": "={{ JSON.stringify({ phone: $('Webhook').item.json.body.phone, title: ['Olá! Sou o Pespi 👋', 'Oi! Aqui é o Pespi 👋', 'E aí! Sou o Pespi, assistente do IPESSP 👋'][Math.floor(Math.random() * 3)], description: ['Assistente virtual do IPESSP. Como posso ajudar?', 'Tô aqui pra ajudar com o que você precisar do IPESSP.', 'Assistente virtual do IPESSP — em que posso ser útil hoje?'][Math.floor(Math.random() * 3)], buttonLabel: 'Ver opções', sections: [{ title: 'Menu Principal', rows: [{ id: 'financeiro', title: '💰 Situação financeira', description: 'Boletos e pendências' }, { id: 'secretaria', title: '📋 Secretaria', description: 'Matrícula, documentos e declarações' }, { id: 'ti', title: '💻 Suporte TI', description: 'Acesso, senha e sistemas' }, { id: 'avisos', title: '📢 Avisos', description: 'Comunicados e novidades' }, { id: 'calendario', title: '📅 Calendário', description: 'Datas e agenda escolar' }, { id: 'matricula', title: '📝 Quero me matricular', description: 'Informações sobre cursos' }] }], delayMessage: Math.floor(Math.random() * 4) + 2 }) }}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
