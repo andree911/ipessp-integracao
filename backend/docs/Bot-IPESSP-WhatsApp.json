@@ -117,6 +117,16 @@
     },
     {
       "parameters": {
+        "jsCode": "const item = $input.first().json;\nlet texto = item.output ?? '';\n\n// WhatsApp só reconhece *negrito* (um asterisco) e _itálico_ (um underline).\n// O modelo às vezes escreve **negrito**/__itálico__ (markdown padrão) mesmo\n// com a instrução no prompt -- corrige aqui de forma determinística, sem\n// depender só do modelo obedecer.\ntexto = texto.replace(/\\*\\*(.+?)\\*\\*/g, '*$1*');\ntexto = texto.replace(/__(.+?)__/g, '_$1_');\n\nreturn [{ json: { ...item, output: texto } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [592, -96],
+      "id": "c7a8b9d0-1111-4444-8888-000000000010",
+      "name": "Corrigir Formatação WhatsApp"
+    },
+    {
+      "parameters": {
         "method": "POST",
         "url": "={{ 'https://api.z-api.io/instances/' + $env.ZAPI_INSTANCE_ID + '/token/' + $env.ZAPI_TOKEN + '/send-text' }}",
         "sendHeaders": true,
@@ -604,7 +614,8 @@
     "Injetar CPF no Menu": { "main": [[{ "node": "AI Agent", "type": "main", "index": 0 }]] },
     "Buscar CPF por Telefone": { "main": [[{ "node": "Injetar CPF no Contexto", "type": "main", "index": 0 }]] },
     "Injetar CPF no Contexto": { "main": [[{ "node": "AI Agent", "type": "main", "index": 0 }]] },
-    "AI Agent": { "main": [[{ "node": "Enviar Resposta WhatsApp", "type": "main", "index": 0 }]] },
+    "AI Agent": { "main": [[{ "node": "Corrigir Formatação WhatsApp", "type": "main", "index": 0 }]] },
+    "Corrigir Formatação WhatsApp": { "main": [[{ "node": "Enviar Resposta WhatsApp", "type": "main", "index": 0 }]] },
     "Enviar Resposta WhatsApp": { "main": [[{ "node": "Registrar Interação Bot", "type": "main", "index": 0 }]] },
     "Simple Memory": { "ai_memory": [[{ "node": "AI Agent", "type": "ai_memory", "index": 0 }]] },
     "OpenAI Chat Model": { "ai_languageModel": [[{ "node": "AI Agent", "type": "ai_languageModel", "index": 0 }]] },
