@@ -294,7 +294,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ phone: $('Webhook').item.json.body.phone, message: ['Olá! Sou a Eliza 👋', 'Oi! Aqui é a Eliza 👋', 'E aí! Sou a Eliza, assistente do IPESSP 👋'][Math.floor(Math.random() * 3)], optionList: { title: 'Assistente virtual do IPESSP — como posso ajudar?', buttonLabel: 'Ver opções', options: [{ id: 'financeiro', title: '💰 Situação financeira', description: 'Boletos e pendências' }, { id: 'secretaria', title: '📋 Secretaria', description: 'Matrícula, documentos e declarações' }, { id: 'ti', title: '💻 Suporte TI', description: 'Acesso, senha e sistemas' }, { id: 'avisos', title: '📢 Avisos', description: 'Comunicados e novidades' }, { id: 'calendario', title: '📅 Calendário', description: 'Datas e agenda escolar' }, { id: 'matricula', title: '📝 Quero me matricular', description: 'Informações sobre cursos' }] }, delayMessage: Math.floor(Math.random() * 4) + 2 }) }}",
+        "jsonBody": "={{ JSON.stringify({ phone: $('Webhook').item.json.body.phone, message: ['Olá! Sou a Eliza 👋\\nAssistente virtual do IPESSP. Como posso ajudar?', 'Oi! Aqui é a Eliza 👋\\nTô aqui pra ajudar com o que você precisar do IPESSP.', 'E aí! Sou a Eliza, assistente do IPESSP 👋\\nEm que posso ser útil hoje?'][Math.floor(Math.random() * 3)], optionList: { title: 'Menu Principal', buttonLabel: 'Ver opções', options: [{ id: 'financeiro', title: '💰 Situação financeira', description: 'Boletos e pendências' }, { id: 'secretaria', title: '📋 Secretaria', description: 'Matrícula, documentos e declarações' }, { id: 'ti', title: '💻 Suporte TI', description: 'Acesso, senha e sistemas' }, { id: 'avisos', title: '📢 Avisos', description: 'Comunicados e novidades' }, { id: 'calendario', title: '📅 Calendário', description: 'Datas e agenda escolar' }, { id: 'matricula', title: '📝 Quero me matricular', description: 'Informações sobre cursos' }] }, delayMessage: Math.floor(Math.random() * 4) + 2 }) }}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -310,7 +310,7 @@
           "conditions": [
             {
               "id": "75abb9e4-9ccc-4d21-aaae-078a3a477f55",
-              "leftValue": "={{ $json.body.listResponseMessage?.rowId }}",
+              "leftValue": "={{ $json.body.listResponseMessage?.selectedRowId }}",
               "rightValue": "",
               "operator": { "type": "string", "operation": "exists", "singleValue": true }
             }
@@ -327,7 +327,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const data = $input.first().json;\nconst sel = data.body.listResponseMessage;\n\nconst contextos = {\n  financeiro: 'O usuário selecionou situação financeira. Solicite o CPF para consultar boletos em aberto.',\n  secretaria: 'O usuário selecionou Secretaria. Pergunte o que precisa: matrícula, documentos, declarações ou outro assunto.',\n  ti: 'O usuário selecionou Suporte TI. Pergunte qual problema está tendo: acesso ao portal, senha, email ou outro sistema.',\n  avisos: 'O usuário selecionou avisos da escola. Mostre os comunicados ativos usando a ferramenta disponível.',\n  calendario: 'O usuário selecionou calendário. Mostre os próximos eventos usando a ferramenta disponível.',\n  matricula: 'O usuário demonstrou interesse em se matricular. Use a tool \"Verificar Lead CRM\" para ver se já está cadastrado. Se não, colete nome completo, email e telefone para registrar o lead.',\n};\n\nconst mensagem = contextos[sel?.rowId] || `O usuário selecionou: ${sel?.title}`;\n\nreturn [{ json: { ...data, body: { ...data.body, text: { message: mensagem } } } }];"
+        "jsCode": "const data = $input.first().json;\nconst sel = data.body.listResponseMessage;\n\nconst contextos = {\n  financeiro: 'O usuário selecionou situação financeira. Solicite o CPF para consultar boletos em aberto.',\n  secretaria: 'O usuário selecionou Secretaria. Pergunte o que precisa: matrícula, documentos, declarações ou outro assunto.',\n  ti: 'O usuário selecionou Suporte TI. Pergunte qual problema está tendo: acesso ao portal, senha, email ou outro sistema.',\n  avisos: 'O usuário selecionou avisos da escola. Mostre os comunicados ativos usando a ferramenta disponível.',\n  calendario: 'O usuário selecionou calendário. Mostre os próximos eventos usando a ferramenta disponível.',\n  matricula: 'O usuário demonstrou interesse em se matricular. Use a tool \"Verificar Lead CRM\" para ver se já está cadastrado. Se não, colete nome completo, email e telefone para registrar o lead.',\n};\n\nconst mensagem = contextos[sel?.selectedRowId] || `O usuário selecionou: ${sel?.title}`;\n\nreturn [{ json: { ...data, body: { ...data.body, text: { message: mensagem } } } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
