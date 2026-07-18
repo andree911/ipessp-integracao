@@ -284,7 +284,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ 'https://api.z-api.io/instances/' + $env.ZAPI_INSTANCE_ID + '/token/' + $env.ZAPI_TOKEN + '/send-text' }}",
+        "url": "={{ 'https://api.z-api.io/instances/' + $env.ZAPI_INSTANCE_ID + '/token/' + $env.ZAPI_TOKEN + '/send-option-list' }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -294,7 +294,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ phone: $('Webhook').item.json.body.phone, message: ['Olá! Sou a Eliza 👋\\nAssistente virtual do IPESSP. Como posso ajudar?\\n\\n1️⃣ Financeiro — boletos e pendências\\n2️⃣ Secretaria — matrícula, documentos e declarações\\n3️⃣ TI / Suporte — acesso, senha e sistemas\\n4️⃣ Avisos — comunicados e novidades\\n5️⃣ Calendário — datas e agenda escolar\\n6️⃣ Quero me matricular — informações sobre cursos\\n\\nResponda com o número ou me diga o que precisa.', 'Oi! Aqui é a Eliza 👋\\nTô aqui pra ajudar com o que você precisar do IPESSP:\\n\\n1️⃣ Financeiro — boletos e pendências\\n2️⃣ Secretaria — matrícula, documentos e declarações\\n3️⃣ TI / Suporte — acesso, senha e sistemas\\n4️⃣ Avisos — comunicados e novidades\\n5️⃣ Calendário — datas e agenda escolar\\n6️⃣ Quero me matricular — informações sobre cursos\\n\\nResponda com o número ou me diga o que precisa.'][Math.floor(Math.random() * 2)], delayMessage: Math.floor(Math.random() * 4) + 2, delayTyping: Math.floor(Math.random() * 5) + 4 }) }}",
+        "jsonBody": "={{ JSON.stringify({ phone: $('Webhook').item.json.body.phone, message: ['Olá! Sou a Eliza 👋', 'Oi! Aqui é a Eliza 👋', 'E aí! Sou a Eliza, assistente do IPESSP 👋'][Math.floor(Math.random() * 3)], optionList: { title: 'Assistente virtual do IPESSP — como posso ajudar?', buttonLabel: 'Ver opções', options: [{ id: 'financeiro', title: '💰 Situação financeira', description: 'Boletos e pendências' }, { id: 'secretaria', title: '📋 Secretaria', description: 'Matrícula, documentos e declarações' }, { id: 'ti', title: '💻 Suporte TI', description: 'Acesso, senha e sistemas' }, { id: 'avisos', title: '📢 Avisos', description: 'Comunicados e novidades' }, { id: 'calendario', title: '📅 Calendário', description: 'Datas e agenda escolar' }, { id: 'matricula', title: '📝 Quero me matricular', description: 'Informações sobre cursos' }] }, delayMessage: Math.floor(Math.random() * 4) + 2 }) }}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
