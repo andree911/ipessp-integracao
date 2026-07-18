@@ -1113,8 +1113,11 @@ export interface CancelamentoEmailData extends MarcaEmailData {
 
 const fmtMoeda = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-/** Título unificado dos 3 emails de cancelamento (acadêmico com/sem dívida, financeiro). */
+/** Título do email de cancelamento financeiro (sem multa). */
 const SUBJECT_CANCELAMENTO = 'Confirmação de trancamento de matrícula - Setor Financeiro IPESSP';
+
+/** Título dos 2 emails de cancelamento acadêmico (com/sem dívida) — ambos sempre cobram multa rescisória. */
+const SUBJECT_MULTA_RESCISORIA = 'Multa Rescisória Pendente';
 
 /** Disparado ao marcar o check "Acadêmico" — escolhe entre os dois textos conforme haja (ou não) parcelas em atraso. */
 export function templateCancelamentoAcademico(d: CancelamentoEmailData): { subject: string; html: string } {
@@ -1153,8 +1156,8 @@ export function templateCancelamentoAcademico(d: CancelamentoEmailData): { subje
     </p>`;
 
   return {
-    subject: SUBJECT_CANCELAMENTO,
-    html: baseConteudoLivre(SUBJECT_CANCELAMENTO, d, saudacao + corpo),
+    subject: SUBJECT_MULTA_RESCISORIA,
+    html: baseConteudoLivre(SUBJECT_MULTA_RESCISORIA, d, saudacao + corpo),
   };
 }
 
