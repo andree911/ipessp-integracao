@@ -276,17 +276,17 @@ export default function MatriculaPage() {
               <Input value={aluno.nome} onChange={set(setAluno)('nome')} placeholder="Nome do aluno" />
             </Field>
             <Field label="CPF *" error={errors.cpf}>
-              <Input value={aluno.cpf} onChange={e => setAluno(prev => ({ ...prev, cpf: maskCPF(e.target.value) }))} placeholder="000.000.000-00" />
+              <Input inputMode="numeric" value={aluno.cpf} onChange={e => setAluno(prev => ({ ...prev, cpf: maskCPF(e.target.value) }))} placeholder="000.000.000-00" />
             </Field>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="E-mail">
                 <Input type="email" value={aluno.email} onChange={set(setAluno)('email')} placeholder="email@exemplo.com" />
               </Field>
               <Field label="Telefone">
-                <Input value={aluno.telefone} onChange={set(setAluno)('telefone')} placeholder="(11) 99999-9999" />
+                <Input type="tel" inputMode="tel" value={aluno.telefone} onChange={set(setAluno)('telefone')} placeholder="(11) 99999-9999" />
               </Field>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="Sexo">
                 <Select value={aluno.sexo} onChange={set(setAluno)('sexo')}>
                   <option value="M">Masculino</option>
@@ -316,14 +316,14 @@ export default function MatriculaPage() {
                   <Input value={resp.nome} onChange={set(setResp)('nome')} placeholder="Nome do responsável" />
                 </Field>
                 <Field label="CPF *" error={errors.respCpf}>
-                  <Input value={resp.cpf} onChange={e => setResp(prev => ({ ...prev, cpf: maskCPF(e.target.value) }))} placeholder="000.000.000-00" />
+                  <Input inputMode="numeric" value={resp.cpf} onChange={e => setResp(prev => ({ ...prev, cpf: maskCPF(e.target.value) }))} placeholder="000.000.000-00" />
                 </Field>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Field label="E-mail">
                     <Input type="email" value={resp.email} onChange={set(setResp)('email')} placeholder="email@exemplo.com" />
                   </Field>
                   <Field label="Telefone">
-                    <Input value={resp.telefone} onChange={set(setResp)('telefone')} placeholder="(11) 99999-9999" />
+                    <Input type="tel" inputMode="tel" value={resp.telefone} onChange={set(setResp)('telefone')} placeholder="(11) 99999-9999" />
                   </Field>
                 </div>
                 <Field label="Parentesco">
@@ -348,7 +348,7 @@ export default function MatriculaPage() {
             <Field label="Unidade *" error={errors.unidade}>
               <Input value={curso.unidade} onChange={set(setCurso)('unidade')} placeholder="Ex: Unidade Centro" />
             </Field>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="Turno">
                 <Select value={curso.turno} onChange={set(setCurso)('turno')}>
                   <option>Manhã</option>
@@ -374,7 +374,7 @@ export default function MatriculaPage() {
             <p className="text-sm" style={{ color: 'var(--ink-500)' }}>
               A 1ª parcela será gerada via Mercado Pago. O financeiro configurará o plano completo no sistema.
             </p>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="Nº de parcelas">
                 <Input type="number" min={1} value={plano.numeroParcelas} onChange={set(setPlano)('numeroParcelas')} placeholder="12" />
               </Field>

@@ -140,7 +140,6 @@ export default function Hero() {
             className="object-cover object-center transition-transform duration-700 ease-out"
             style={{ transform: (i === current && paused) ? 'scale(1.05)' : 'scale(1)' }}
             priority={i === 0}
-            unoptimized
             sizes="100vw"
           />
           {/* Gradient only at bottom for arrows/dots contrast */}

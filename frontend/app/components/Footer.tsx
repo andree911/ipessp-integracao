@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Image from 'next/image';
 import {
   FONE_DISPLAY, FONE_TEL, WHATSAPP_URL, EMAIL_CONTATO, EMAIL_HREF,
@@ -47,6 +48,8 @@ const footerLinks = {
 };
 
 export default function Footer() {
+  const [logoExpanded, setLogoExpanded] = useState(false);
+
   return (
     <footer id="footer" style={{ background: 'var(--ink-900)' }}>
       {/* Main content */}
@@ -55,7 +58,12 @@ export default function Footer() {
 
           {/* Col 1 – Brand */}
           <div className="group flex flex-col gap-4">
-            <div style={{ background: 'white', borderRadius: '10px', padding: '8px 14px', display: 'inline-flex', flexDirection: 'column' }}>
+            <button
+              type="button"
+              onClick={() => setLogoExpanded(v => !v)}
+              aria-expanded={logoExpanded}
+              style={{ background: 'white', borderRadius: '10px', padding: '8px 14px', display: 'inline-flex', flexDirection: 'column', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+            >
               <Image
                 src="/images/logo.png"
                 alt="Faculdade IPESSP"
@@ -64,20 +72,24 @@ export default function Footer() {
                 className="object-contain"
                 style={{ height: 'auto', width: '140px' }}
               />
-              <div className="overflow-hidden max-h-0 opacity-0 group-hover:max-h-40 group-hover:opacity-100 transition-all duration-500 ease-in-out">
+              <div
+                className={`overflow-hidden transition-all duration-500 ease-in-out ${
+                  logoExpanded ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0 group-hover:max-h-40 group-hover:opacity-100'
+                }`}
+              >
                 <p className="text-sm leading-relaxed pt-3 mt-3" style={{ color: '#3f3636', borderTop: '1px solid #ece6e6' }}>
                   Fundada em 2000, a Faculdade IPESSP já formou mais de 5.000 profissionais de saúde
                   em São Paulo. 25 anos de excelência no ensino da saúde na Consolação.
                 </p>
               </div>
-            </div>
+            </button>
             <div className="flex items-center gap-2">
               {socials.map(s => (
                 <a
                   key={s.label}
                   href={s.href}
                   aria-label={s.label}
-                  className="w-9 h-9 rounded-xl flex items-center justify-center transition-all"
+                  className="w-11 h-11 rounded-xl flex items-center justify-center transition-all"
                   style={{ background: 'rgba(255,255,255,0.07)', color: 'var(--brand-500)' }}
                   onMouseEnter={e => {
                     e.currentTarget.style.background = 'var(--brand-600)';

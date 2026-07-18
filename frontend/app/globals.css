@@ -84,7 +84,17 @@
 /* ─── Reset & Base ─────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
 
-html { scroll-behavior: smooth; }
+html {
+  scroll-behavior: smooth;
+  /* Compensa a altura do header sticky (nav) pra âncoras (#pre-inscricao etc.)
+     não pararem com o topo da seção escondido atrás dele. Acima de md o
+     topbar (telefone/redes) também fica sticky junto, por isso o valor maior. */
+  scroll-padding-top: 84px;
+}
+
+@media (min-width: 768px) {
+  html { scroll-padding-top: 128px; }
+}
 
 body {
   background: var(--surface);
