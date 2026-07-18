@@ -267,7 +267,7 @@
             {
               "id": "33162f65-fed3-48a0-832d-6b2029a90ff2",
               "leftValue": "={{ $json.body.text.message }}",
-              "rightValue": "^(oi+|ol[áa]|bom dia|boa tarde|boa noite|hi|hello|hey|e ?a[íi]|blz|beleza|salve|fala\\b|menu|in[íi]cio|come[çc]ar|ajuda|help|start|opa|ei|tudo bem|td bem|prazer|quero|queria|gostaria|preciso|pode(ria)?|informa)",
+              "rightValue": "^(oi+|ol[áa]|bom dia|boa tarde|boa noite|hi|hello|hey|e ?a[íi]|blz|beleza|salve|fala\\b|menu|in[íi]cio|come[çc]ar|ajuda|help|start|opa|ei|tudo bem|td bem|prazer)",
               "operator": { "type": "string", "operation": "regex" }
             }
           ],
