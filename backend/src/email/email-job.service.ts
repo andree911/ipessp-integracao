@@ -189,6 +189,7 @@ export class EmailJobService {
     let totalEnviados = 0;
     let totalErros = 0;
     let totalJaPagos = 0;
+    let totalSemBoleto = 0;
 
     for (const { cliente, lancamento } of pendentes) {
       if (!cliente.emailResponsavel) continue;
@@ -199,6 +200,14 @@ export class EmailJobService {
 
         const tipos = this.calcularTipos(diffDias, diasAntes, diasAviso, diasAposVencimento, diasRenegociacaoOverlap);
         if (tipos.length === 0) continue;
+
+        // Só cobra quem já tem boleto gerado e sincronizado no cache — sem
+        // linhaDigitavel o email sairia "vazio" (sem código de barras nem
+        // PIX pra pagar), o que confunde mais do que ajuda.
+        if (!lancamento.linhaDigitavel) {
+          totalSemBoleto++;
+          continue;
+        }
 
         if (!(await this.aindaPendenteNaSophia(cliente, lancamento, cacheAlunos))) {
           totalJaPagos++;
@@ -261,7 +270,7 @@ export class EmailJobService {
       }
     }
 
-    this.logger.log(`=== Job de emails concluído: ${totalEnviados} enviados, ${totalErros} erros, ${totalJaPagos} já pagos (pulados) ===`);
+    this.logger.log(`=== Job de emails concluído: ${totalEnviados} enviados, ${totalErros} erros, ${totalJaPagos} já pagos (pulados), ${totalSemBoleto} sem boleto (pulados) ===`);
   }
 
   /**

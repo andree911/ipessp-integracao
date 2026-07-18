@@ -224,6 +224,7 @@ export class WhatsAppJobService {
     );
     let totalEnviados = 0;
     let totalErros = 0;
+    let totalSemBoleto = 0;
 
     for (const { cliente, lancamento } of pendentes) {
       if (!cliente.telefoneResponsavel) continue;
@@ -246,6 +247,16 @@ export class WhatsAppJobService {
         }
 
         if (!tipo) continue;
+
+        // Só cobra quem já tem o PIX gerado e sincronizado no cache — é o
+        // único dado de pagamento que essa mensagem inclui (montarMensagem
+        // só usa codigoPix, nunca linhaDigitavel/urlBoleto); sem isso a
+        // mensagem sairia sem nenhuma forma de pagamento anexada (ver mesmo
+        // ajuste em email-job.service.ts).
+        if (!lancamento.codigoPix) {
+          totalSemBoleto++;
+          continue;
+        }
 
         const jaEnviado = await this.logRepo.findOne({
           where: {
@@ -303,7 +314,7 @@ export class WhatsAppJobService {
     }
 
     this.logger.log(
-      `=== Job WhatsApp concluído: ${totalEnviados} enviados, ${totalErros} erros ===`,
+      `=== Job WhatsApp concluído: ${totalEnviados} enviados, ${totalErros} erros, ${totalSemBoleto} sem PIX (pulados) ===`,
     );
   }
 }
