@@ -99,6 +99,14 @@ export class AdminController {
     return { message: 'Job de emails iniciado manualmente' };
   }
 
+  @Get('email/historico')
+  historicoEmail(@Query('page') page?: string, @Query('limit') limit?: string) {
+    return this.emailJobService.listarHistoricoEmail(
+      page ? Number(page) : undefined,
+      limit ? Number(limit) : undefined,
+    );
+  }
+
   // ─── Cancelamento de curso ──────────────────────────────────────────────────
 
   @Get('cancelamento/buscar-aluno')

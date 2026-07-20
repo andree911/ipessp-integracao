@@ -281,6 +281,7 @@ export class WhatsAppJobService {
 
         const log = this.logRepo.create({
           codigoLancamento: String(lancamento.id),
+          nome: cliente.nomeAluno,
           tipo,
           destinatario: cliente.telefoneResponsavel,
           enviado: false,

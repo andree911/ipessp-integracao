@@ -20,6 +20,9 @@ export type EmailTipo =
   | 'lead_boas_vindas'
   | 'lead_followup'
   | 'lead_cta'
+  // ── Cancelamento ───────────────────────────────────────────────────────────
+  | 'cancelamento_academico'
+  | 'cancelamento_financeiro'
   // ── WhatsApp — genérico (mantido para logs antigos) ───────────────────────────
   | 'wpp_lembrete'
   | 'wpp_vencimento_hoje'
@@ -45,6 +48,13 @@ export class EmailLog {
 
   @Column({ type: 'varchar' })
   tipo: EmailTipo;
+
+  // Denormalizado de propósito (não é FK pra ClienteCache/Lead) — cada
+  // caller (cobrança, lead, cancelamento) já tem o nome em mãos na hora do
+  // envio, e assim o histórico não depende de join nem sobrevive à exclusão
+  // do cliente/lead original.
+  @Column({ type: 'varchar', nullable: true })
+  nome: string | null;
 
   @Column({ type: 'varchar' })
   destinatario: string;

@@ -152,19 +152,51 @@ export class EmailJobService {
     const template = tipo === 'academico'
       ? templateCancelamentoAcademico(emailData)
       : templateCancelamentoFinanceiro(emailData);
+    const tipoLog: EmailTipo = tipo === 'academico' ? 'cancelamento_academico' : 'cancelamento_financeiro';
 
     // Remetente próprio (EMAIL_CANCELAMENTO_FROM) — o SMTP_FROM padrão (que
     // manda os outros modelos) recebe cópia em CC pra manter visibilidade.
     const cancelamentoFrom = this.config.get<string>('email.cancelamentoFrom');
     const fromPadrao = this.config.get<string>('email.from');
-    await this.emailService.enviar(
-      resumo.emailResponsavel,
-      template.subject,
-      template.html,
-      undefined,
-      { from: cancelamentoFrom || undefined, cc: fromPadrao || undefined },
-    );
+    try {
+      await this.emailService.enviar(
+        resumo.emailResponsavel,
+        template.subject,
+        template.html,
+        undefined,
+        { from: cancelamentoFrom || undefined, cc: fromPadrao || undefined },
+      );
+      await this.emailLogRepo.save({
+        codigoLancamento: '',
+        nome: resumo.nomeAluno,
+        tipo: tipoLog,
+        destinatario: resumo.emailResponsavel,
+        enviado: true,
+      });
+    } catch (err: unknown) {
+      await this.emailLogRepo.save({
+        codigoLancamento: '',
+        nome: resumo.nomeAluno,
+        tipo: tipoLog,
+        destinatario: resumo.emailResponsavel,
+        enviado: false,
+        erro: errMsg(err),
+      });
+      throw err;
+    }
     return { enviado: true, para: resumo.emailResponsavel, subject: template.subject };
+  }
+
+  /** Histórico de e-mails enviados (cobrança, leads, cancelamento) — exclui WhatsApp, que usa a mesma tabela. */
+  async listarHistoricoEmail(page = 1, limit = 50): Promise<{ items: EmailLog[]; total: number; page: number; limit: number }> {
+    const [items, total] = await this.emailLogRepo
+      .createQueryBuilder('log')
+      .where("log.tipo NOT LIKE 'wpp\\_%'")
+      .orderBy('log.enviadoEm', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+    return { items, total, page, limit };
   }
 
   @Cron('0 7,19 * * *', { name: 'email_job', timeZone: 'America/Sao_Paulo' })
@@ -256,6 +288,7 @@ export class EmailJobService {
 
           const log = this.emailLogRepo.create({
             codigoLancamento: String(lancamento.id),
+            nome: cliente.nomeAluno,
             tipo,
             destinatario: cliente.emailResponsavel,
             enviado: false,
