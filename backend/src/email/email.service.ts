@@ -28,16 +28,24 @@ export class EmailService implements OnModuleInit {
     assunto: string,
     html: string,
     inline?: Array<{ cid: string; buffer: Buffer; nome: string }>,
+    opts?: { from?: string; cc?: string },
   ): Promise<void> {
-    const from = this.config.get<string>('email.from');
+    const from = opts?.from || this.config.get<string>('email.from');
     const attachments = (inline ?? []).map(a => ({
       filename: a.nome,
       content: a.buffer,
       contentType: 'image/png',
       cid: a.cid,
     }));
-    await this.transporter.sendMail({ from, to: para, subject: assunto, html, attachments });
-    this.logger.log(`Email enviado → ${para} | ${assunto}`);
+    await this.transporter.sendMail({
+      from,
+      to: para,
+      cc: opts?.cc || undefined,
+      subject: assunto,
+      html,
+      attachments,
+    });
+    this.logger.log(`Email enviado → ${para}${opts?.cc ? ` (cc: ${opts.cc})` : ''} | ${assunto}`);
   }
 
   async enviarComAnexo(

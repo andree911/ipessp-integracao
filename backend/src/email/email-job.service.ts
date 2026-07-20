@@ -153,7 +153,17 @@ export class EmailJobService {
       ? templateCancelamentoAcademico(emailData)
       : templateCancelamentoFinanceiro(emailData);
 
-    await this.emailService.enviar(resumo.emailResponsavel, template.subject, template.html);
+    // Remetente próprio (EMAIL_CANCELAMENTO_FROM) — o SMTP_FROM padrão (que
+    // manda os outros modelos) recebe cópia em CC pra manter visibilidade.
+    const cancelamentoFrom = this.config.get<string>('email.cancelamentoFrom');
+    const fromPadrao = this.config.get<string>('email.from');
+    await this.emailService.enviar(
+      resumo.emailResponsavel,
+      template.subject,
+      template.html,
+      undefined,
+      { from: cancelamentoFrom || undefined, cc: fromPadrao || undefined },
+    );
     return { enviado: true, para: resumo.emailResponsavel, subject: template.subject };
   }
 

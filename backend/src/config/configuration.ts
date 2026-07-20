@@ -30,6 +30,9 @@ export default () => ({
     user: process.env.SMTP_USER ?? '',
     pass: process.env.SMTP_PASS ?? '',
     from: process.env.SMTP_FROM ?? '',
+    // Remetente exclusivo do e-mail de cancelamento — o SMTP_FROM padrão
+    // continua recebendo cópia (CC) automaticamente, ver enviarCancelamento().
+    cancelamentoFrom: process.env.EMAIL_CANCELAMENTO_FROM ?? '',
     nomeEscola: process.env.ESCOLA_NOME ?? 'Escola',
     telefoneEscola: process.env.ESCOLA_TELEFONE ?? '',
     diasAntes: (process.env.EMAIL_DIAS_ANTES ?? '7,5,3,1')
