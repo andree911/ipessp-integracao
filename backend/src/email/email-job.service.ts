@@ -126,9 +126,10 @@ export class EmailJobService {
 
   /**
    * Dispara o email de cancelamento pro RA informado. `tipo === 'academico'`
-   * escolhe entre os dois textos de cancelamento de matrícula (com/sem
-   * inadimplência) conforme o resumo financeiro atual; `tipo === 'financeiro'`
-   * sempre manda o texto de plano de pagamento quitado.
+   * sempre manda a mesma confirmação simples (sem valores — isso é papel do
+   * financeiro); `tipo === 'financeiro'` escolhe sozinho, a partir do resumo
+   * atual, entre os 3 textos: sem multa/atraso, só multa, ou multa +
+   * inadimplência (ver templateCancelamentoFinanceiro).
    */
   async enviarCancelamento(ra: string, tipo: 'academico' | 'financeiro'): Promise<{ enviado: boolean; para: string; subject: string }> {
     const resumo = await this.financeiro.getResumoCancelamento(ra);

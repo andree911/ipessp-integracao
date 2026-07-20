@@ -1100,6 +1100,13 @@ export function templateRenegociacaoLembrete(data: EmailData): { subject: string
 }
 
 // ─── Emails de cancelamento (Acadêmico / Financeiro) ──────────────────────────
+//
+// "Acadêmico" (checkbox homônimo na tela de Cancelamentos) manda uma
+// confirmação simples de que a matrícula foi cancelada, sem números
+// financeiros — quem cobra multa/parcela em atraso é sempre o financeiro,
+// à parte. "Financeiro" manda um dos 3 textos abaixo, escolhido sozinho
+// conforme o resumo (valorMulta/parcelasEmAtraso): só multa, multa +
+// inadimplência, ou nenhum dos dois (plano já quitado).
 
 export interface CancelamentoEmailData extends MarcaEmailData {
   nomeAluno: string;
@@ -1113,14 +1120,69 @@ export interface CancelamentoEmailData extends MarcaEmailData {
 
 const fmtMoeda = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
+const SUBJECT_CANCELAMENTO_ACADEMICO = 'Confirmação de Cancelamento Acadêmico - IPESSP';
+
+/** Disparado ao marcar o check "Acadêmico" — sempre o mesmo texto, sem menção a valores (isso é papel do financeiro). */
+export function templateCancelamentoAcademico(d: CancelamentoEmailData): { subject: string; html: string } {
+  const primeiroNome = d.nomeAluno.split(' ')[0];
+
+  const corpo = `
+    <p style="margin:0 0 18px;font-size:17px;font-weight:bold;color:${COR};text-transform:uppercase;font-family:Arial,sans-serif;">Prezado(a) ${primeiroNome},</p>
+    <p style="margin:0 0 18px;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
+      Em resposta &#224; sua solicita&#231;&#227;o, informamos que o cancelamento acad&#234;mico de sua matr&#237;cula foi realizado com sucesso em nossos sistemas.
+    </p>
+    <p style="margin:0 0 18px;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
+      Em breve, o setor financeiro encaminhar&#225; as informa&#231;&#245;es referentes &#224; multa rescis&#243;ria e/ou eventuais parcelas em atraso, caso existam. Se voc&#234; j&#225; recebeu esse contato, por gentileza, desconsidere esta informa&#231;&#227;o.
+    </p>
+    <p style="margin:0 0 18px;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
+      Agradecemos o per&#237;odo em que fez parte de nossa comunidade acad&#234;mica e desejamos muito sucesso em seus projetos pessoais e profissionais. Esperamos ter a oportunidade de receb&#234;-lo(a) novamente no futuro.
+    </p>
+    <p style="margin:0;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
+      Permanecemos &#224; disposi&#231;&#227;o em caso de d&#250;vidas.
+    </p>
+    <p style="margin:18px 0 0;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
+      Atenciosamente,<br>
+      <strong>Setor Acad&#234;mico</strong><br>
+      IPESSP
+    </p>`;
+
+  return {
+    subject: SUBJECT_CANCELAMENTO_ACADEMICO,
+    html: baseConteudoLivre(SUBJECT_CANCELAMENTO_ACADEMICO, d, corpo),
+  };
+}
+
 /** Título do email de cancelamento financeiro (sem multa). */
 const SUBJECT_CANCELAMENTO = 'Confirmação de trancamento de matrícula - Setor Financeiro IPESSP';
 
-/** Título dos 2 emails de cancelamento acadêmico (com/sem dívida) — ambos sempre cobram multa rescisória. */
+/** Título dos 2 casos com multa (com/sem inadimplência) — ambos sempre cobram multa rescisória. */
 const SUBJECT_MULTA_RESCISORIA = 'Multa Rescisória Pendente';
 
-/** Disparado ao marcar o check "Acadêmico" — escolhe entre os dois textos conforme haja (ou não) parcelas em atraso. */
-export function templateCancelamentoAcademico(d: CancelamentoEmailData): { subject: string; html: string } {
+/**
+ * Disparado ao marcar o check "Financeiro" — escolhe sozinho, a partir do
+ * resumo, entre os 3 textos: sem multa/atraso (plano já quitado, valorMulta
+ * <= 0), só multa (valorMulta > 0 e sem parcela em atraso), ou multa +
+ * inadimplência (valorMulta > 0 e parcelasEmAtraso > 0).
+ */
+export function templateCancelamentoFinanceiro(d: CancelamentoEmailData): { subject: string; html: string } {
+  if (d.valorMulta <= 0) {
+    const primeiroNomeSemPendencia = d.nomeAluno.split(' ')[0];
+    const corpo = `
+      <p style="margin:0 0 18px;font-size:17px;font-weight:bold;color:${COR};text-transform:uppercase;font-family:Arial,sans-serif;">Prezado(a) ${primeiroNomeSemPendencia},</p>
+      <p style="margin:0 0 18px;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
+        Informamos que o cancelamento do plano de pagamento financeiro foi realizado com sucesso, sem a necessidade
+        de cobran&#231;a de multas ou parcelas em atraso.
+      </p>
+      <p style="margin:0 0 18px;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
+        Dessa forma, n&#227;o h&#225; pend&#234;ncias vinculadas ao referido plano, e o processo encontra-se devidamente conclu&#237;do.
+      </p>
+      <p style="margin:0;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
+        Permanecemos &#224; disposi&#231;&#227;o para quaisquer esclarecimentos.
+      </p>`;
+
+    return { subject: SUBJECT_CANCELAMENTO, html: baseConteudoLivre(SUBJECT_CANCELAMENTO, d, corpo) };
+  }
+
   const primeiroNome = d.nomeAluno.split(' ')[0];
   const temInadimplencia = d.parcelasEmAtraso > 0;
 
@@ -1158,28 +1220,6 @@ export function templateCancelamentoAcademico(d: CancelamentoEmailData): { subje
   return {
     subject: SUBJECT_MULTA_RESCISORIA,
     html: baseConteudoLivre(SUBJECT_MULTA_RESCISORIA, d, saudacao + corpo),
-  };
-}
-
-/** Disparado ao marcar o check "Financeiro" — plano de pagamento já sem multa/inadimplência pendente. */
-export function templateCancelamentoFinanceiro(d: CancelamentoEmailData): { subject: string; html: string } {
-  const saudacao = `<p style="margin:0 0 18px;font-size:17px;font-weight:bold;color:${COR};text-transform:uppercase;font-family:Arial,sans-serif;">Prezados(as),</p>`;
-
-  const corpo = `
-    <p style="margin:0 0 18px;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
-      Informamos que o cancelamento do plano de pagamento financeiro foi realizado com sucesso, sem a necessidade
-      de cobran&#231;a de multas ou parcelas em atraso.
-    </p>
-    <p style="margin:0 0 18px;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
-      Dessa forma, n&#227;o h&#225; pend&#234;ncias vinculadas ao referido plano, e o processo encontra-se devidamente conclu&#237;do.
-    </p>
-    <p style="margin:0;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
-      Permanecemos &#224; disposi&#231;&#227;o para quaisquer esclarecimentos.
-    </p>`;
-
-  return {
-    subject: SUBJECT_CANCELAMENTO,
-    html: baseConteudoLivre(SUBJECT_CANCELAMENTO, d, saudacao + corpo),
   };
 }
 

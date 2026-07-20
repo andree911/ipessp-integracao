@@ -25,9 +25,26 @@ const dadosEscola = {
 
 const cancelamentos = [
   {
-    nome: 'cancelamento_academico_com_divida',
+    // Disparado pelo check "Acadêmico" — sempre o mesmo texto, sem valores.
+    nome: 'cancelamento_academico',
     fn: () =>
       templateCancelamentoAcademico({
+        ...dadosEscola,
+        nomeAluno: 'João da Silva',
+        numeroParcelasRestantes: 0,
+        valorParcela: 0,
+        somaValor: 0,
+        valorMulta: 0,
+        parcelasEmAtraso: 0,
+        saldoDevedor: 0,
+      }),
+  },
+  // Os 3 abaixo são disparados pelo check "Financeiro" — a própria função
+  // escolhe o texto certo a partir de valorMulta/parcelasEmAtraso.
+  {
+    nome: 'cancelamento_financeiro_multa_e_atraso',
+    fn: () =>
+      templateCancelamentoFinanceiro({
         ...dadosEscola,
         nomeAluno: 'João da Silva',
         numeroParcelasRestantes: 8,
@@ -39,9 +56,9 @@ const cancelamentos = [
       }),
   },
   {
-    nome: 'cancelamento_academico_sem_divida',
+    nome: 'cancelamento_financeiro_so_multa',
     fn: () =>
-      templateCancelamentoAcademico({
+      templateCancelamentoFinanceiro({
         ...dadosEscola,
         nomeAluno: 'João da Silva',
         numeroParcelasRestantes: 8,
@@ -53,7 +70,7 @@ const cancelamentos = [
       }),
   },
   {
-    nome: 'cancelamento_financeiro',
+    nome: 'cancelamento_financeiro_sem_pendencia',
     fn: () =>
       templateCancelamentoFinanceiro({
         ...dadosEscola,
