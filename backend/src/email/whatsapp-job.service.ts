@@ -92,14 +92,20 @@ export class WhatsAppJobService {
       : '';
     // cta()/quickReply() não embutem mais texto na mensagem — viram itens da
     // lista nativa do WhatsApp (ver enviarListaOpcoes em whatsapp.service.ts).
+    // As duas variantes sorteadas por escolher() chamam cta()/quickReply() —
+    // guarda por id evita empurrar a opção 2x (uma por variante avaliada).
     const opcoes: OpcaoLista[] = [];
     const cta = (label: string) => {
-      if (d.portalLink) opcoes.push({ id: 'portal', title: `🔗 ${label}` });
+      if (d.portalLink && !opcoes.some((o) => o.id === 'portal')) {
+        opcoes.push({ id: 'portal', title: `🔗 ${label}` });
+      }
       return '';
     };
     const quickReply = (a: string, b: string) => {
-      opcoes.push({ id: 'ja_paguei', title: `✅ ${a}` });
-      opcoes.push({ id: 'ajuda', title: `❓ ${b}` });
+      if (!opcoes.some((o) => o.id === 'ja_paguei')) {
+        opcoes.push({ id: 'ja_paguei', title: `✅ ${a}` });
+        opcoes.push({ id: 'ajuda', title: `❓ ${b}` });
+      }
       return '';
     };
 
