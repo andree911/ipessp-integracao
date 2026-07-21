@@ -52,6 +52,56 @@ export class WhatsAppService {
     }
   }
 
+  /**
+   * Envia texto + lista de opções nativa do WhatsApp (botão "Ver opções" que
+   * abre uma lista dentro do próprio app — não abre link externo). Mesmo
+   * formato usado pelo menu principal do chatbot Eliza (send-option-list),
+   * que comprovadamente entrega — diferente do send-button-actions (URL),
+   * que a Z-API aceita mas o WhatsApp não entrega em números não verificados
+   * como Business API. Propaga erro — quem chama decide o fallback.
+   */
+  async enviarListaOpcoes(
+    telefone: string,
+    mensagem: string,
+    tituloLista: string,
+    botaoLabel: string,
+    opcoes: { id: string; title: string }[],
+  ): Promise<void> {
+    const instanceId = this.config.get<string>('zapi.instanceId');
+    const token = this.config.get<string>('zapi.token');
+    const clientToken = this.config.get<string>('zapi.clientToken');
+
+    if (!instanceId || !token) {
+      throw new Error('Z-API não configurada — lista não pode ser enviada');
+    }
+
+    const url = `https://api.z-api.io/instances/${instanceId}/token/${token}/send-option-list`;
+    const phone = telefone.replace(/\D/g, '');
+
+    try {
+      await firstValueFrom(
+        this.http.post(
+          url,
+          {
+            phone,
+            message: mensagem,
+            optionList: {
+              title: tituloLista,
+              buttonLabel: botaoLabel,
+              options: opcoes,
+            },
+          },
+          { headers: { 'Client-Token': clientToken ?? '' } },
+        ),
+      );
+    } catch (err) {
+      this.logger.warn(
+        `WhatsApp: falha ao enviar lista para ${phone} — ${detalheErro(err)}`,
+      );
+      throw err;
+    }
+  }
+
   /** Consulta se a sessão do WhatsApp está de fato pareada na Z-API (independe de qualquer envio). */
   async verificarConexao(): Promise<{
     connected: boolean;
