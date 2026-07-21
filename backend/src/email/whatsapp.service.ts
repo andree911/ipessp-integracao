@@ -3,6 +3,16 @@ import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 
+/** Prioriza o corpo da resposta da Z-API (onde vem o motivo real) sobre o "Request failed with status code X" genérico do axios. */
+function detalheErro(err: unknown): string {
+  const axiosErr = err as { response?: { data?: unknown }; message?: string };
+  const data = axiosErr?.response?.data;
+  if (data !== undefined) {
+    return typeof data === 'string' ? data : JSON.stringify(data);
+  }
+  return axiosErr?.message ?? String(err);
+}
+
 @Injectable()
 export class WhatsAppService {
   private readonly logger = new Logger(WhatsAppService.name);
@@ -37,15 +47,15 @@ export class WhatsAppService {
       );
     } catch (err) {
       this.logger.warn(
-        `WhatsApp: falha ao enviar para ${phone} — ${(err as Error).message}`,
+        `WhatsApp: falha ao enviar para ${phone} — ${detalheErro(err)}`,
       );
     }
   }
 
   /**
-   * Envia texto com um botão nativo do WhatsApp (link). Se a Z-API não estiver
-   * configurada, cai em silêncio (mesmo comportamento de enviarTexto) — quem
-   * chama não precisa tratar esse caso à parte.
+   * Envia texto com um botão nativo do WhatsApp (link). Propaga erro — quem
+   * chama (WhatsAppJobService.enviar) decide o fallback pra texto puro, pra
+   * garantir que a mensagem saia mesmo se o send-button-actions falhar.
    */
   async enviarBotaoLink(
     telefone: string,
@@ -58,8 +68,7 @@ export class WhatsAppService {
     const clientToken = this.config.get<string>('zapi.clientToken');
 
     if (!instanceId || !token) {
-      this.logger.warn('Z-API não configurada — mensagem não enviada');
-      return;
+      throw new Error('Z-API não configurada — botão não pode ser enviado');
     }
 
     const endpoint = `https://api.z-api.io/instances/${instanceId}/token/${token}/send-button-actions`;
@@ -79,8 +88,9 @@ export class WhatsAppService {
       );
     } catch (err) {
       this.logger.warn(
-        `WhatsApp: falha ao enviar botão para ${phone} — ${(err as Error).message}`,
+        `WhatsApp: falha ao enviar botão para ${phone} — ${detalheErro(err)}`,
       );
+      throw err;
     }
   }
 
@@ -114,7 +124,7 @@ export class WhatsAppService {
       );
     } catch (err) {
       this.logger.warn(
-        `WhatsApp: falha ao enviar documento para ${phone} — ${(err as Error).message}`,
+        `WhatsApp: falha ao enviar documento para ${phone} — ${detalheErro(err)}`,
       );
       throw err;
     }

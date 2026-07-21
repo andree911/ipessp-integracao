@@ -498,7 +498,12 @@ export class WhatsAppJobService {
     return { aluno: cliente.nomeAluno, tipo, lancamento: lancamento.id };
   }
 
-  /** Manda com botão nativo (link) quando há portalLink + label; cai pra texto puro senão. */
+  /**
+   * Manda com botão nativo (link) quando há portalLink + label. Se o
+   * send-button-actions falhar (Z-API pode rejeitar por vários motivos —
+   * checar o warning logado em whatsapp.service.ts pro motivo exato), cai
+   * pra texto puro com o link embutido, pra garantir que a mensagem chegue.
+   */
   private async enviar(
     telefone: string,
     texto: string,
@@ -506,14 +511,25 @@ export class WhatsAppJobService {
     portalLink: string | undefined,
   ): Promise<void> {
     if (botaoLabel && portalLink) {
-      await this.whatsapp.enviarBotaoLink(
+      try {
+        await this.whatsapp.enviarBotaoLink(
+          telefone,
+          texto,
+          botaoLabel,
+          portalLink,
+        );
+        return;
+      } catch (err: unknown) {
+        this.logger.warn(
+          `Botão falhou para ${telefone}, caindo pra texto puro — ${errMsg(err)}`,
+        );
+      }
+      await this.whatsapp.enviarTexto(
         telefone,
-        texto,
-        botaoLabel,
-        portalLink,
+        `${texto}\n\n🔘 *${botaoLabel}:* ${portalLink}`,
       );
-    } else {
-      await this.whatsapp.enviarTexto(telefone, texto);
+      return;
     }
+    await this.whatsapp.enviarTexto(telefone, texto);
   }
 }
