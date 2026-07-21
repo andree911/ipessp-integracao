@@ -1,4 +1,16 @@
-import { BadRequestException, Body, Controller, Get, HttpCode, Param, ParseIntPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { AdminApiKeyGuard } from './guards/admin-api-key.guard';
@@ -7,6 +19,7 @@ import { LeadsService } from '../leads/leads.service';
 import { MoverEstagioDto } from '../leads/dto/mover-estagio.dto';
 import { FinanceiroService } from '../financeiro/financeiro.service';
 import { EmailJobService } from '../email/email-job.service';
+import { WhatsAppService } from '../email/whatsapp.service';
 import { SophiaService } from '../sophia/sophia.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -20,6 +33,7 @@ export class AdminController {
     private readonly leadsService: LeadsService,
     private readonly financeiroService: FinanceiroService,
     private readonly emailJobService: EmailJobService,
+    private readonly whatsapp: WhatsAppService,
     private readonly sophia: SophiaService,
     private readonly config: ConfigService,
   ) {}
@@ -36,7 +50,10 @@ export class AdminController {
     @Query('limit') limit?: string,
   ) {
     return this.leadsService.listar({
-      status, origem, de, ate,
+      status,
+      origem,
+      de,
+      ate,
       page: page ? Number(page) : undefined,
       limit: limit ? Number(limit) : undefined,
     });
@@ -123,10 +140,15 @@ export class AdminController {
 
   @Post('cancelamento/email')
   @HttpCode(200)
-  emailCancelamento(@Body('ra') ra: string, @Body('tipo') tipo: 'academico' | 'financeiro') {
+  emailCancelamento(
+    @Body('ra') ra: string,
+    @Body('tipo') tipo: 'academico' | 'financeiro',
+  ) {
     if (!ra?.trim()) throw new BadRequestException('Informe o campo "ra"');
     if (tipo !== 'academico' && tipo !== 'financeiro') {
-      throw new BadRequestException('Campo "tipo" deve ser "academico" ou "financeiro"');
+      throw new BadRequestException(
+        'Campo "tipo" deve ser "academico" ou "financeiro"',
+      );
     }
     return this.emailJobService.enviarCancelamento(ra, tipo);
   }
@@ -141,7 +163,8 @@ export class AdminController {
   // (o RA, que é o que costuma aparecer na tela de cadastro do aluno).
   @Get('sophia/buscar-por-nome')
   diagnosticoBuscarPorNome(@Query('nome') nome: string) {
-    if (!nome?.trim()) throw new BadRequestException('Informe o parâmetro nome');
+    if (!nome?.trim())
+      throw new BadRequestException('Informe o parâmetro nome');
     return this.sophia.getAlunos(1, 20, nome);
   }
 
@@ -169,13 +192,22 @@ export class AdminController {
   @Get('whatsapp/status')
   diagnosticoWhatsappStatus() {
     return {
-      wppCronHabilitado: this.config.get<string>('zapi.cronHabilitado') === 'true',
+      wppCronHabilitado:
+        this.config.get<string>('zapi.cronHabilitado') === 'true',
       zapiInstanceIdConfigurada: !!this.config.get<string>('zapi.instanceId'),
       zapiTokenConfigurada: !!this.config.get<string>('zapi.token'),
       zapiClientTokenConfigurada: !!this.config.get<string>('zapi.clientToken'),
-      telefoneFinanceiroConfigurado: !!this.config.get<string>('zapi.telefoneFinanceiro'),
+      telefoneFinanceiroConfigurado: !!this.config.get<string>(
+        'zapi.telefoneFinanceiro',
+      ),
       diasAntes: this.config.get<number[]>('zapi.diasAntes'),
       diasApos: this.config.get<number[]>('zapi.diasApos'),
     };
+  }
+
+  /** Chama a Z-API de verdade pra saber se a sessão do WhatsApp está pareada — independe de qualquer envio. */
+  @Get('whatsapp/conexao')
+  diagnosticoWhatsappConexao() {
+    return this.whatsapp.verificarConexao();
   }
 }

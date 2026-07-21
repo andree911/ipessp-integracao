@@ -94,6 +94,35 @@ export class WhatsAppService {
     }
   }
 
+  /** Consulta se a sessão do WhatsApp está de fato pareada na Z-API (independe de qualquer envio). */
+  async verificarConexao(): Promise<{
+    connected: boolean;
+    smartphoneConnected?: boolean;
+    error?: string;
+  }> {
+    const instanceId = this.config.get<string>('zapi.instanceId');
+    const token = this.config.get<string>('zapi.token');
+    const clientToken = this.config.get<string>('zapi.clientToken');
+
+    if (!instanceId || !token) {
+      return { connected: false, error: 'Z-API não configurada' };
+    }
+
+    const url = `https://api.z-api.io/instances/${instanceId}/token/${token}/status`;
+
+    try {
+      const resposta = await firstValueFrom(
+        this.http.get<{ connected: boolean; smartphoneConnected?: boolean }>(
+          url,
+          { headers: { 'Client-Token': clientToken ?? '' } },
+        ),
+      );
+      return resposta.data;
+    } catch (err) {
+      return { connected: false, error: detalheErro(err) };
+    }
+  }
+
   /** Envia um documento (ex.: PDF de boleto) em base64. Propaga erro — quem chama decide o fallback. */
   async enviarDocumento(
     telefone: string,
