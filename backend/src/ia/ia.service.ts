@@ -1,4 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SophiaService } from '../sophia/sophia.service';
@@ -18,6 +19,7 @@ export class IaService {
     private readonly financeiro: FinanceiroService,
     private readonly whatsapp: WhatsAppService,
     private readonly supabase: SupabaseService,
+    private readonly config: ConfigService,
     @InjectRepository(ResponsavelCache)
     private readonly cacheRepo: Repository<ResponsavelCache>,
     @InjectRepository(TelefoneCpfCache)
@@ -30,21 +32,32 @@ export class IaService {
 
     const dados = await this.financeiro.getByCpf(cpfNumeros);
 
-    return [{
-      aluno: { nome: dados.nomeAluno },
-      responsavel: { nome: dados.nomeResponsavel, email: dados.emailResponsavel },
-      pendencias: dados.pendencias.map((p) => ({
-        codigo: p.codigo,
-        descricao: p.descricao,
-        vencimento: p.vencimento,
-        valor: p.valor,
-        linhaDigitavel: p.linhaDigitavel ?? null,
-        urlBoleto: p.urlBoleto ?? null,
-        pix: p.codigoPix ?? null,
-        codigoBoleto: p.codigoBoleto ?? null,
-      })),
-      totalPendente: dados.pendencias.reduce((s, p) => s + p.valor, 0),
-    }];
+    const portalLink =
+      this.config.get<string>('email.linkPortalAluno') ||
+      this.config.get<string>('email.siteUrl') ||
+      null;
+
+    return [
+      {
+        aluno: { nome: dados.nomeAluno },
+        responsavel: {
+          nome: dados.nomeResponsavel,
+          email: dados.emailResponsavel,
+        },
+        pendencias: dados.pendencias.map((p) => ({
+          codigo: p.codigo,
+          descricao: p.descricao,
+          vencimento: p.vencimento,
+          valor: p.valor,
+          linhaDigitavel: p.linhaDigitavel ?? null,
+          urlBoleto: p.urlBoleto ?? null,
+          pix: p.codigoPix ?? null,
+          codigoBoleto: p.codigoBoleto ?? null,
+        })),
+        totalPendente: dados.pendencias.reduce((s, p) => s + p.valor, 0),
+        portalLink,
+      },
+    ];
   }
 
   /**
@@ -52,8 +65,14 @@ export class IaService {
    * anexar como documento na conversa do WhatsApp (nó de envio de
    * documento da Z-API aceita base64 direto, sem precisar de URL pública).
    */
-  async getBoletoPdf(cpf: string, codigoBoleto: number): Promise<{ base64: string; fileName: string; mimeType: string }> {
-    const { codigoAluno } = await this.financeiro.getBoletoInfo(cpf, codigoBoleto);
+  async getBoletoPdf(
+    cpf: string,
+    codigoBoleto: number,
+  ): Promise<{ base64: string; fileName: string; mimeType: string }> {
+    const { codigoAluno } = await this.financeiro.getBoletoInfo(
+      cpf,
+      codigoBoleto,
+    );
     const pdf = await this.sophia.getBoleto(codigoAluno, codigoBoleto);
     return {
       base64: pdf.toString('base64'),
@@ -63,7 +82,11 @@ export class IaService {
   }
 
   /** Busca o PDF do boleto e manda direto pro WhatsApp do próprio usuário — usado pela tool do bot. */
-  async enviarBoletoWhatsapp(cpf: string, codigoBoleto: number, telefone: string): Promise<{ ok: boolean }> {
+  async enviarBoletoWhatsapp(
+    cpf: string,
+    codigoBoleto: number,
+    telefone: string,
+  ): Promise<{ ok: boolean }> {
     const { base64, fileName } = await this.getBoletoPdf(cpf, codigoBoleto);
     await this.whatsapp.enviarDocumento(telefone, base64, fileName);
     return { ok: true };
@@ -107,7 +130,8 @@ export class IaService {
   async getSecretariaByCpf(cpf: string) {
     const cpfNumeros = cpf.replace(/\D/g, '');
     const registros = await this.cacheRepo.find({ where: { cpf: cpfNumeros } });
-    if (registros.length === 0) throw new NotFoundException('Aluno não encontrado para este CPF');
+    if (registros.length === 0)
+      throw new NotFoundException('Aluno não encontrado para este CPF');
 
     const { codigoAluno, nomeAluno } = registros[0];
     const matriculas = await this.sophia.getMatriculasAluno(codigoAluno);
@@ -127,24 +151,32 @@ export class IaService {
 
   async getProfessorByEmail(email: string) {
     const colaboradores = await this.sophia.getColaboradores({ Email: email });
-    if (!colaboradores.length) throw new NotFoundException('Professor não encontrado para este email');
+    if (!colaboradores.length)
+      throw new NotFoundException('Professor não encontrado para este email');
 
     const professor = colaboradores[0];
     const hoje = new Date().toISOString().substring(0, 10);
     const listas = await this.sophia.getListaChamadaProfessor(professor.codigo);
 
     const proximas = listas
-      .filter(l => l.dataListaChamada >= hoje)
+      .filter((l) => l.dataListaChamada >= hoje)
       .sort((a, b) => a.dataListaChamada.localeCompare(b.dataListaChamada))
       .slice(0, 20);
 
-    const turmas = [...new Map(listas.map(l => [l.codigoTurma, { codigoTurma: l.codigoTurma, turma: l.turma }])).values()];
+    const turmas = [
+      ...new Map(
+        listas.map((l) => [
+          l.codigoTurma,
+          { codigoTurma: l.codigoTurma, turma: l.turma },
+        ]),
+      ).values(),
+    ];
 
     return {
       nome: professor.nome,
       email: professor.email ?? email,
       turmas,
-      cronograma: proximas.map(l => ({
+      cronograma: proximas.map((l) => ({
         idLista: l.codigoLista,
         turma: l.turma,
         disciplina: l.disciplina,
@@ -163,7 +195,9 @@ export class IaService {
 
   async getCursos() {
     const [cursos, conteudo] = await Promise.all([
-      this.sophia.getCursos() as Promise<Array<{ codigo: number; nome: string; nomeResumido: string }>>,
+      this.sophia.getCursos() as Promise<
+        Array<{ codigo: number; nome: string; nomeResumido: string }>
+      >,
       this.getCursosConteudo(),
     ]);
 
@@ -207,7 +241,13 @@ export class IaService {
     const cpf = dto.cpf.replace(/\D/g, '');
 
     await this.telefoneCpfRepo.upsert(
-      { telefone, cpf, nomeResponsavel: dto.nomeResponsavel ?? null, tipo: dto.tipo ?? null, email: dto.email ?? null } as TelefoneCpfCache,
+      {
+        telefone,
+        cpf,
+        nomeResponsavel: dto.nomeResponsavel ?? null,
+        tipo: dto.tipo ?? null,
+        email: dto.email ?? null,
+      } as TelefoneCpfCache,
       ['telefone'],
     );
 
@@ -217,8 +257,19 @@ export class IaService {
 
   async getCpfPorTelefone(telefone: string) {
     const tel = telefone.replace(/\D/g, '');
-    const registro = await this.telefoneCpfRepo.findOne({ where: { telefone: tel } });
-    if (!registro) throw new NotFoundException('Nenhum CPF associado a este número de telefone');
-    return { telefone: registro.telefone, cpf: registro.cpf, nomeResponsavel: registro.nomeResponsavel, tipo: registro.tipo ?? null, email: registro.email ?? null };
+    const registro = await this.telefoneCpfRepo.findOne({
+      where: { telefone: tel },
+    });
+    if (!registro)
+      throw new NotFoundException(
+        'Nenhum CPF associado a este número de telefone',
+      );
+    return {
+      telefone: registro.telefone,
+      cpf: registro.cpf,
+      nomeResponsavel: registro.nomeResponsavel,
+      tipo: registro.tipo ?? null,
+      email: registro.email ?? null,
+    };
   }
 }
