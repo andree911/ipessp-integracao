@@ -56,10 +56,10 @@
     },
     {
       "parameters": {
-        "url": "={{ $env.CORE_API_URL }}/v1/leads/prontos-para-contato",
+        "url": "={{ $env.CORE_API_URL }}/crm/leads/prontos-para-contato",
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}" }]
+          "parameters": [{ "name": "x-admin-key", "value": "={{ $env.ADMIN_API_KEY }}" }]
         },
         "options": {}
       },
@@ -102,10 +102,10 @@
     {
       "parameters": {
         "method": "PATCH",
-        "url": "={{ $env.CORE_API_URL + '/v1/leads/' + $('Montar Mensagens Nurturing').item.json.leadId + '/nurturing-avanco' }}",
+        "url": "={{ $env.CORE_API_URL + '/crm/leads/' + $('Montar Mensagens Nurturing').item.json.leadId + '/nurturing-avanco' }}",
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}" }]
+          "parameters": [{ "name": "x-admin-key", "value": "={{ $env.ADMIN_API_KEY }}" }]
         },
         "options": {}
       },
@@ -128,10 +128,10 @@
     },
     {
       "parameters": {
-        "url": "={{ $env.CORE_API_URL }}/v1/leads/relatorio/diario",
+        "url": "={{ $env.CORE_API_URL }}/crm/leads/relatorio/diario",
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}" }]
+          "parameters": [{ "name": "x-admin-key", "value": "={{ $env.ADMIN_API_KEY }}" }]
         },
         "options": {}
       },
@@ -183,10 +183,10 @@
     },
     {
       "parameters": {
-        "url": "={{ $env.CORE_API_URL }}/v1/leads/relatorio",
+        "url": "={{ $env.CORE_API_URL }}/crm/leads/relatorio",
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}" }]
+          "parameters": [{ "name": "x-admin-key", "value": "={{ $env.ADMIN_API_KEY }}" }]
         },
         "options": {}
       },
@@ -239,10 +239,10 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.CORE_API_URL }}/v1/leads/reativar-nurturing",
+        "url": "={{ $env.CORE_API_URL }}/crm/leads/reativar-nurturing",
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}" }]
+          "parameters": [{ "name": "x-admin-key", "value": "={{ $env.ADMIN_API_KEY }}" }]
         },
         "options": {}
       },
