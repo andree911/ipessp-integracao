@@ -14,9 +14,10 @@ const files = {
   renegLembrete: fs.readFileSync(path.join(dir, 'renegociacao_lembrete.html'), 'utf8'),
   confirmacao: fs.readFileSync(path.join(dir, 'confirmacao_matricula.html'), 'utf8'),
   relatorioInterno: fs.readFileSync(path.join(dir, 'relatorio_matricula_interno.html'), 'utf8'),
-  cancAcademicoComDivida: fs.readFileSync(path.join(dir, 'cancelamento_academico_com_divida.html'), 'utf8'),
-  cancAcademicoSemDivida: fs.readFileSync(path.join(dir, 'cancelamento_academico_sem_divida.html'), 'utf8'),
-  cancFinanceiro: fs.readFileSync(path.join(dir, 'cancelamento_financeiro.html'), 'utf8'),
+  cancAcademico: fs.readFileSync(path.join(dir, 'cancelamento_academico.html'), 'utf8'),
+  cancFinanceiroMultaEAtraso: fs.readFileSync(path.join(dir, 'cancelamento_financeiro_multa_e_atraso.html'), 'utf8'),
+  cancFinanceiroSoMulta: fs.readFileSync(path.join(dir, 'cancelamento_financeiro_so_multa.html'), 'utf8'),
+  cancFinanceiroSemPendencia: fs.readFileSync(path.join(dir, 'cancelamento_financeiro_sem_pendencia.html'), 'utf8'),
   leadBoasVindas: fs.readFileSync(path.join(dir, 'lead_boas_vindas.html'), 'utf8'),
   leadFollowup: fs.readFileSync(path.join(dir, 'lead_followup.html'), 'utf8'),
   leadCta: fs.readFileSync(path.join(dir, 'lead_cta.html'), 'utf8'),
@@ -32,9 +33,10 @@ const subjects = {
   renegLembrete: 'IPESSP - Já conferiu a solução para o seu atraso?',
   confirmacao: 'Sua matrícula em Biomedicina — Acesse o link de pagamento',
   relatorioInterno: '(interno — sem assunto de e-mail, usado só como corpo de notificação)',
-  cancAcademicoComDivida: 'Multa Rescisória Pendente',
-  cancAcademicoSemDivida: 'Multa Rescisória Pendente',
-  cancFinanceiro: 'Confirmação de trancamento de matrícula - Setor Financeiro IPESSP',
+  cancAcademico: 'Confirmação de Cancelamento Acadêmico - IPESSP',
+  cancFinanceiroMultaEAtraso: 'Multa Rescisória Pendente',
+  cancFinanceiroSoMulta: 'Multa Rescisória Pendente',
+  cancFinanceiroSemPendencia: 'Confirmação de trancamento de matrícula - Setor Financeiro IPESSP',
   leadBoasVindas: 'Bem-vindo(a) ao IPESSP — seu futuro começa aqui!',
   leadFollowup: 'Ainda pensando? Podemos ajudar — IPESSP',
   leadCta: 'Última chamada: inscrições abertas no IPESSP',
@@ -241,7 +243,7 @@ const shell = `<!doctype html>
   <header>
     <p class="eyebrow">scripts/preview-email*.ts &middot; dados fake &middot; gerado por scripts/build-preview-artifact.js</p>
     <h1>Templates de e-mail transacional</h1>
-    <p>Renderização real dos 15 templates com dados de teste: ciclo de cobrança (lembrete, vencimento, cobrança, aviso, renegociação), matrícula (confirmação + notificação interna) e nutrição de leads. Cabeçalho/rodapé usam ícones reais (PNG hospedado). Logo carregada via URL externa pode não aparecer aqui por causa do bloqueio de imagens remotas do artifact.</p>
+    <p>Renderização real dos 16 templates com dados de teste: ciclo de cobrança (lembrete, vencimento, cobrança, aviso, renegociação), matrícula (confirmação + notificação interna), cancelamento (acadêmico + 3 variantes financeiras) e nutrição de leads. Cabeçalho/rodapé usam ícones reais (PNG hospedado). Logo carregada via URL externa pode não aparecer aqui por causa do bloqueio de imagens remotas do artifact.</p>
   </header>
 
   <div class="layout">
@@ -287,17 +289,21 @@ const shell = `<!doctype html>
       </button>
 
       <p class="nav-group-label">Cancelamento</p>
-      <button class="tab" data-tab="cancAcademicoComDivida">
+      <button class="tab" data-tab="cancAcademico">
         <span class="stage">Acadêmico</span>
-        <span class="label">Com dívida em aberto</span>
+        <span class="label">Confirmação (sem valores)</span>
       </button>
-      <button class="tab" data-tab="cancAcademicoSemDivida">
-        <span class="stage">Acadêmico</span>
-        <span class="label">Sem dívida em aberto</span>
-      </button>
-      <button class="tab" data-tab="cancFinanceiro">
+      <button class="tab" data-tab="cancFinanceiroMultaEAtraso">
         <span class="stage">Financeiro</span>
-        <span class="label">Plano de pagamento</span>
+        <span class="label">Multa + parcelas em atraso</span>
+      </button>
+      <button class="tab" data-tab="cancFinanceiroSoMulta">
+        <span class="stage">Financeiro</span>
+        <span class="label">Só multa rescisória</span>
+      </button>
+      <button class="tab" data-tab="cancFinanceiroSemPendencia">
+        <span class="stage">Financeiro</span>
+        <span class="label">Sem pendência (quitado)</span>
       </button>
 
       <p class="nav-group-label">Leads / CRM</p>
@@ -340,9 +346,10 @@ const shell = `<!doctype html>
 <template id="tpl-renegLembrete">${esc(files.renegLembrete)}</template>
 <template id="tpl-confirmacao">${esc(files.confirmacao)}</template>
 <template id="tpl-relatorioInterno">${esc(files.relatorioInterno)}</template>
-<template id="tpl-cancAcademicoComDivida">${esc(files.cancAcademicoComDivida)}</template>
-<template id="tpl-cancAcademicoSemDivida">${esc(files.cancAcademicoSemDivida)}</template>
-<template id="tpl-cancFinanceiro">${esc(files.cancFinanceiro)}</template>
+<template id="tpl-cancAcademico">${esc(files.cancAcademico)}</template>
+<template id="tpl-cancFinanceiroMultaEAtraso">${esc(files.cancFinanceiroMultaEAtraso)}</template>
+<template id="tpl-cancFinanceiroSoMulta">${esc(files.cancFinanceiroSoMulta)}</template>
+<template id="tpl-cancFinanceiroSemPendencia">${esc(files.cancFinanceiroSemPendencia)}</template>
 <template id="tpl-leadBoasVindas">${esc(files.leadBoasVindas)}</template>
 <template id="tpl-leadFollowup">${esc(files.leadFollowup)}</template>
 <template id="tpl-leadCta">${esc(files.leadCta)}</template>

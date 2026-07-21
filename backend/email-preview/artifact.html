@@ -195,7 +195,7 @@
   <header>
     <p class="eyebrow">scripts/preview-email*.ts &middot; dados fake &middot; gerado por scripts/build-preview-artifact.js</p>
     <h1>Templates de e-mail transacional</h1>
-    <p>Renderização real dos 15 templates com dados de teste: ciclo de cobrança (lembrete, vencimento, cobrança, aviso, renegociação), matrícula (confirmação + notificação interna) e nutrição de leads. Cabeçalho/rodapé usam ícones reais (PNG hospedado). Logo carregada via URL externa pode não aparecer aqui por causa do bloqueio de imagens remotas do artifact.</p>
+    <p>Renderização real dos 16 templates com dados de teste: ciclo de cobrança (lembrete, vencimento, cobrança, aviso, renegociação), matrícula (confirmação + notificação interna), cancelamento (acadêmico + 3 variantes financeiras) e nutrição de leads. Cabeçalho/rodapé usam ícones reais (PNG hospedado). Logo carregada via URL externa pode não aparecer aqui por causa do bloqueio de imagens remotas do artifact.</p>
   </header>
 
   <div class="layout">
@@ -241,17 +241,21 @@
       </button>
 
       <p class="nav-group-label">Cancelamento</p>
-      <button class="tab" data-tab="cancAcademicoComDivida">
+      <button class="tab" data-tab="cancAcademico">
         <span class="stage">Acadêmico</span>
-        <span class="label">Com dívida em aberto</span>
+        <span class="label">Confirmação (sem valores)</span>
       </button>
-      <button class="tab" data-tab="cancAcademicoSemDivida">
-        <span class="stage">Acadêmico</span>
-        <span class="label">Sem dívida em aberto</span>
-      </button>
-      <button class="tab" data-tab="cancFinanceiro">
+      <button class="tab" data-tab="cancFinanceiroMultaEAtraso">
         <span class="stage">Financeiro</span>
-        <span class="label">Plano de pagamento</span>
+        <span class="label">Multa + parcelas em atraso</span>
+      </button>
+      <button class="tab" data-tab="cancFinanceiroSoMulta">
+        <span class="stage">Financeiro</span>
+        <span class="label">Só multa rescisória</span>
+      </button>
+      <button class="tab" data-tab="cancFinanceiroSemPendencia">
+        <span class="stage">Financeiro</span>
+        <span class="label">Sem pendência (quitado)</span>
       </button>
 
       <p class="nav-group-label">Leads / CRM</p>
@@ -3105,7 +3109,163 @@
 &lt;/table>
 &lt;/body>
 &lt;/html></template>
-<template id="tpl-cancAcademicoComDivida">&lt;!DOCTYPE html>
+<template id="tpl-cancAcademico">&lt;!DOCTYPE html>
+&lt;html lang="pt-BR" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+&lt;head>
+  &lt;meta charset="UTF-8">
+  &lt;meta name="viewport" content="width=device-width, initial-scale=1.0">
+  &lt;meta name="color-scheme" content="light">
+  &lt;meta name="supported-color-schemes" content="light">
+  &lt;!--[if gte mso 9]>&lt;xml>&lt;o:OfficeDocumentSettings>&lt;o:AllowPNG/>&lt;o:PixelsPerInch>96&lt;/o:PixelsPerInch>&lt;/o:OfficeDocumentSettings>&lt;/xml>&lt;![endif]-->
+  &lt;title>Confirmação de Cancelamento Acadêmico - IPESSP&lt;/title>
+  &lt;style>
+    body { margin: 0 !important; padding: 0 !important; background-color: #f0f2f5 !important; }
+    table { border-collapse: collapse; }
+    @media only screen and (max-width: 480px) {
+      .wrapper  { width: 100% !important; }
+      .body-pad { padding: 24px 16px 16px !important; }
+      .hdr-logo { display: block !important; width: 100% !important; text-align: left !important; padding-bottom: 12px !important; }
+      .hdr-info { display: block !important; width: 100% !important; text-align: right !important; }
+    }
+  &lt;/style>
+&lt;/head>
+&lt;body style="margin:0;padding:0;background-color:#f0f2f5;" bgcolor="#f0f2f5">
+
+&lt;table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f0f2f5"
+  style="background-color:#f0f2f5;padding:28px 8px;">
+  &lt;tr>&lt;td align="center">
+
+    &lt;table width="600" cellpadding="0" cellspacing="0" border="0" class="wrapper"
+      style="max-width:600px;width:100%;background-color:#ffffff;border-radius:16px;overflow:hidden;">
+
+      &lt;!-- 1. Cabeçalho -->
+      
+  &lt;tr>
+    &lt;td align="center" bgcolor="#7C2529" style="background-color:#7C2529;padding:20px 32px;">
+      &lt;table width="100%" cellpadding="0" cellspacing="0" border="0">
+        &lt;tr>
+          &lt;td valign="middle" class="hdr-logo" style="width:1%;">&lt;a href="https://www.ipessp.edu.br" target="_blank" style="text-decoration:none;border:0;display:inline-block;line-height:0;">&lt;img src="https://oylhowadealxvsmdhmzc.supabase.co/storage/v1/object/public/assets/logo.png" alt="IPESSP" height="48" border="0" style="height:48px;width:auto;display:block;border:0;outline:0;border-radius:10px;">&lt;/a>&lt;/td>
+          
+          &lt;td align="right" valign="middle" class="hdr-info" style="padding-left:20px;">
+            &lt;table cellpadding="0" cellspacing="0" border="0" align="right">
+              
+  &lt;tr>
+    &lt;td width="24" align="center" valign="middle" style="width:24px;min-width:24px;padding:3px 0;">
+      &lt;img src="https://www.ipessp.edu.br/images/icons/icon-telefone.png" width="18" height="18" alt="" style="width:18px;height:18px;display:block;border:0;">
+    &lt;/td>
+    &lt;td valign="middle" style="padding:3px 0 3px 6px;text-align:left;">
+      &lt;a href="tel:+5511998393640" target="_blank" style="text-decoration:none;">
+        &lt;span style="font-size:11px;color:#ffffff;font-family:Arial,sans-serif;white-space:nowrap;">(11) 99839-3640&lt;/span>
+      &lt;/a>
+    &lt;/td>
+  &lt;/tr>
+  &lt;tr>
+    &lt;td width="24" align="center" valign="middle" style="width:24px;min-width:24px;padding:3px 0;">
+      &lt;img src="https://www.ipessp.edu.br/images/icons/icon-email.png" width="18" height="18" alt="" style="width:18px;height:18px;display:block;border:0;">
+    &lt;/td>
+    &lt;td valign="middle" style="padding:3px 0 3px 6px;text-align:left;">
+      &lt;a href="mailto:matricula.financeiro@ipessp.edu.br" target="_blank" style="text-decoration:none;">
+        &lt;span style="font-size:11px;color:#ffffff;font-family:Arial,sans-serif;white-space:nowrap;">matricula.financeiro@ipessp.edu.br&lt;/span>
+      &lt;/a>
+    &lt;/td>
+  &lt;/tr>
+  &lt;tr>
+    &lt;td width="24" align="center" valign="middle" style="width:24px;min-width:24px;padding:3px 0;">
+      &lt;img src="https://www.ipessp.edu.br/images/icons/icon-site.png" width="18" height="18" alt="" style="width:18px;height:18px;display:block;border:0;">
+    &lt;/td>
+    &lt;td valign="middle" style="padding:3px 0 3px 6px;text-align:left;">
+      &lt;a href="https://www.ipessp.edu.br" target="_blank" style="text-decoration:none;">
+        &lt;span style="font-size:11px;color:#ffffff;font-family:Arial,sans-serif;white-space:nowrap;">ipessp.edu.br&lt;/span>
+      &lt;/a>
+    &lt;/td>
+  &lt;/tr>
+            &lt;/table>
+          &lt;/td>
+        &lt;/tr>
+      &lt;/table>
+    &lt;/td>
+  &lt;/tr>
+
+      &lt;!-- Corpo livre -->
+      &lt;tr>
+        &lt;td bgcolor="#ffffff" class="body-pad" style="background-color:#ffffff;padding:32px 40px;">
+          
+    &lt;p style="margin:0 0 18px;font-size:17px;font-weight:bold;color:#7C2529;text-transform:uppercase;font-family:Arial,sans-serif;">Prezado(a) João,&lt;/p>
+    &lt;p style="margin:0 0 18px;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
+      Em resposta &amp;#224; sua solicita&amp;#231;&amp;#227;o, informamos que o cancelamento acad&amp;#234;mico de sua matr&amp;#237;cula foi realizado com sucesso em nossos sistemas.
+    &lt;/p>
+    &lt;p style="margin:0 0 18px;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
+      Em breve, o setor financeiro encaminhar&amp;#225; as informa&amp;#231;&amp;#245;es referentes &amp;#224; multa rescis&amp;#243;ria e/ou eventuais parcelas em atraso, caso existam. Se voc&amp;#234; j&amp;#225; recebeu esse contato, por gentileza, desconsidere esta informa&amp;#231;&amp;#227;o.
+    &lt;/p>
+    &lt;p style="margin:0 0 18px;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
+      Agradecemos o per&amp;#237;odo em que fez parte de nossa comunidade acad&amp;#234;mica e desejamos muito sucesso em seus projetos pessoais e profissionais. Esperamos ter a oportunidade de receb&amp;#234;-lo(a) novamente no futuro.
+    &lt;/p>
+    &lt;p style="margin:0;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
+      Permanecemos &amp;#224; disposi&amp;#231;&amp;#227;o em caso de d&amp;#250;vidas.
+    &lt;/p>
+    &lt;p style="margin:18px 0 0;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
+      Atenciosamente,&lt;br>
+      &lt;strong>Setor Acad&amp;#234;mico&lt;/strong>&lt;br>
+      IPESSP
+    &lt;/p>
+        &lt;/td>
+      &lt;/tr>
+
+      &lt;!-- Rodapé -->
+      
+  &lt;tr>
+    &lt;td align="center" bgcolor="#7C2529" style="background-color:#7C2529;padding:28px 40px 24px;">
+      &lt;div style="margin:0 auto 20px;text-align:center;line-height:0;">
+         &lt;a href="https://www.ipessp.edu.br" target="_blank" style="text-decoration:none;border:0;display:inline-block;line-height:0;">&lt;img src="https://oylhowadealxvsmdhmzc.supabase.co/storage/v1/object/public/assets/logo.png" alt="IPESSP" height="40" border="0" style="height:40px;width:auto;display:block;border:0;outline:0;border-radius:10px;">&lt;/a>
+       &lt;/div>
+      
+  &lt;table cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 8px;">
+    &lt;tr>
+      
+      &lt;td style="padding:0 8px;text-align:center;">
+        &lt;a href="https://www.facebook.com/pages/Ipessp/209464852483898" target="_blank" style="text-decoration:none;">
+          &lt;img src="https://www.ipessp.edu.br/images/icons/icon-facebook.png" width="40" height="40" alt="Facebook" style="width:40px;height:40px;display:block;border:0;border-radius:50%;">
+        &lt;/a>
+        &lt;p style="margin:4px 0 0;font-size:9px;color:rgba(255,255,255,0.6);font-family:Arial,sans-serif;">Facebook&lt;/p>
+      &lt;/td>
+      &lt;td style="padding:0 8px;text-align:center;">
+        &lt;a href="https://www.instagram.com/ipessp/" target="_blank" style="text-decoration:none;">
+          &lt;img src="https://www.ipessp.edu.br/images/icons/icon-instagram.png" width="40" height="40" alt="Instagram" style="width:40px;height:40px;display:block;border:0;border-radius:50%;">
+        &lt;/a>
+        &lt;p style="margin:4px 0 0;font-size:9px;color:rgba(255,255,255,0.6);font-family:Arial,sans-serif;">Instagram&lt;/p>
+      &lt;/td>
+      &lt;td style="padding:0 8px;text-align:center;">
+        &lt;a href="https://www.youtube.com/channel/UC7dgP6NBgM9L0m11UbhCyHg" target="_blank" style="text-decoration:none;">
+          &lt;img src="https://www.ipessp.edu.br/images/icons/icon-youtube.png" width="40" height="40" alt="YouTube" style="width:40px;height:40px;display:block;border:0;border-radius:50%;">
+        &lt;/a>
+        &lt;p style="margin:4px 0 0;font-size:9px;color:rgba(255,255,255,0.6);font-family:Arial,sans-serif;">YouTube&lt;/p>
+      &lt;/td>
+      &lt;td style="padding:0 8px;text-align:center;">
+        &lt;a href="https://www.linkedin.com/company/ipessp---educa-o" target="_blank" style="text-decoration:none;">
+          &lt;img src="https://www.ipessp.edu.br/images/icons/icon-linkedin.png" width="40" height="40" alt="LinkedIn" style="width:40px;height:40px;display:block;border:0;border-radius:50%;">
+        &lt;/a>
+        &lt;p style="margin:4px 0 0;font-size:9px;color:rgba(255,255,255,0.6);font-family:Arial,sans-serif;">LinkedIn&lt;/p>
+      &lt;/td>
+    &lt;/tr>
+  &lt;/table>
+      &lt;table cellpadding="0" cellspacing="0" border="0" style="margin:16px auto 0;">
+        &lt;tr>&lt;td style="height:1px;width:220px;background:rgba(255,255,255,0.3);font-size:0;line-height:0;">&amp;nbsp;&lt;/td>&lt;/tr>
+      &lt;/table>
+      &lt;p style="margin:14px 0 4px;font-size:11px;color:rgba(255,255,255,0.85);font-family:Arial,sans-serif;line-height:1.7;">
+        &amp;#169; 2026 IPESSP &amp;#8226; Todos os direitos reservados
+        &amp;#8226; &lt;a href="https://www.ipessp.edu.br" style="color:rgba(255,255,255,0.75);text-decoration:none;">ipessp.edu.br&lt;/a>
+      &lt;/p>
+      &lt;p style="margin:4px 0 0;font-size:10px;color:rgba(255,255,255,0.65);font-family:Arial,sans-serif;">Rua Dona Antônia de Queirós, 333 – São Paulo, SP&lt;/p>
+      &lt;p style="margin:4px 0 0;font-size:10px;color:rgba(255,255,255,0.65);font-family:Arial,sans-serif;">&lt;a href="tel:+5511998393640" style="color:rgba(255,255,255,0.75);text-decoration:none;">(11) 99839-3640&lt;/a>&lt;/p>
+    &lt;/td>
+  &lt;/tr>
+
+    &lt;/table>
+  &lt;/td>&lt;/tr>
+&lt;/table>
+&lt;/body>
+&lt;/html></template>
+<template id="tpl-cancFinanceiroMultaEAtraso">&lt;!DOCTYPE html>
 &lt;html lang="pt-BR" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 &lt;head>
   &lt;meta charset="UTF-8">
@@ -3268,7 +3428,7 @@
 &lt;/table>
 &lt;/body>
 &lt;/html></template>
-<template id="tpl-cancAcademicoSemDivida">&lt;!DOCTYPE html>
+<template id="tpl-cancFinanceiroSoMulta">&lt;!DOCTYPE html>
 &lt;html lang="pt-BR" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 &lt;head>
   &lt;meta charset="UTF-8">
@@ -3426,7 +3586,7 @@
 &lt;/table>
 &lt;/body>
 &lt;/html></template>
-<template id="tpl-cancFinanceiro">&lt;!DOCTYPE html>
+<template id="tpl-cancFinanceiroSemPendencia">&lt;!DOCTYPE html>
 &lt;html lang="pt-BR" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 &lt;head>
   &lt;meta charset="UTF-8">
@@ -3506,17 +3666,18 @@
       &lt;!-- Corpo livre -->
       &lt;tr>
         &lt;td bgcolor="#ffffff" class="body-pad" style="background-color:#ffffff;padding:32px 40px;">
-          &lt;p style="margin:0 0 18px;font-size:17px;font-weight:bold;color:#7C2529;text-transform:uppercase;font-family:Arial,sans-serif;">Prezados(as),&lt;/p>
-    &lt;p style="margin:0 0 18px;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
-      Informamos que o cancelamento do plano de pagamento financeiro foi realizado com sucesso, sem a necessidade
-      de cobran&amp;#231;a de multas ou parcelas em atraso.
-    &lt;/p>
-    &lt;p style="margin:0 0 18px;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
-      Dessa forma, n&amp;#227;o h&amp;#225; pend&amp;#234;ncias vinculadas ao referido plano, e o processo encontra-se devidamente conclu&amp;#237;do.
-    &lt;/p>
-    &lt;p style="margin:0;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
-      Permanecemos &amp;#224; disposi&amp;#231;&amp;#227;o para quaisquer esclarecimentos.
-    &lt;/p>
+          
+      &lt;p style="margin:0 0 18px;font-size:17px;font-weight:bold;color:#7C2529;text-transform:uppercase;font-family:Arial,sans-serif;">Prezado(a) João,&lt;/p>
+      &lt;p style="margin:0 0 18px;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
+        Informamos que o cancelamento do plano de pagamento financeiro foi realizado com sucesso, sem a necessidade
+        de cobran&amp;#231;a de multas ou parcelas em atraso.
+      &lt;/p>
+      &lt;p style="margin:0 0 18px;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
+        Dessa forma, n&amp;#227;o h&amp;#225; pend&amp;#234;ncias vinculadas ao referido plano, e o processo encontra-se devidamente conclu&amp;#237;do.
+      &lt;/p>
+      &lt;p style="margin:0;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
+        Permanecemos &amp;#224; disposi&amp;#231;&amp;#227;o para quaisquer esclarecimentos.
+      &lt;/p>
         &lt;/td>
       &lt;/tr>
 
@@ -4063,7 +4224,7 @@
 &lt;/html></template>
 
 <script>
-  const subjects = {"lembrete":"IPESSP - Sua Parcela Vence em Breve","hoje":"IPESSP - Vencimento da sua parcela","cobranca":"IPESSP - Mensalidade em atraso — 5 dias","cobrancaQr":"IPESSP - Mensalidade em atraso — 5 dias (QR PIX real)","aviso":"IPESSP - Aviso Importante: vencimento em 3 dias","renegOferta":"IPESSP - Condições especiais para regularizar sua mensalidade","renegLembrete":"IPESSP - Já conferiu a solução para o seu atraso?","confirmacao":"Sua matrícula em Biomedicina — Acesse o link de pagamento","relatorioInterno":"(interno — sem assunto de e-mail, usado só como corpo de notificação)","cancAcademicoComDivida":"Multa Rescisória Pendente","cancAcademicoSemDivida":"Multa Rescisória Pendente","cancFinanceiro":"Confirmação de trancamento de matrícula - Setor Financeiro IPESSP","leadBoasVindas":"Bem-vindo(a) ao IPESSP — seu futuro começa aqui!","leadFollowup":"Ainda pensando? Podemos ajudar — IPESSP","leadCta":"Última chamada: inscrições abertas no IPESSP"};
+  const subjects = {"lembrete":"IPESSP - Sua Parcela Vence em Breve","hoje":"IPESSP - Vencimento da sua parcela","cobranca":"IPESSP - Mensalidade em atraso — 5 dias","cobrancaQr":"IPESSP - Mensalidade em atraso — 5 dias (QR PIX real)","aviso":"IPESSP - Aviso Importante: vencimento em 3 dias","renegOferta":"IPESSP - Condições especiais para regularizar sua mensalidade","renegLembrete":"IPESSP - Já conferiu a solução para o seu atraso?","confirmacao":"Sua matrícula em Biomedicina — Acesse o link de pagamento","relatorioInterno":"(interno — sem assunto de e-mail, usado só como corpo de notificação)","cancAcademico":"Confirmação de Cancelamento Acadêmico - IPESSP","cancFinanceiroMultaEAtraso":"Multa Rescisória Pendente","cancFinanceiroSoMulta":"Multa Rescisória Pendente","cancFinanceiroSemPendencia":"Confirmação de trancamento de matrícula - Setor Financeiro IPESSP","leadBoasVindas":"Bem-vindo(a) ao IPESSP — seu futuro começa aqui!","leadFollowup":"Ainda pensando? Podemos ajudar — IPESSP","leadCta":"Última chamada: inscrições abertas no IPESSP"};
   const frame = document.getElementById('frame');
   const subjectLine = document.getElementById('subject-line');
   const tabs = document.querySelectorAll('.tab');
