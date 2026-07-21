@@ -154,17 +154,21 @@ export class EmailJobService {
       : templateCancelamentoFinanceiro(emailData);
     const tipoLog: EmailTipo = tipo === 'academico' ? 'cancelamento_academico' : 'cancelamento_financeiro';
 
-    // Remetente próprio (EMAIL_CANCELAMENTO_FROM) — o SMTP_FROM padrão (que
-    // manda os outros modelos) recebe cópia em CC pra manter visibilidade.
+    // Remetente próprio (EMAIL_CANCELAMENTO_FROM) — financeiro, pedagógico e
+    // trancamento recebem cópia em CC (vars opcionais; endereços vazios ignorados).
     const cancelamentoFrom = this.config.get<string>('email.cancelamentoFrom');
-    const fromPadrao = this.config.get<string>('email.from');
+    const ccEnderecos = [
+      this.config.get<string>('email.from'),
+      this.config.get<string>('email.cancelamentoCcPedagogico'),
+      this.config.get<string>('email.cancelamentoCcTrancamento'),
+    ].filter(Boolean).join(', ');
     try {
       await this.emailService.enviar(
         resumo.emailResponsavel,
         template.subject,
         template.html,
         undefined,
-        { from: cancelamentoFrom || undefined, cc: fromPadrao || undefined },
+        { from: cancelamentoFrom || undefined, cc: ccEnderecos || undefined },
       );
       await this.emailLogRepo.save({
         codigoLancamento: '',
