@@ -1,12 +1,14 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { errMsg } from '../common/err.util';
 import { FinanceiroService } from '../financeiro/financeiro.service';
 import { WhatsAppService } from './whatsapp.service';
 import { EmailLog, EmailTipo } from './entities/email-log.entity';
+import { ClienteCache } from '../financeiro/entities/cliente-cache.entity';
+import { LancamentoCache } from '../financeiro/entities/lancamento-cache.entity';
 import { parseDateBR } from '../common/date.util';
 
 const WPP_ANTES_TIPO: Record<number, EmailTipo> = {
@@ -64,6 +66,10 @@ export class WhatsAppJobService {
     private readonly config: ConfigService,
     @InjectRepository(EmailLog)
     private readonly logRepo: Repository<EmailLog>,
+    @InjectRepository(ClienteCache)
+    private readonly clienteRepo: Repository<ClienteCache>,
+    @InjectRepository(LancamentoCache)
+    private readonly lancamentoRepo: Repository<LancamentoCache>,
   ) {}
 
   // Cada dia mapeia pra 2 variantes com o mesmo conteúdo/tom, sorteadas por
@@ -317,5 +323,111 @@ export class WhatsAppJobService {
     this.logger.log(
       `=== Job WhatsApp concluído: ${totalEnviados} enviados, ${totalErros} erros, ${totalSemBoleto} sem PIX (pulados) ===`,
     );
+  }
+
+  /**
+   * Preview isolado: monta a mensagem real de um aluno específico (por CPF) e manda
+   * para `para` (ex.: o próprio número do responsável pelo teste), sem tocar no lote
+   * do cron nem no telefone real cadastrado do responsável do aluno.
+   */
+  async previewPorCpf(
+    cpf: string,
+    para: string,
+    diasSimulados?: number,
+  ): Promise<{ aluno: string; tipo: string; lancamento: number }[]> {
+    const cpfLimpo = cpf.replace(/\D/g, '');
+    const clientes = await this.clienteRepo.find({ where: { cpf: cpfLimpo } });
+    if (clientes.length === 0) {
+      throw new NotFoundException(
+        'Nenhum aluno encontrado para o CPF informado. Verifique se o CPF do responsável financeiro está cadastrado.',
+      );
+    }
+
+    const lancamentos = await this.lancamentoRepo.find({
+      where: { codigoCliente: In(clientes.map((c) => c.id)), recebido: false },
+    });
+    if (lancamentos.length === 0) {
+      throw new Error(
+        `${clientes[0].nomeAluno} não possui lançamentos em aberto`,
+      );
+    }
+
+    lancamentos.sort((a, b) =>
+      a.dataVencimento.localeCompare(b.dataVencimento),
+    );
+    const lancamento = lancamentos[0];
+    const cliente = clientes.find((c) => c.id === lancamento.codigoCliente)!;
+
+    return [await this.enviarPreview(cliente, lancamento, para, diasSimulados)];
+  }
+
+  /** `diasSimulados` — ver comentário de previewPorCpf, mesma convenção. */
+  async previewPorLancamento(
+    codigoLancamento: number,
+    para: string,
+    diasSimulados?: number,
+  ): Promise<{ aluno: string; tipo: string; lancamento: number }[]> {
+    const lancamento = await this.lancamentoRepo.findOne({
+      where: { id: codigoLancamento },
+    });
+    if (!lancamento)
+      throw new NotFoundException(
+        `Lançamento ${codigoLancamento} não encontrado`,
+      );
+
+    const cliente = await this.clienteRepo.findOne({
+      where: { id: lancamento.codigoCliente },
+    });
+    if (!cliente)
+      throw new NotFoundException(
+        `Cliente do lançamento ${codigoLancamento} não encontrado`,
+      );
+
+    return [await this.enviarPreview(cliente, lancamento, para, diasSimulados)];
+  }
+
+  private async enviarPreview(
+    cliente: ClienteCache,
+    lancamento: LancamentoCache,
+    para: string,
+    diasSimulados?: number,
+  ): Promise<{ aluno: string; tipo: string; lancamento: number }> {
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+
+    let venc: Date;
+    let diffDias: number;
+    if (diasSimulados !== undefined) {
+      diffDias = diasSimulados;
+      venc = new Date(hoje.getTime() + diasSimulados * 86_400_000);
+    } else {
+      venc = parseDateBR(lancamento.dataVencimento);
+      venc.setHours(0, 0, 0, 0);
+      diffDias = Math.round((venc.getTime() - hoje.getTime()) / 86_400_000);
+    }
+
+    const portalLink =
+      this.config.get<string>('email.linkPortalAluno') ||
+      this.config.get<string>('email.siteUrl') ||
+      undefined;
+
+    const mensagem = this.montarMensagem(diffDias, {
+      nomeResponsavel: cliente.nomeResponsavel ?? cliente.nomeAluno,
+      nomeAluno: cliente.nomeAluno,
+      vencimento: venc.toLocaleDateString('pt-BR'),
+      codigoPix: lancamento.codigoPix ?? undefined,
+      portalLink,
+    });
+
+    await this.whatsapp.enviarTexto(para, `🧪 *[PREVIEW]*\n\n${mensagem}`);
+
+    const tipo =
+      diffDias === 0
+        ? 'wpp_vencimento_hoje'
+        : diffDias > 0
+          ? (WPP_ANTES_TIPO[diffDias] ?? 'wpp_lembrete')
+          : (WPP_APOS_TIPO[Math.abs(diffDias)] ?? 'wpp_cobranca');
+
+    return { aluno: cliente.nomeAluno, tipo, lancamento: lancamento.id };
   }
 }
