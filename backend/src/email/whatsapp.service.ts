@@ -36,7 +36,7 @@ export class WhatsAppService {
     const phone = telefone.replace(/\D/g, '');
 
     try {
-      await firstValueFrom(
+      const resposta = await firstValueFrom(
         this.http.post(
           url,
           { phone, message: mensagem },
@@ -44,6 +44,12 @@ export class WhatsAppService {
             headers: { 'Client-Token': clientToken ?? '' },
           },
         ),
+      );
+      // Log temporário — a Z-API pode devolver HTTP 200 com o motivo real da
+      // falha dentro do corpo (não como erro HTTP), então sem isso a falha
+      // fica invisível nos logs mesmo sem cair no catch.
+      this.logger.log(
+        `WhatsApp: resposta do send-text para ${phone} — ${JSON.stringify(resposta.data)}`,
       );
     } catch (err) {
       this.logger.warn(
@@ -75,7 +81,7 @@ export class WhatsAppService {
     const phone = telefone.replace(/\D/g, '');
 
     try {
-      await firstValueFrom(
+      const resposta = await firstValueFrom(
         this.http.post(
           endpoint,
           {
@@ -85,6 +91,9 @@ export class WhatsAppService {
           },
           { headers: { 'Client-Token': clientToken ?? '' } },
         ),
+      );
+      this.logger.log(
+        `WhatsApp: resposta do send-button-actions para ${phone} — ${JSON.stringify(resposta.data)}`,
       );
     } catch (err) {
       this.logger.warn(
