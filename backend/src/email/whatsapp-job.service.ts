@@ -76,186 +76,126 @@ export class WhatsAppJobService {
   // envio — evita que centenas de destinatários no mesmo dia recebam texto
   // byte-a-byte idêntico (só o nome mudava antes), que é um padrão fácil de
   // sinalizar como spam.
-  private montarMensagem(
-    diffDias: number,
-    d: MensagemDados,
-  ): { texto: string; botaoLabel?: string } {
+  private montarMensagem(diffDias: number, d: MensagemDados): string {
     const nome = d.nomeResponsavel;
     const venc = d.vencimento;
     const pixBloco = d.codigoPix
       ? `\n\n*PIX Copia e Cola:*\n\`${d.codigoPix}\``
       : '';
-    // cta() não embute mais o link no texto — o link vira um botão nativo do
-    // WhatsApp (ver enviarBotaoLink em whatsapp.service.ts), então aqui só
-    // registramos o label pra quem chamou montarMensagem montar o botão.
-    let botaoLabel: string | undefined;
-    const cta = (label: string) => {
-      if (d.portalLink) botaoLabel = label;
-      return '';
-    };
+    const cta = (label: string) =>
+      d.portalLink ? `\n\n🔘 *${label}:* ${d.portalLink}` : '';
     const quickReply = (a: string, b: string) =>
       `\n\n↩️ Responda com: *${a}* ou *${b}*`;
 
     // ── Antes do vencimento ──────────────────────────────────────────────────
     if (diffDias === 7) {
-      return {
-        texto: escolher([
-          `Oi, ${nome}! 👋\nPassando para lembrar que sua mensalidade com vencimento em *${venc}* já está disponível para pagamento.\nVocê pode pagar via PIX copia e cola ou pelo Portal do Aluno Sophia, onde também consegue emitir a 2ª via do boleto quando quiser.${pixBloco}\nAproveite para se antecipar e evitar imprevistos de última hora! 😉${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Acessar Portal Sophia')}`,
-          `Olá, ${nome}! 😊\nSua mensalidade vence em *${venc}* e já está liberada para pagamento. Você pode quitar via PIX copia e cola ou pelo Portal do Aluno Sophia, onde também dá pra emitir a 2ª via do boleto.${pixBloco}\nAdiantar o pagamento evita correria de última hora!${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Acessar Portal Sophia')}`,
-        ]),
-        botaoLabel,
-      };
+      return escolher([
+        `Oi, ${nome}! 👋\nPassando para lembrar que sua mensalidade com vencimento em *${venc}* já está disponível para pagamento.\nVocê pode pagar via PIX copia e cola ou pelo Portal do Aluno Sophia, onde também consegue emitir a 2ª via do boleto quando quiser.${pixBloco}\nAproveite para se antecipar e evitar imprevistos de última hora! 😉${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Acessar Portal Sophia')}`,
+        `Olá, ${nome}! 😊\nSua mensalidade vence em *${venc}* e já está liberada para pagamento. Você pode quitar via PIX copia e cola ou pelo Portal do Aluno Sophia, onde também dá pra emitir a 2ª via do boleto.${pixBloco}\nAdiantar o pagamento evita correria de última hora!${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Acessar Portal Sophia')}`,
+      ]);
     }
     if (diffDias === 5) {
-      return {
-        texto: escolher([
-          `Olá, ${nome}!\nSua mensalidade vence em 5 dias (*${venc}*). Já está disponível para pagamento via PIX ou boleto, e também pelo Portal Sophia.${pixBloco}\nQue tal já deixar essa pendência resolvida? Assim você garante que tudo fique em dia sem se preocupar depois. 🙂${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Acessar Portal Sophia')}`,
-          `Oi, ${nome}, tudo certo?\nFaltam 5 dias para o vencimento da sua mensalidade (*${venc}*), que já pode ser paga via PIX, boleto ou pelo Portal Sophia.${pixBloco}\nVale a pena resolver isso logo e ficar tranquilo(a) depois. 🙂${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Acessar Portal Sophia')}`,
-        ]),
-        botaoLabel,
-      };
+      return escolher([
+        `Olá, ${nome}!\nSua mensalidade vence em 5 dias (*${venc}*). Já está disponível para pagamento via PIX ou boleto, e também pelo Portal Sophia.${pixBloco}\nQue tal já deixar essa pendência resolvida? Assim você garante que tudo fique em dia sem se preocupar depois. 🙂${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Acessar Portal Sophia')}`,
+        `Oi, ${nome}, tudo certo?\nFaltam 5 dias para o vencimento da sua mensalidade (*${venc}*), que já pode ser paga via PIX, boleto ou pelo Portal Sophia.${pixBloco}\nVale a pena resolver isso logo e ficar tranquilo(a) depois. 🙂${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Acessar Portal Sophia')}`,
+      ]);
     }
     if (diffDias === 3) {
-      return {
-        texto: escolher([
-          `${nome}, tudo bem?\nSua mensalidade vence em apenas 3 dias (*${venc}*). Para evitar juros e encargos por atraso, recomendamos realizar o pagamento o quanto antes.${pixBloco}\nO boleto também está disponível no Portal do Aluno Sophia, caso prefira pagar por lá.${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Pagar no Portal Sophia')}`,
-          `Oi, ${nome}!\nFaltam só 3 dias para o vencimento da sua mensalidade (*${venc}*). Pagando antes do prazo você evita juros e encargos.${pixBloco}\nSe preferir, o boleto também está disponível no Portal do Aluno Sophia.${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Pagar no Portal Sophia')}`,
-        ]),
-        botaoLabel,
-      };
+      return escolher([
+        `${nome}, tudo bem?\nSua mensalidade vence em apenas 3 dias (*${venc}*). Para evitar juros e encargos por atraso, recomendamos realizar o pagamento o quanto antes.${pixBloco}\nO boleto também está disponível no Portal do Aluno Sophia, caso prefira pagar por lá.${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Pagar no Portal Sophia')}`,
+        `Oi, ${nome}!\nFaltam só 3 dias para o vencimento da sua mensalidade (*${venc}*). Pagando antes do prazo você evita juros e encargos.${pixBloco}\nSe preferir, o boleto também está disponível no Portal do Aluno Sophia.${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Pagar no Portal Sophia')}`,
+      ]);
     }
     if (diffDias === 1) {
-      return {
-        texto: escolher([
-          `Atenção, ${nome}! 🚨\nSua mensalidade vence amanhã (*${venc}*). Para evitar a incidência de juros, o ideal é regularizar ainda hoje.${pixBloco}\nSe já efetuou o pagamento, pode desconsiderar esta mensagem. Qualquer dúvida, estamos por aqui!${quickReply('Já paguei', 'Quero negociar')}${cta('Pagar no Portal Sophia')}`,
-          `${nome}, passando um aviso rápido: sua mensalidade vence amanhã (*${venc}*). 🚨\nO ideal é regularizar ainda hoje pra não pegar juros.${pixBloco}\nJá pagou? Pode ignorar esta mensagem. Qualquer coisa, é só chamar!${quickReply('Já paguei', 'Quero negociar')}${cta('Pagar no Portal Sophia')}`,
-        ]),
-        botaoLabel,
-      };
+      return escolher([
+        `Atenção, ${nome}! 🚨\nSua mensalidade vence amanhã (*${venc}*). Para evitar a incidência de juros, o ideal é regularizar ainda hoje.${pixBloco}\nSe já efetuou o pagamento, pode desconsiderar esta mensagem. Qualquer dúvida, estamos por aqui!${quickReply('Já paguei', 'Quero negociar')}${cta('Pagar no Portal Sophia')}`,
+        `${nome}, passando um aviso rápido: sua mensalidade vence amanhã (*${venc}*). 🚨\nO ideal é regularizar ainda hoje pra não pegar juros.${pixBloco}\nJá pagou? Pode ignorar esta mensagem. Qualquer coisa, é só chamar!${quickReply('Já paguei', 'Quero negociar')}${cta('Pagar no Portal Sophia')}`,
+      ]);
     }
 
     // ── No dia do vencimento ─────────────────────────────────────────────────
     if (diffDias === 0) {
-      return {
-        texto: escolher([
-          `${nome}! 📅\nO vencimento da sua mensalidade é hoje (*${venc}*). Este é o último dia para realizar o pagamento sem acréscimo de juros e encargos.${pixBloco}\nVocê também pode pagar diretamente pelo Portal do Aluno Sophia, de forma rápida e segura.${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Pagar agora')}`,
-          `Oi, ${nome}! 📅\nHoje (*${venc}*) é o último dia para pagar sua mensalidade sem juros nem encargos.${pixBloco}\nDá pra resolver rapidinho pelo Portal do Aluno Sophia também.${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Pagar agora')}`,
-        ]),
-        botaoLabel,
-      };
+      return escolher([
+        `${nome}! 📅\nO vencimento da sua mensalidade é hoje (*${venc}*). Este é o último dia para realizar o pagamento sem acréscimo de juros e encargos.${pixBloco}\nVocê também pode pagar diretamente pelo Portal do Aluno Sophia, de forma rápida e segura.${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Pagar agora')}`,
+        `Oi, ${nome}! 📅\nHoje (*${venc}*) é o último dia para pagar sua mensalidade sem juros nem encargos.${pixBloco}\nDá pra resolver rapidinho pelo Portal do Aluno Sophia também.${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Pagar agora')}`,
+      ]);
     }
 
     // ── Após o vencimento ────────────────────────────────────────────────────
     const atraso = Math.abs(diffDias);
 
     if (atraso === 1) {
-      return {
-        texto: escolher([
-          `Oi, ${nome}.\nNotamos que sua mensalidade com vencimento em *${venc}* não foi identificada em nosso sistema até o momento.\nPara evitar o acréscimo de juros e encargos, pedimos que regularize o quanto antes.${pixBloco}\nSe já efetuou o pagamento, pode desconsiderar esta mensagem. 🙂${quickReply('Já paguei', 'Quero negociar')}${cta('Pagar agora')}`,
-          `${nome}, tudo bem?\nAté agora não identificamos o pagamento da sua mensalidade que venceu em *${venc}*.\nPedimos que regularize o quanto antes pra evitar juros e encargos.${pixBloco}\nJá pagou? Pode desconsiderar este aviso. 🙂${quickReply('Já paguei', 'Quero negociar')}${cta('Pagar agora')}`,
-        ]),
-        botaoLabel,
-      };
+      return escolher([
+        `Oi, ${nome}.\nNotamos que sua mensalidade com vencimento em *${venc}* não foi identificada em nosso sistema até o momento.\nPara evitar o acréscimo de juros e encargos, pedimos que regularize o quanto antes.${pixBloco}\nSe já efetuou o pagamento, pode desconsiderar esta mensagem. 🙂${quickReply('Já paguei', 'Quero negociar')}${cta('Pagar agora')}`,
+        `${nome}, tudo bem?\nAté agora não identificamos o pagamento da sua mensalidade que venceu em *${venc}*.\nPedimos que regularize o quanto antes pra evitar juros e encargos.${pixBloco}\nJá pagou? Pode desconsiderar este aviso. 🙂${quickReply('Já paguei', 'Quero negociar')}${cta('Pagar agora')}`,
+      ]);
     }
     if (atraso === 2) {
-      return {
-        texto: escolher([
-          `Olá, ${nome}.\nSua mensalidade com vencimento em *${venc}* segue em aberto há 2 dias.\nPara evitar maiores encargos, recomendamos a regularização o quanto antes.${pixBloco}\nVocê também pode acessar o Portal Sophia para consultar e pagar diretamente por lá.${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Pagar no Portal')}`,
-          `${nome}, oi.\nJá se passaram 2 dias desde o vencimento da sua mensalidade (*${venc}*), que segue em aberto.\nRegularizar logo evita o acúmulo de encargos.${pixBloco}\nVocê pode consultar e pagar direto pelo Portal Sophia.${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Pagar no Portal')}`,
-        ]),
-        botaoLabel,
-      };
+      return escolher([
+        `Olá, ${nome}.\nSua mensalidade com vencimento em *${venc}* segue em aberto há 2 dias.\nPara evitar maiores encargos, recomendamos a regularização o quanto antes.${pixBloco}\nVocê também pode acessar o Portal Sophia para consultar e pagar diretamente por lá.${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Pagar no Portal')}`,
+        `${nome}, oi.\nJá se passaram 2 dias desde o vencimento da sua mensalidade (*${venc}*), que segue em aberto.\nRegularizar logo evita o acúmulo de encargos.${pixBloco}\nVocê pode consultar e pagar direto pelo Portal Sophia.${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Pagar no Portal')}`,
+      ]);
     }
     if (atraso === 3) {
-      return {
-        texto: escolher([
-          `${nome}, tudo bem?\nIdentificamos que sua mensalidade está em aberto há 3 dias. Pedimos, por gentileza, que regularize o pagamento para evitar juros adicionais.${pixBloco}\nSe precisar de ajuda ou já pagou, é só nos avisar por aqui!${quickReply('Já paguei', 'Falar com o financeiro')}${cta('Pagar agora')}`,
-          `Oi, ${nome}.\nSua mensalidade (*${venc}*) está em aberto há 3 dias. Pedimos que regularize assim que possível pra não acumular juros.${pixBloco}\nPrecisa de ajuda ou já pagou? É só nos avisar!${quickReply('Já paguei', 'Falar com o financeiro')}${cta('Pagar agora')}`,
-        ]),
-        botaoLabel,
-      };
+      return escolher([
+        `${nome}, tudo bem?\nIdentificamos que sua mensalidade está em aberto há 3 dias. Pedimos, por gentileza, que regularize o pagamento para evitar juros adicionais.${pixBloco}\nSe precisar de ajuda ou já pagou, é só nos avisar por aqui!${quickReply('Já paguei', 'Falar com o financeiro')}${cta('Pagar agora')}`,
+        `Oi, ${nome}.\nSua mensalidade (*${venc}*) está em aberto há 3 dias. Pedimos que regularize assim que possível pra não acumular juros.${pixBloco}\nPrecisa de ajuda ou já pagou? É só nos avisar!${quickReply('Já paguei', 'Falar com o financeiro')}${cta('Pagar agora')}`,
+      ]);
     }
     if (atraso === 7) {
-      return {
-        texto: escolher([
-          `Olá, ${nome}.\nSua mensalidade encontra-se em aberto há 7 dias. Reforçamos a importância da regularização para evitar o acréscimo de encargos e possíveis restrições acadêmicas.${pixBloco}\nVocê pode consultar e pagar também pelo Portal Sophia.${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Acessar Portal Sophia')}`,
-          `${nome}, tudo bem?\nJá são 7 dias com a mensalidade em aberto. É importante regularizar logo pra evitar mais encargos e possíveis restrições acadêmicas.${pixBloco}\nO Portal Sophia também está disponível pra consulta e pagamento.${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Acessar Portal Sophia')}`,
-        ]),
-        botaoLabel,
-      };
+      return escolher([
+        `Olá, ${nome}.\nSua mensalidade encontra-se em aberto há 7 dias. Reforçamos a importância da regularização para evitar o acréscimo de encargos e possíveis restrições acadêmicas.${pixBloco}\nVocê pode consultar e pagar também pelo Portal Sophia.${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Acessar Portal Sophia')}`,
+        `${nome}, tudo bem?\nJá são 7 dias com a mensalidade em aberto. É importante regularizar logo pra evitar mais encargos e possíveis restrições acadêmicas.${pixBloco}\nO Portal Sophia também está disponível pra consulta e pagamento.${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Acessar Portal Sophia')}`,
+      ]);
     }
     if (atraso === 8) {
-      return {
-        texto: escolher([
-          `Oi, ${nome}.\nSua mensalidade segue pendente há 8 dias. Para evitar transtornos, pedimos que a regularização seja feita o quanto antes.${pixBloco}\nEstamos à disposição para ajudar com o que for preciso!${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Pagar no Portal')}`,
-          `${nome}, passando aqui de novo.\nSua mensalidade continua pendente há 8 dias. Pra evitar transtorno, regularize assim que puder.${pixBloco}\nQualquer coisa, estamos à disposição!${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Pagar no Portal')}`,
-        ]),
-        botaoLabel,
-      };
+      return escolher([
+        `Oi, ${nome}.\nSua mensalidade segue pendente há 8 dias. Para evitar transtornos, pedimos que a regularização seja feita o quanto antes.${pixBloco}\nEstamos à disposição para ajudar com o que for preciso!${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Pagar no Portal')}`,
+        `${nome}, passando aqui de novo.\nSua mensalidade continua pendente há 8 dias. Pra evitar transtorno, regularize assim que puder.${pixBloco}\nQualquer coisa, estamos à disposição!${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Pagar no Portal')}`,
+      ]);
     }
     if (atraso === 9) {
-      return {
-        texto: escolher([
-          `${nome}, sua mensalidade está em aberto há 9 dias.\nPara evitar o aumento dos juros e encargos contratuais, solicitamos a regularização com urgência.${pixBloco}\nCaso já tenha pago, pode desconsiderar esta mensagem.${quickReply('Já paguei', 'Quero negociar')}${cta('Pagar agora')}`,
-          `Oi, ${nome}.\nJá faz 9 dias que sua mensalidade está em aberto. Pedimos regularização urgente pra não aumentar juros e encargos.${pixBloco}\nSe já pagou, desconsidere este aviso.${quickReply('Já paguei', 'Quero negociar')}${cta('Pagar agora')}`,
-        ]),
-        botaoLabel,
-      };
+      return escolher([
+        `${nome}, sua mensalidade está em aberto há 9 dias.\nPara evitar o aumento dos juros e encargos contratuais, solicitamos a regularização com urgência.${pixBloco}\nCaso já tenha pago, pode desconsiderar esta mensagem.${quickReply('Já paguei', 'Quero negociar')}${cta('Pagar agora')}`,
+        `Oi, ${nome}.\nJá faz 9 dias que sua mensalidade está em aberto. Pedimos regularização urgente pra não aumentar juros e encargos.${pixBloco}\nSe já pagou, desconsidere este aviso.${quickReply('Já paguei', 'Quero negociar')}${cta('Pagar agora')}`,
+      ]);
     }
     if (atraso === 10) {
-      return {
-        texto: escolher([
-          `Atenção, ${nome}. 📌\nSua mensalidade está em atraso há 10 dias. A continuidade do débito pode gerar restrições acadêmicas, como bloqueio de acesso a notas e boletos.${pixBloco}\nPedimos a regularização o quanto antes para evitar maiores transtornos.${quickReply('Já paguei', 'Quero negociar')}${cta('Pagar no Portal Sophia')}`,
-          `${nome}, um alerta importante. 📌\nJá são 10 dias de atraso na sua mensalidade. Isso pode gerar restrições acadêmicas, como bloqueio de notas e boletos.${pixBloco}\nRegularize o quanto antes pra evitar mais transtorno.${quickReply('Já paguei', 'Quero negociar')}${cta('Pagar no Portal Sophia')}`,
-        ]),
-        botaoLabel,
-      };
+      return escolher([
+        `Atenção, ${nome}. 📌\nSua mensalidade está em atraso há 10 dias. A continuidade do débito pode gerar restrições acadêmicas, como bloqueio de acesso a notas e boletos.${pixBloco}\nPedimos a regularização o quanto antes para evitar maiores transtornos.${quickReply('Já paguei', 'Quero negociar')}${cta('Pagar no Portal Sophia')}`,
+        `${nome}, um alerta importante. 📌\nJá são 10 dias de atraso na sua mensalidade. Isso pode gerar restrições acadêmicas, como bloqueio de notas e boletos.${pixBloco}\nRegularize o quanto antes pra evitar mais transtorno.${quickReply('Já paguei', 'Quero negociar')}${cta('Pagar no Portal Sophia')}`,
+      ]);
     }
     if (atraso === 12) {
-      return {
-        texto: escolher([
-          `${nome}, sua mensalidade está vencida há 12 dias.\nSolicitamos, por gentileza, que a regularização seja realizada com urgência, a fim de evitar o acréscimo de juros e possíveis restrições acadêmicas.${pixBloco}\nCaso tenha alguma dificuldade, entre em contato para avaliarmos opções de negociação.${quickReply('Já paguei', 'Falar com o financeiro')}${cta('Pagar no Portal Sophia')}`,
-          `Oi, ${nome}.\nJá são 12 dias de mensalidade vencida. Pedimos que regularize com urgência, pra evitar mais juros e possíveis restrições acadêmicas.${pixBloco}\nSe estiver com dificuldade, fale com a gente — dá pra avaliar opções de negociação.${quickReply('Já paguei', 'Falar com o financeiro')}${cta('Pagar no Portal Sophia')}`,
-        ]),
-        botaoLabel,
-      };
+      return escolher([
+        `${nome}, sua mensalidade está vencida há 12 dias.\nSolicitamos, por gentileza, que a regularização seja realizada com urgência, a fim de evitar o acréscimo de juros e possíveis restrições acadêmicas.${pixBloco}\nCaso tenha alguma dificuldade, entre em contato para avaliarmos opções de negociação.${quickReply('Já paguei', 'Falar com o financeiro')}${cta('Pagar no Portal Sophia')}`,
+        `Oi, ${nome}.\nJá são 12 dias de mensalidade vencida. Pedimos que regularize com urgência, pra evitar mais juros e possíveis restrições acadêmicas.${pixBloco}\nSe estiver com dificuldade, fale com a gente — dá pra avaliar opções de negociação.${quickReply('Já paguei', 'Falar com o financeiro')}${cta('Pagar no Portal Sophia')}`,
+      ]);
     }
     if (atraso === 15) {
-      return {
-        texto: escolher([
-          `Olá, ${nome}.\nSua mensalidade está em aberto há 15 dias, já sujeita ao acréscimo de juros e encargos contratuais.\nPedimos que a quitação seja providenciada o quanto antes.${pixBloco}\nSe desejar negociar valores ou condições, é só nos chamar por aqui.${quickReply('Já paguei', 'Falar com o financeiro')}${cta('Resolver no Portal Sophia')}`,
-          `${nome}, tudo bem?\nJá se passaram 15 dias desde o vencimento, e a mensalidade já está sujeita a juros e encargos contratuais.\nPedimos que a quitação seja feita o quanto antes.${pixBloco}\nQuer negociar valores ou condições? É só chamar!${quickReply('Já paguei', 'Falar com o financeiro')}${cta('Resolver no Portal Sophia')}`,
-        ]),
-        botaoLabel,
-      };
+      return escolher([
+        `Olá, ${nome}.\nSua mensalidade está em aberto há 15 dias, já sujeita ao acréscimo de juros e encargos contratuais.\nPedimos que a quitação seja providenciada o quanto antes.${pixBloco}\nSe desejar negociar valores ou condições, é só nos chamar por aqui.${quickReply('Já paguei', 'Falar com o financeiro')}${cta('Resolver no Portal Sophia')}`,
+        `${nome}, tudo bem?\nJá se passaram 15 dias desde o vencimento, e a mensalidade já está sujeita a juros e encargos contratuais.\nPedimos que a quitação seja feita o quanto antes.${pixBloco}\nQuer negociar valores ou condições? É só chamar!${quickReply('Já paguei', 'Falar com o financeiro')}${cta('Resolver no Portal Sophia')}`,
+      ]);
     }
     if (atraso === 20) {
-      return {
-        texto: escolher([
-          `${nome}, atenção: sua mensalidade está em atraso há 20 dias. ⚠️\nA manutenção do débito pode acarretar restrições acadêmicas, incluindo bloqueio de acesso a notas, boletos e matrícula.${pixBloco}\nPedimos a regularização imediata. Caso tenha dificuldades para o pagamento, entre em contato para negociarmos juntos a melhor solução.${quickReply('Já paguei', 'Quero negociar')}${cta('Resolver no Portal Sophia')}`,
-          `Oi, ${nome}. ⚠️\nJá são 20 dias de atraso na sua mensalidade. Isso pode acarretar restrições acadêmicas, como bloqueio de notas, boletos e matrícula.${pixBloco}\nPedimos regularização imediata. Com dificuldade pra pagar? Fale com a gente pra buscarmos a melhor solução juntos.${quickReply('Já paguei', 'Quero negociar')}${cta('Resolver no Portal Sophia')}`,
-        ]),
-        botaoLabel,
-      };
+      return escolher([
+        `${nome}, atenção: sua mensalidade está em atraso há 20 dias. ⚠️\nA manutenção do débito pode acarretar restrições acadêmicas, incluindo bloqueio de acesso a notas, boletos e matrícula.${pixBloco}\nPedimos a regularização imediata. Caso tenha dificuldades para o pagamento, entre em contato para negociarmos juntos a melhor solução.${quickReply('Já paguei', 'Quero negociar')}${cta('Resolver no Portal Sophia')}`,
+        `Oi, ${nome}. ⚠️\nJá são 20 dias de atraso na sua mensalidade. Isso pode acarretar restrições acadêmicas, como bloqueio de notas, boletos e matrícula.${pixBloco}\nPedimos regularização imediata. Com dificuldade pra pagar? Fale com a gente pra buscarmos a melhor solução juntos.${quickReply('Já paguei', 'Quero negociar')}${cta('Resolver no Portal Sophia')}`,
+      ]);
     }
 
     // ── Fallback para dias não mapeados ──────────────────────────────────────
     if (diffDias > 0) {
-      return {
-        texto: escolher([
-          `📅 Olá, ${nome}!\nSua mensalidade vence em *${diffDias} dia(s)* (*${venc}*). Efetue o pagamento em dia para evitar juros e encargos.${pixBloco}${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Acessar Portal Sophia')}`,
-          `📅 Oi, ${nome}!\nFaltam *${diffDias} dia(s)* pro vencimento da sua mensalidade (*${venc}*). Pague em dia pra evitar juros e encargos.${pixBloco}${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Acessar Portal Sophia')}`,
-        ]),
-        botaoLabel,
-      };
+      return escolher([
+        `📅 Olá, ${nome}!\nSua mensalidade vence em *${diffDias} dia(s)* (*${venc}*). Efetue o pagamento em dia para evitar juros e encargos.${pixBloco}${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Acessar Portal Sophia')}`,
+        `📅 Oi, ${nome}!\nFaltam *${diffDias} dia(s)* pro vencimento da sua mensalidade (*${venc}*). Pague em dia pra evitar juros e encargos.${pixBloco}${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Acessar Portal Sophia')}`,
+      ]);
     }
-    return {
-      texto: escolher([
-        `⚠️ Olá, ${nome}!\nSua mensalidade está em aberto há *${atraso} dia(s)* (venceu em *${venc}*). Regularize o quanto antes para evitar maiores encargos.${pixBloco}${quickReply('Já paguei', 'Falar com o financeiro')}${cta('Acessar Portal')}`,
-        `⚠️ Oi, ${nome}!\nJá são *${atraso} dia(s)* de mensalidade em aberto (venceu em *${venc}*). Quanto antes regularizar, menos encargos acumulam.${pixBloco}${quickReply('Já paguei', 'Falar com o financeiro')}${cta('Acessar Portal')}`,
-      ]),
-      botaoLabel,
-    };
+    return escolher([
+      `⚠️ Olá, ${nome}!\nSua mensalidade está em aberto há *${atraso} dia(s)* (venceu em *${venc}*). Regularize o quanto antes para evitar maiores encargos.${pixBloco}${quickReply('Já paguei', 'Falar com o financeiro')}${cta('Acessar Portal')}`,
+      `⚠️ Oi, ${nome}!\nJá são *${atraso} dia(s)* de mensalidade em aberto (venceu em *${venc}*). Quanto antes regularizar, menos encargos acumulam.${pixBloco}${quickReply('Já paguei', 'Falar com o financeiro')}${cta('Acessar Portal')}`,
+    ]);
   }
 
   @Cron('0 8 * * *', { name: 'wpp_job', timeZone: 'America/Sao_Paulo' })
@@ -358,11 +298,9 @@ export class WhatsAppJobService {
         await delayAleatorio();
 
         try {
-          await this.enviar(
+          await this.whatsapp.enviarTexto(
             cliente.telefoneResponsavel,
-            mensagem.texto,
-            mensagem.botaoLabel,
-            portalLink,
+            mensagem,
           );
           log.enviado = true;
           totalEnviados++;
@@ -481,12 +419,7 @@ export class WhatsAppJobService {
       portalLink,
     });
 
-    await this.enviar(
-      para,
-      `🧪 *[PREVIEW]*\n\n${mensagem.texto}`,
-      mensagem.botaoLabel,
-      portalLink,
-    );
+    await this.whatsapp.enviarTexto(para, `🧪 *[PREVIEW]*\n\n${mensagem}`);
 
     const tipo =
       diffDias === 0
@@ -496,40 +429,5 @@ export class WhatsAppJobService {
           : (WPP_APOS_TIPO[Math.abs(diffDias)] ?? 'wpp_cobranca');
 
     return { aluno: cliente.nomeAluno, tipo, lancamento: lancamento.id };
-  }
-
-  /**
-   * Manda com botão nativo (link) quando há portalLink + label. Se o
-   * send-button-actions falhar (Z-API pode rejeitar por vários motivos —
-   * checar o warning logado em whatsapp.service.ts pro motivo exato), cai
-   * pra texto puro com o link embutido, pra garantir que a mensagem chegue.
-   */
-  private async enviar(
-    telefone: string,
-    texto: string,
-    botaoLabel: string | undefined,
-    portalLink: string | undefined,
-  ): Promise<void> {
-    if (botaoLabel && portalLink) {
-      try {
-        await this.whatsapp.enviarBotaoLink(
-          telefone,
-          texto,
-          botaoLabel,
-          portalLink,
-        );
-        return;
-      } catch (err: unknown) {
-        this.logger.warn(
-          `Botão falhou para ${telefone}, caindo pra texto puro — ${errMsg(err)}`,
-        );
-      }
-      await this.whatsapp.enviarTexto(
-        telefone,
-        `${texto}\n\n🔘 *${botaoLabel}:* ${portalLink}`,
-      );
-      return;
-    }
-    await this.whatsapp.enviarTexto(telefone, texto);
   }
 }

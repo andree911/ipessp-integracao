@@ -36,7 +36,7 @@ export class WhatsAppService {
     const phone = telefone.replace(/\D/g, '');
 
     try {
-      const resposta = await firstValueFrom(
+      await firstValueFrom(
         this.http.post(
           url,
           { phone, message: mensagem },
@@ -45,61 +45,10 @@ export class WhatsAppService {
           },
         ),
       );
-      // Log temporário — a Z-API pode devolver HTTP 200 com o motivo real da
-      // falha dentro do corpo (não como erro HTTP), então sem isso a falha
-      // fica invisível nos logs mesmo sem cair no catch.
-      this.logger.log(
-        `WhatsApp: resposta do send-text para ${phone} — ${JSON.stringify(resposta.data)}`,
-      );
     } catch (err) {
       this.logger.warn(
         `WhatsApp: falha ao enviar para ${phone} — ${detalheErro(err)}`,
       );
-    }
-  }
-
-  /**
-   * Envia texto com um botão nativo do WhatsApp (link). Propaga erro — quem
-   * chama (WhatsAppJobService.enviar) decide o fallback pra texto puro, pra
-   * garantir que a mensagem saia mesmo se o send-button-actions falhar.
-   */
-  async enviarBotaoLink(
-    telefone: string,
-    mensagem: string,
-    botaoLabel: string,
-    url: string,
-  ): Promise<void> {
-    const instanceId = this.config.get<string>('zapi.instanceId');
-    const token = this.config.get<string>('zapi.token');
-    const clientToken = this.config.get<string>('zapi.clientToken');
-
-    if (!instanceId || !token) {
-      throw new Error('Z-API não configurada — botão não pode ser enviado');
-    }
-
-    const endpoint = `https://api.z-api.io/instances/${instanceId}/token/${token}/send-button-actions`;
-    const phone = telefone.replace(/\D/g, '');
-
-    try {
-      const resposta = await firstValueFrom(
-        this.http.post(
-          endpoint,
-          {
-            phone,
-            message: mensagem,
-            buttonActions: [{ id: '1', type: 'URL', url, label: botaoLabel }],
-          },
-          { headers: { 'Client-Token': clientToken ?? '' } },
-        ),
-      );
-      this.logger.log(
-        `WhatsApp: resposta do send-button-actions para ${phone} — ${JSON.stringify(resposta.data)}`,
-      );
-    } catch (err) {
-      this.logger.warn(
-        `WhatsApp: falha ao enviar botão para ${phone} — ${detalheErro(err)}`,
-      );
-      throw err;
     }
   }
 
