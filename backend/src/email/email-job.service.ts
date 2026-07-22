@@ -21,6 +21,7 @@ import {
   templateRenegociacaoLembrete,
   templateCancelamentoAcademico,
   templateCancelamentoFinanceiro,
+  templateCancelamentoReembolso,
   type EmailData,
   type CancelamentoEmailData,
 } from './templates/email.templates';
@@ -129,7 +130,9 @@ export class EmailJobService {
    * sempre manda a mesma confirmação simples (sem valores — isso é papel do
    * financeiro); `tipo === 'financeiro'` escolhe sozinho, a partir do resumo
    * atual, entre os 3 textos: sem multa/atraso, só multa, ou multa +
-   * inadimplência (ver templateCancelamentoFinanceiro).
+   * inadimplência (ver templateCancelamentoFinanceiro); `tipo === 'reembolso'`
+   * manda o pedido de dados bancários (cenário à parte, só disponível na tela
+   * quando não há multa/parcela/saldo devedor registrados).
    *
    * `overrides` vem da tela de Cancelamentos do ipessp-corporativo, onde o
    * financeiro edita manualmente saldo devedor/parcelas em atraso/etc — esses
@@ -140,7 +143,7 @@ export class EmailJobService {
    */
   async enviarCancelamento(
     ra: string,
-    tipo: 'academico' | 'financeiro',
+    tipo: 'academico' | 'financeiro' | 'reembolso',
     overrides?: Partial<Pick<CancelamentoEmailData,
       'numeroParcelasRestantes' | 'valorParcela' | 'somaValor' | 'valorMulta' | 'parcelasEmAtraso' | 'saldoDevedor'
     >>,
@@ -164,17 +167,28 @@ export class EmailJobService {
 
     const template = tipo === 'academico'
       ? templateCancelamentoAcademico(emailData)
-      : templateCancelamentoFinanceiro(emailData);
-    const tipoLog: EmailTipo = tipo === 'academico' ? 'cancelamento_academico' : 'cancelamento_financeiro';
+      : tipo === 'reembolso'
+        ? templateCancelamentoReembolso(emailData)
+        : templateCancelamentoFinanceiro(emailData);
+    const tipoLog: EmailTipo = tipo === 'academico'
+      ? 'cancelamento_academico'
+      : tipo === 'reembolso'
+        ? 'cancelamento_reembolso'
+        : 'cancelamento_financeiro';
 
     // Remetente próprio (EMAIL_CANCELAMENTO_FROM) — financeiro, pedagógico e
-    // trancamento recebem cópia em CC (vars opcionais; endereços vazios ignorados).
+    // trancamento recebem cópia em CC (vars opcionais; endereços vazios
+    // ignorados). Reembolso é assunto só do financeiro (dados bancários) —
+    // única cópia é matricula.financeiro (email.from), sem pedagógico/trancamento.
     const cancelamentoFrom = this.config.get<string>('email.cancelamentoFrom');
-    const ccEnderecos = [
-      this.config.get<string>('email.from'),
-      this.config.get<string>('email.cancelamentoCcPedagogico'),
-      this.config.get<string>('email.cancelamentoCcTrancamento'),
-    ].filter(Boolean).join(', ');
+    const ccEnderecos = (tipo === 'reembolso'
+      ? [this.config.get<string>('email.from')]
+      : [
+          this.config.get<string>('email.from'),
+          this.config.get<string>('email.cancelamentoCcPedagogico'),
+          this.config.get<string>('email.cancelamentoCcTrancamento'),
+        ]
+    ).filter(Boolean).join(', ');
     try {
       await this.emailService.enviar(
         resumo.emailResponsavel,

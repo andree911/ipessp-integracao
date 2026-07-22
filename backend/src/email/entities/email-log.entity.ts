@@ -23,6 +23,7 @@ export type EmailTipo =
   // ── Cancelamento ───────────────────────────────────────────────────────────
   | 'cancelamento_academico'
   | 'cancelamento_financeiro'
+  | 'cancelamento_reembolso'
   // ── WhatsApp — genérico (mantido para logs antigos) ───────────────────────────
   | 'wpp_lembrete'
   | 'wpp_vencimento_hoje'

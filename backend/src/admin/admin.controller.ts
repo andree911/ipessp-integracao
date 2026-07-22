@@ -142,7 +142,7 @@ export class AdminController {
   @HttpCode(200)
   emailCancelamento(
     @Body('ra') ra: string,
-    @Body('tipo') tipo: 'academico' | 'financeiro',
+    @Body('tipo') tipo: 'academico' | 'financeiro' | 'reembolso',
     @Body('dados') dados?: {
       numeroParcelasRestantes?: number;
       valorParcela?: number;
@@ -153,9 +153,9 @@ export class AdminController {
     },
   ) {
     if (!ra?.trim()) throw new BadRequestException('Informe o campo "ra"');
-    if (tipo !== 'academico' && tipo !== 'financeiro') {
+    if (tipo !== 'academico' && tipo !== 'financeiro' && tipo !== 'reembolso') {
       throw new BadRequestException(
-        'Campo "tipo" deve ser "academico" ou "financeiro"',
+        'Campo "tipo" deve ser "academico", "financeiro" ou "reembolso"',
       );
     }
     return this.emailJobService.enviarCancelamento(ra, tipo, dados);

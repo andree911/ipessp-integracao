@@ -1152,6 +1152,55 @@ export function templateCancelamentoAcademico(d: CancelamentoEmailData): { subje
   };
 }
 
+const SUBJECT_CANCELAMENTO_REEMBOLSO = 'Cancelamento Confirmado - Dados para Reembolso - IPESSP';
+
+/**
+ * Disparado ao marcar o check "Reembolso" — cenário à parte de Financeiro,
+ * usado quando a escola precisa devolver dinheiro ao aluno em vez de cobrar
+ * (só fica disponível na tela quando não há multa/parcela/saldo devedor
+ * registrados). Pede os dados bancários pro processamento do reembolso.
+ */
+export function templateCancelamentoReembolso(d: CancelamentoEmailData): { subject: string; html: string } {
+  const primeiroNome = d.nomeAluno.split(' ')[0];
+
+  const corpo = `
+    <p style="margin:0 0 18px;font-size:17px;font-weight:bold;color:${COR};text-transform:uppercase;font-family:Arial,sans-serif;">Prezado(a) ${primeiroNome},</p>
+    <p style="margin:0 0 18px;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
+      Esperamos que esteja bem.
+    </p>
+    <p style="margin:0 0 18px;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
+      Informamos que o cancelamento do seu plano de pagamento foi realizado com sucesso, conforme solicitado.
+    </p>
+    <p style="margin:0 0 8px;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
+      Para darmos continuidade ao processo e efetuarmos o reembolso dos valores devidos, solicitamos, por gentileza, que nos encaminhe os seguintes dados banc&#225;rios:
+    </p>
+    <ul style="margin:0 0 18px;padding-left:20px;font-size:14px;color:#444;line-height:1.9;font-family:Arial,sans-serif;">
+      <li>Nome do titular da conta</li>
+      <li>CPF do titular</li>
+      <li>Banco</li>
+      <li>Ag&#234;ncia</li>
+      <li>N&#250;mero da conta</li>
+      <li>Tipo de conta (corrente ou poupan&#231;a)</li>
+      <li>Chave PIX (caso prefira receber por essa modalidade)</li>
+    </ul>
+    <p style="margin:0 0 18px;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
+      Assim que recebermos as informa&#231;&#245;es, seu pedido de reembolso ser&#225; encaminhado ao setor respons&#225;vel para an&#225;lise e processamento.
+    </p>
+    <p style="margin:0;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
+      Permanecemos &#224; disposi&#231;&#227;o para quaisquer esclarecimentos.
+    </p>
+    <p style="margin:18px 0 0;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
+      Atenciosamente,<br>
+      <strong>Setor Financeiro</strong><br>
+      IPESSP
+    </p>`;
+
+  return {
+    subject: SUBJECT_CANCELAMENTO_REEMBOLSO,
+    html: baseConteudoLivre(SUBJECT_CANCELAMENTO_REEMBOLSO, d, corpo),
+  };
+}
+
 /** Título do email de cancelamento financeiro (sem multa). */
 const SUBJECT_CANCELAMENTO = 'Confirmação de trancamento de matrícula - Setor Financeiro IPESSP';
 
