@@ -143,6 +143,14 @@ export class AdminController {
   emailCancelamento(
     @Body('ra') ra: string,
     @Body('tipo') tipo: 'academico' | 'financeiro',
+    @Body('dados') dados?: {
+      numeroParcelasRestantes?: number;
+      valorParcela?: number;
+      somaValor?: number;
+      valorMulta?: number;
+      parcelasEmAtraso?: number;
+      saldoDevedor?: number;
+    },
   ) {
     if (!ra?.trim()) throw new BadRequestException('Informe o campo "ra"');
     if (tipo !== 'academico' && tipo !== 'financeiro') {
@@ -150,7 +158,7 @@ export class AdminController {
         'Campo "tipo" deve ser "academico" ou "financeiro"',
       );
     }
-    return this.emailJobService.enviarCancelamento(ra, tipo);
+    return this.emailJobService.enviarCancelamento(ra, tipo, dados);
   }
 
   // ─── Diagnóstico Sophia ─────────────────────────────────────────────────────

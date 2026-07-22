@@ -130,8 +130,21 @@ export class EmailJobService {
    * financeiro); `tipo === 'financeiro'` escolhe sozinho, a partir do resumo
    * atual, entre os 3 textos: sem multa/atraso, só multa, ou multa +
    * inadimplência (ver templateCancelamentoFinanceiro).
+   *
+   * `overrides` vem da tela de Cancelamentos do ipessp-corporativo, onde o
+   * financeiro edita manualmente saldo devedor/parcelas em atraso/etc — esses
+   * valores prevalecem sobre o resumo recalculado aqui (que reflete só o
+   * cache de cobranças da Sophia e pode divergir do que foi ajustado à mão).
+   * Sem overrides (chamada antiga, sem o campo `dados`), o comportamento
+   * continua sendo recalcular tudo a partir do resumo.
    */
-  async enviarCancelamento(ra: string, tipo: 'academico' | 'financeiro'): Promise<{ enviado: boolean; para: string; subject: string }> {
+  async enviarCancelamento(
+    ra: string,
+    tipo: 'academico' | 'financeiro',
+    overrides?: Partial<Pick<CancelamentoEmailData,
+      'numeroParcelasRestantes' | 'valorParcela' | 'somaValor' | 'valorMulta' | 'parcelasEmAtraso' | 'saldoDevedor'
+    >>,
+  ): Promise<{ enviado: boolean; para: string; subject: string }> {
     const resumo = await this.financeiro.getResumoCancelamento(ra);
     if (!resumo.emailResponsavel) {
       throw new Error(`Aluno '${resumo.nomeAluno}' não tem e-mail de responsável cadastrado`);
@@ -141,12 +154,12 @@ export class EmailJobService {
     const emailData: CancelamentoEmailData = {
       ...escola,
       nomeAluno: resumo.nomeAluno,
-      numeroParcelasRestantes: resumo.parcelasEmAberto,
-      valorParcela: resumo.valorParcela,
-      somaValor: resumo.somaValor,
-      valorMulta: resumo.valorMulta,
-      parcelasEmAtraso: resumo.parcelasEmAtraso,
-      saldoDevedor: resumo.saldoDevedor,
+      numeroParcelasRestantes: overrides?.numeroParcelasRestantes ?? resumo.parcelasEmAberto,
+      valorParcela: overrides?.valorParcela ?? resumo.valorParcela,
+      somaValor: overrides?.somaValor ?? resumo.somaValor,
+      valorMulta: overrides?.valorMulta ?? resumo.valorMulta,
+      parcelasEmAtraso: overrides?.parcelasEmAtraso ?? resumo.parcelasEmAtraso,
+      saldoDevedor: overrides?.saldoDevedor ?? resumo.saldoDevedor,
     };
 
     const template = tipo === 'academico'
