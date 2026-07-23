@@ -6,6 +6,12 @@ import { IsBoolean, IsEmail, IsNotEmpty, IsOptional, IsString, IsIn, Matches, Ma
 // então sem esse Transform "" cairia nos validadores de formato e voltaria 400.
 const undefinedSeVazio = ({ value }: { value: string }) => (value === '' ? undefined : value);
 
+// Mesmo motivo do Transform acima, pra boolean: $fromAI manda "true"/"false"
+// como string, e @IsBoolean() rejeitaria isso com 400. undefined passa direto
+// (campo não enviado — diferente de false explícito, ver atualizarInteresseExistente).
+const paraBooleano = ({ value }: { value: unknown }) =>
+  value === undefined ? undefined : value === true || value === 'true';
+
 export class CriarLeadDto {
   @IsNotEmpty()
   @IsString()
@@ -29,6 +35,7 @@ export class CriarLeadDto {
   @MaxLength(300)
   cursoInteresse?: string;
 
+  @Transform(paraBooleano)
   @IsOptional()
   @IsBoolean()
   whatsappOptin?: boolean;
