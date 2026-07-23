@@ -12,6 +12,7 @@ import { CriarLeadDto } from './dto/criar-lead.dto';
 import { AtualizarLeadDto } from './dto/atualizar-lead.dto';
 import { MoverEstagioDto } from './dto/mover-estagio.dto';
 import { LeadEmailService } from '../email/lead-email.service';
+import { WhatsAppService } from '../email/whatsapp.service';
 
 const TIPOS_EMAIL_LEAD = ['lead_boas_vindas', 'lead_followup', 'lead_cta'];
 
@@ -37,6 +38,7 @@ export class LeadsService {
     private readonly config: ConfigService,
     @InjectDataSource() private readonly dataSource: DataSource,
     @Optional() private readonly leadEmail?: LeadEmailService,
+    @Optional() private readonly whatsapp?: WhatsAppService,
   ) {}
 
   async criar(dto: CriarLeadDto): Promise<Lead> {
@@ -65,8 +67,29 @@ export class LeadsService {
 
     void this.dispararWebhook(salvo);
     if (this.leadEmail) void this.leadEmail.enviarBoasVindas(salvo);
+    void this.notificarConsultoras(salvo);
 
     return salvo;
+  }
+
+  // Avisa as consultoras de marketing por WhatsApp assim que a IA registra um lead novo
+  private async notificarConsultoras(lead: Lead): Promise<void> {
+    if (!this.whatsapp) return;
+    const numeros = this.config.get<string[]>('zapi.telefonesConsultorasMarketing') ?? [];
+    if (numeros.length === 0) return;
+
+    const linhas = [
+      '🔔 *Novo lead registrado pela IA*',
+      `*Nome:* ${lead.nome}`,
+      lead.telefone && `*Telefone:* ${lead.telefone}`,
+      lead.email && `*E-mail:* ${lead.email}`,
+      lead.cursoInteresse && `*Curso de interesse:* ${lead.cursoInteresse}`,
+      `*Origem:* ${lead.origem}`,
+      lead.observacao && `*Observação:* ${lead.observacao}`,
+    ].filter(Boolean);
+    const mensagem = linhas.join('\n');
+
+    await Promise.all(numeros.map((numero) => this.whatsapp!.enviarTexto(numero, mensagem)));
   }
 
   // Telefone já tem um lead ativo (não perdido/matriculado): atualiza em vez de duplicar

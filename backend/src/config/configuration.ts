@@ -72,6 +72,11 @@ export default () => ({
     token: process.env.ZAPI_TOKEN ?? '',
     clientToken: process.env.ZAPI_CLIENT_TOKEN ?? '',
     telefoneFinanceiro: process.env.ZAPI_TELEFONE_FINANCEIRO ?? '',
+    // Consultoras de marketing avisadas por WhatsApp assim que a IA registra um lead novo
+    telefonesConsultorasMarketing: (process.env.ZAPI_TELEFONES_CONSULTORAS_MARKETING ?? '')
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean),
     cronHabilitado: process.env.WPP_CRON_HABILITADO ?? 'false',
     diasAntes: (process.env.WPP_DIAS_ANTES ?? '7,5,3,1')
       .split(',')
