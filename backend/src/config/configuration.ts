@@ -78,6 +78,9 @@ export default () => ({
       .map((t) => t.trim())
       .filter(Boolean),
     cronHabilitado: process.env.WPP_CRON_HABILITADO ?? 'false',
+    // Toggle separado do de cobrança acima — nutrição de lead e lembrete
+    // financeiro são jobs distintos, cada um liga/desliga sozinho
+    leadNurturingCronHabilitado: process.env.LEAD_WPP_CRON_HABILITADO ?? 'false',
     diasAntes: (process.env.WPP_DIAS_ANTES ?? '7,5,3,1')
       .split(',')
       .map((d) => parseInt(d.trim(), 10)),
