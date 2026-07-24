@@ -1,8 +1,9 @@
-import { Injectable, Logger, NotFoundException, Optional } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException, Optional } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository, Between, LessThanOrEqual, MoreThan, Not, IsNull, In } from 'typeorm';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
+import { Cron } from '@nestjs/schedule';
 import { errMsg } from '../common/err.util';
 import { firstValueFrom } from 'rxjs';
 import { Lead } from './entities/lead.entity';
@@ -12,6 +13,7 @@ import { EmailLog } from '../email/entities/email-log.entity';
 import { CriarLeadDto } from './dto/criar-lead.dto';
 import { AtualizarLeadDto } from './dto/atualizar-lead.dto';
 import { MoverEstagioDto } from './dto/mover-estagio.dto';
+import { ReatribuirLeadDto } from './dto/reatribuir-lead.dto';
 import { LeadEmailService } from '../email/lead-email.service';
 import { WhatsAppService } from '../email/whatsapp.service';
 
@@ -25,6 +27,10 @@ const ETAPAS_NURTURING = [
 ];
 
 const STATUS_ATIVOS: Lead['status'][] = ['novo', 'contatado'];
+
+// Tempo sem sair do status "novo" pra considerar que a consultora atual não
+// conseguiu atender e reatribuir automaticamente pra outra
+const TIMEOUT_ATRIBUICAO_MS = 20 * 60 * 1000;
 
 @Injectable()
 export class LeadsService {
@@ -82,9 +88,22 @@ export class LeadsService {
     if (numeros.length === 0) return;
 
     const numeroEscolhido = await this.proximaConsultora(numeros);
+    // Grava a atribuição ANTES de tentar enviar: se o WhatsApp falhar (Z-API fora,
+    // número inválido etc.), o lead continua com consultoraResponsavel preenchido e
+    // atribuidoEm recente — assim o timeout automático consegue reatribuir pra outra
+    // consultora depois, em vez de o lead ficar órfão (sem ninguém, sem retry).
+    await this.leadRepo.update(lead.id, { consultoraResponsavel: numeroEscolhido, atribuidoEm: new Date() });
 
+    try {
+      await this.whatsapp.enviarTexto(numeroEscolhido, this.montarMensagemLead(lead));
+    } catch (err: unknown) {
+      this.logger.warn(`Falha ao notificar consultora ${numeroEscolhido} do lead #${lead.id}: ${errMsg(err)}`);
+    }
+  }
+
+  private montarMensagemLead(lead: Lead, prefixo = '🔔 *Novo lead registrado pela IA*'): string {
     const linhas = [
-      '🔔 *Novo lead registrado pela IA*',
+      prefixo,
       `*Nome:* ${lead.nome}`,
       lead.telefone && `*Telefone:* ${lead.telefone}`,
       lead.email && `*E-mail:* ${lead.email}`,
@@ -92,10 +111,7 @@ export class LeadsService {
       `*Origem:* ${lead.origem}`,
       lead.observacao && `*Observação:* ${lead.observacao}`,
     ].filter(Boolean);
-    const mensagem = linhas.join('\n');
-
-    await this.whatsapp.enviarTexto(numeroEscolhido, mensagem);
-    await this.leadRepo.update(lead.id, { consultoraResponsavel: numeroEscolhido });
+    return linhas.join('\n');
   }
 
   // Escolhe o próximo número da lista em rodízio, sem repetir. O estado (próximo
@@ -120,6 +136,74 @@ export class LeadsService {
 
       return numeros[indice];
     });
+  }
+
+  // Reatribuição manual (ex: consultora avisa que não vai dar conta) — pega a
+  // próxima da lista após a atual, sem mexer no índice do rodízio (que serve só
+  // pra distribuir os PRÓXIMOS leads novos, não pra corrigir um já atribuído).
+  async reatribuir(id: number, observacao?: string): Promise<Lead> {
+    const lead = await this.leadRepo.findOneBy({ id });
+    if (!lead) throw new NotFoundException(`Lead #${id} não encontrado`);
+    return this.executarReatribuicao(lead, observacao ? `Reatribuição manual — ${observacao}` : 'Reatribuição manual');
+  }
+
+  private async executarReatribuicao(lead: Lead, motivo: string): Promise<Lead> {
+    const numeros = this.config.get<string[]>('zapi.telefonesConsultorasMarketing') ?? [];
+    if (numeros.length < 2) {
+      throw new BadRequestException('É preciso ao menos 2 números em ZAPI_TELEFONES_CONSULTORAS_MARKETING para reatribuir');
+    }
+
+    const indiceAtual = lead.consultoraResponsavel ? numeros.indexOf(lead.consultoraResponsavel) : -1;
+    const numeroNovo = numeros[(indiceAtual + 1) % numeros.length];
+    const numeroAnterior = lead.consultoraResponsavel;
+
+    lead.consultoraResponsavel = numeroNovo;
+    lead.atribuidoEm = new Date();
+    await this.leadRepo.save(lead);
+
+    await this.historicoRepo.save({
+      leadId: lead.id,
+      estagioAnterior: lead.status,
+      estagioNovo: lead.status,
+      observacao: `${motivo}: ${numeroAnterior ?? 'ninguém'} → ${numeroNovo}`,
+    });
+
+    if (this.whatsapp) {
+      try {
+        await this.whatsapp.enviarTexto(numeroNovo, this.montarMensagemLead(lead, '🔄 *Lead reatribuído pra você*'));
+      } catch (err: unknown) {
+        this.logger.warn(`Falha ao notificar consultora ${numeroNovo} sobre reatribuição do lead #${lead.id}: ${errMsg(err)}`);
+      }
+    }
+
+    return lead;
+  }
+
+  // Rede de segurança: lead que ficou parado em "novo" (ninguém avançou o funil)
+  // por mais de TIMEOUT_ATRIBUICAO_MS desde a última atribuição é passado
+  // automaticamente pra outra consultora.
+  @Cron('*/5 * * * *')
+  async reatribuirLeadsSemAtendimento(): Promise<void> {
+    const numeros = this.config.get<string[]>('zapi.telefonesConsultorasMarketing') ?? [];
+    if (numeros.length < 2) return;
+
+    const limite = new Date(Date.now() - TIMEOUT_ATRIBUICAO_MS);
+    const leads = await this.leadRepo.find({
+      where: {
+        status: 'novo',
+        consultoraResponsavel: Not(IsNull()),
+        atribuidoEm: LessThanOrEqual(limite),
+      },
+    });
+
+    for (const lead of leads) {
+      try {
+        await this.executarReatribuicao(lead, 'Sem atendimento em 20 min — reatribuição automática');
+        this.logger.log(`Lead #${lead.id} reatribuído automaticamente por timeout`);
+      } catch (err: unknown) {
+        this.logger.warn(`Falha ao reatribuir lead #${lead.id} por timeout: ${errMsg(err)}`);
+      }
+    }
   }
 
   // Telefone já tem um lead ativo (não perdido/matriculado): atualiza em vez de duplicar

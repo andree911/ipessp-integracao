@@ -42,6 +42,12 @@ export class Lead {
   @Column({ nullable: true, type: 'varchar' })
   consultoraResponsavel: string | null;
 
+  // Quando a consultoraResponsavel atual foi definida (atribuição inicial ou
+  // reatribuição) — usado pelo timeout automático pra saber há quanto tempo
+  // o lead está parado sem sair do status "novo"
+  @Column({ nullable: true, type: 'timestamptz' })
+  atribuidoEm: Date | null;
+
   // Vinculação ao aluno no SophiA após conversão lead → matrícula (ID externo, sem FK)
   @Index()
   @Column({ nullable: true, type: 'integer' })

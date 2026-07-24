@@ -17,6 +17,7 @@ import { AdminApiKeyGuard } from './guards/admin-api-key.guard';
 import { Lead } from '../leads/entities/lead.entity';
 import { LeadsService } from '../leads/leads.service';
 import { MoverEstagioDto } from '../leads/dto/mover-estagio.dto';
+import { ReatribuirLeadDto } from '../leads/dto/reatribuir-lead.dto';
 import { FinanceiroService } from '../financeiro/financeiro.service';
 import { EmailJobService } from '../email/email-job.service';
 import { WhatsAppService } from '../email/whatsapp.service';
@@ -80,6 +81,14 @@ export class AdminController {
     @Body() dto: MoverEstagioDto,
   ) {
     return this.leadsService.moverEstagio(id, dto);
+  }
+
+  @Patch('leads/:id/reatribuir')
+  reatribuirLead(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: ReatribuirLeadDto,
+  ) {
+    return this.leadsService.reatribuir(id, dto.observacao);
   }
 
   // ─── Financeiro ──────────────────────────────────────────────────────────────

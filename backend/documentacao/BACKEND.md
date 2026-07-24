@@ -169,10 +169,15 @@ Protegido por `IaBearerGuard`. Usado tanto pelo fluxo de nutrição do n8n quant
 | `GET /v1/leads/prontos-para-contato` | Leads cuja etapa de nutrição (5 min → 1 dia → 2 dias) já venceu, para o bot/atendente contatar |
 | `POST /v1/leads/registrar-interacao-bot` | Registra que o bot interagiu com o lead (pausa a nutrição automática) |
 | `POST /v1/leads/reativar-nurturing` | Reativa nutrição pausada em massa |
+| `PATCH /v1/leads/:id/reatribuir` | Reatribui o lead pra outra consultora (rodízio manual, ex: a atual avisou que não vai atender) |
 
 O `SyncService` também reconcilia leads automaticamente: se o e-mail de um lead aparece como aluno matriculado no Sophia, o lead é marcado como `matriculado` (`sync.service.ts` → `reconciliarLeadsPagina`).
 
-**Rodízio de notificação entre consultoras** — assim que a IA registra um lead novo, `LeadsService.notificarConsultoras` escolhe UMA consultora por vez (nunca repete a mesma duas seguidas) dentre os números em `ZAPI_TELEFONES_CONSULTORAS_MARKETING`, envia a notificação por WhatsApp só pra ela e grava o número escolhido em `lead.consultoraResponsavel` — campo visível pela aba de leads do corporativo, já que a tabela `lead` é compartilhada. O índice da próxima consultora fica na tabela singleton `lead_distribuicao_consultoras` (linha `id=1`), travada com `pessimistic_write` dentro de uma transação para serializar leads concorrentes.
+**Rodízio de notificação entre consultoras** — assim que a IA registra um lead novo, `LeadsService.notificarConsultoras` escolhe UMA consultora por vez (nunca repete a mesma duas seguidas) dentre os números em `ZAPI_TELEFONES_CONSULTORAS_MARKETING`, envia a notificação por WhatsApp só pra ela e grava o número escolhido em `lead.consultoraResponsavel` (e o instante em `lead.atribuidoEm`) — campos visíveis pela aba de leads do corporativo, já que a tabela `lead` é compartilhada (hoje ela lê via `GET /v1/admin/leads*`, não direto do Supabase — ver `AdminController`). O índice da próxima consultora fica na tabela singleton `lead_distribuicao_consultoras` (linha `id=1`), travada com `pessimistic_write` dentro de uma transação para serializar leads concorrentes.
+
+**Reatribuição** — se a consultora atual não conseguir atender, o lead pode ser passado pra outra de duas formas, ambas via `LeadsService.executarReatribuicao` (que reenvia o WhatsApp pra nova consultora e loga em `LeadHistorico`, sem mexer no índice do rodízio — isso afeta só os PRÓXIMOS leads novos):
+- **Manual**: `PATCH /v1/leads/:id/reatribuir` (espelhado em `PATCH /v1/admin/leads/:id/reatribuir`) — passa pro próximo número da lista após o atual.
+- **Automática (timeout)**: cron `reatribuirLeadsSemAtendimento` (a cada 5 min) reatribui todo lead que ficou parado em `status = 'novo'` por mais de 20 min desde `atribuidoEm` — sinal de que ninguém moveu o funil ainda. Precisa de pelo menos 2 números configurados em `ZAPI_TELEFONES_CONSULTORAS_MARKETING`.
 
 ---
 

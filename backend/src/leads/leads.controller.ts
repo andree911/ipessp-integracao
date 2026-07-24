@@ -3,6 +3,7 @@ import { LeadsService } from './leads.service';
 import { CriarLeadDto } from './dto/criar-lead.dto';
 import { AtualizarLeadDto } from './dto/atualizar-lead.dto';
 import { MoverEstagioDto } from './dto/mover-estagio.dto';
+import { ReatribuirLeadDto } from './dto/reatribuir-lead.dto';
 import { RegistrarInteracaoBotDto } from './dto/registrar-interacao-bot.dto';
 import { IaBearerGuard } from '../ia/ia.guard';
 
@@ -98,5 +99,10 @@ export class LeadsController {
     @Body('codigoAluno', ParseIntPipe) codigoAluno: number,
   ) {
     return this.leadsService.vincularAluno(id, codigoAluno);
+  }
+
+  @Patch(':id/reatribuir')
+  reatribuir(@Param('id', ParseIntPipe) id: number, @Body() dto: ReatribuirLeadDto) {
+    return this.leadsService.reatribuir(id, dto.observacao);
   }
 }
