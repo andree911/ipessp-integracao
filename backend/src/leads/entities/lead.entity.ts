@@ -36,6 +36,12 @@ export class Lead {
   @Column({ nullable: true, type: 'text' })
   observacao: string;
 
+  // Telefone (de ZAPI_TELEFONES_CONSULTORAS_MARKETING) da consultora escolhida
+  // em rodízio para atender este lead — usado pela aba de leads do corporativo
+  // pra saber de quem é o lead, já que a tabela é compartilhada
+  @Column({ nullable: true, type: 'varchar' })
+  consultoraResponsavel: string | null;
+
   // Vinculação ao aluno no SophiA após conversão lead → matrícula (ID externo, sem FK)
   @Index()
   @Column({ nullable: true, type: 'integer' })

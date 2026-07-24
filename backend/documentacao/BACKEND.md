@@ -172,6 +172,8 @@ Protegido por `IaBearerGuard`. Usado tanto pelo fluxo de nutrição do n8n quant
 
 O `SyncService` também reconcilia leads automaticamente: se o e-mail de um lead aparece como aluno matriculado no Sophia, o lead é marcado como `matriculado` (`sync.service.ts` → `reconciliarLeadsPagina`).
 
+**Rodízio de notificação entre consultoras** — assim que a IA registra um lead novo, `LeadsService.notificarConsultoras` escolhe UMA consultora por vez (nunca repete a mesma duas seguidas) dentre os números em `ZAPI_TELEFONES_CONSULTORAS_MARKETING`, envia a notificação por WhatsApp só pra ela e grava o número escolhido em `lead.consultoraResponsavel` — campo visível pela aba de leads do corporativo, já que a tabela `lead` é compartilhada. O índice da próxima consultora fica na tabela singleton `lead_distribuicao_consultoras` (linha `id=1`), travada com `pessimistic_write` dentro de uma transação para serializar leads concorrentes.
+
 ---
 
 ### `/v1/candidaturas` — Vagas / trabalhe conosco
@@ -306,6 +308,7 @@ Ainda não confirmado por falta de teste em produção (não testar com CPF de a
 | `Chamado` | `chamados` | Chamados de TI (compartilhado com corporativo) |
 | `EmailLog` | `email_log` | Log de e-mails enviados |
 | `Lead` / `LeadHistorico` | `lead` / `lead_historico` | CRM de leads |
+| `LeadDistribuicaoConsultoras` | `lead_distribuicao_consultoras` | Estado do rodízio de notificação entre consultoras (linha única) |
 | `Candidatura` | `candidatura` | Candidaturas de vagas |
 | `Manifestacao`, `MensagemContato`, `SolicitacaoEvento` | `manifestacao`, `mensagem_contato`, `solicitacao_evento` | Formulários institucionais do site |
 

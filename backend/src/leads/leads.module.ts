@@ -5,12 +5,13 @@ import { LeadsController } from './leads.controller';
 import { LeadsService } from './leads.service';
 import { Lead } from './entities/lead.entity';
 import { LeadHistorico } from './entities/lead-historico.entity';
+import { LeadDistribuicaoConsultoras } from './entities/lead-distribuicao.entity';
 import { IaBearerGuard } from '../ia/ia.guard';
 import { EmailModule } from '../email/email.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Lead, LeadHistorico]),
+    TypeOrmModule.forFeature([Lead, LeadHistorico, LeadDistribuicaoConsultoras]),
     HttpModule,
     forwardRef(() => EmailModule),
   ],

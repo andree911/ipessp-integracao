@@ -20,6 +20,7 @@ alter table if exists telefone_cpf_cache enable row level security;
 alter table if exists matriculas_cache enable row level security;
 alter table if exists avisos enable row level security;
 alter table if exists calendario enable row level security;
+alter table if exists lead_distribuicao_consultoras enable row level security;
 
 -- ------------------------------------------------------------------
 -- "chamados" é DIFERENTE das acima: além do backend do bot (service_role,

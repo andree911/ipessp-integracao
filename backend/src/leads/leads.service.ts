@@ -7,6 +7,7 @@ import { errMsg } from '../common/err.util';
 import { firstValueFrom } from 'rxjs';
 import { Lead } from './entities/lead.entity';
 import { LeadHistorico } from './entities/lead-historico.entity';
+import { LeadDistribuicaoConsultoras } from './entities/lead-distribuicao.entity';
 import { EmailLog } from '../email/entities/email-log.entity';
 import { CriarLeadDto } from './dto/criar-lead.dto';
 import { AtualizarLeadDto } from './dto/atualizar-lead.dto';
@@ -72,11 +73,15 @@ export class LeadsService {
     return salvo;
   }
 
-  // Avisa as consultoras de marketing por WhatsApp assim que a IA registra um lead novo
+  // Avisa UMA consultora de marketing por WhatsApp assim que a IA registra um lead novo,
+  // em rodízio (nunca a mesma duas vezes seguidas) — e grava a atribuição no lead, que a
+  // aba de leads do corporativo enxerga (tabela `lead` é compartilhada).
   private async notificarConsultoras(lead: Lead): Promise<void> {
     if (!this.whatsapp) return;
     const numeros = this.config.get<string[]>('zapi.telefonesConsultorasMarketing') ?? [];
     if (numeros.length === 0) return;
+
+    const numeroEscolhido = await this.proximaConsultora(numeros);
 
     const linhas = [
       '🔔 *Novo lead registrado pela IA*',
@@ -89,7 +94,32 @@ export class LeadsService {
     ].filter(Boolean);
     const mensagem = linhas.join('\n');
 
-    await Promise.all(numeros.map((numero) => this.whatsapp!.enviarTexto(numero, mensagem)));
+    await this.whatsapp.enviarTexto(numeroEscolhido, mensagem);
+    await this.leadRepo.update(lead.id, { consultoraResponsavel: numeroEscolhido });
+  }
+
+  // Escolhe o próximo número da lista em rodízio, sem repetir. O estado (próximo
+  // índice) fica numa linha única travada com pessimistic_write, então dois leads
+  // criados ao mesmo tempo são serializados e não caem na mesma consultora.
+  private async proximaConsultora(numeros: string[]): Promise<string> {
+    return this.dataSource.transaction(async (em) => {
+      const repo = em.getRepository(LeadDistribuicaoConsultoras);
+      let estado = await repo
+        .createQueryBuilder('e')
+        .setLock('pessimistic_write')
+        .where('e.id = :id', { id: 1 })
+        .getOne();
+
+      if (!estado) {
+        estado = await repo.save(repo.create({ id: 1, proximoIndice: 0 }));
+      }
+
+      const indice = estado.proximoIndice % numeros.length;
+      estado.proximoIndice = (indice + 1) % numeros.length;
+      await repo.save(estado);
+
+      return numeros[indice];
+    });
   }
 
   // Telefone já tem um lead ativo (não perdido/matriculado): atualiza em vez de duplicar
