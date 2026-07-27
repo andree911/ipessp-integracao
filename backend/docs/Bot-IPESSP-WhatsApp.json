@@ -150,11 +150,11 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.CORE_API_URL }}/v1/leads/registrar-interacao-bot",
+        "url": "={{ $env.IPESSP_CORE_URL }}/crm/leads/registrar-interacao-bot",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Authorization", "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}" },
+            { "name": "x-admin-key", "value": "={{ $env.CORE_API_KEY }}" },
             { "name": "Content-Type", "value": "application/json" }
           ]
         },
@@ -218,12 +218,12 @@
       "parameters": {
         "toolDescription": "Registra um novo lead/prospecto interessado em cursos do IPESSP. Use quando o usuário demonstrar interesse em se matricular, pedir informações sobre cursos ou pedir para ser contatado. Colete nome e email antes de chamar (telefone já é identificado automaticamente pelo WhatsApp). Antes de chamar, pergunte se pode enviar novidades/promoções por WhatsApp e informe a resposta em whatsappOptin.",
         "method": "POST",
-        "url": "={{ $env.CORE_API_URL }}/v1/leads",
+        "url": "={{ $env.IPESSP_CORE_URL }}/crm/leads",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             { "name": "Content-Type", "value": "application/json" },
-            { "name": "Authorization", "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}" }
+            { "name": "x-admin-key", "value": "={{ $env.CORE_API_KEY }}" }
           ]
         },
         "sendBody": true,
@@ -491,14 +491,14 @@
     {
       "parameters": {
         "toolDescription": "Verifica se o usuário atual já é um lead no CRM. Use no início do atendimento para personalizar a conversa com o curso de interesse já registrado. Se encontrar, use o cursoInteresse e o status para contextualizar.",
-        "url": "={{ $env.CORE_API_URL }}/v1/leads",
+        "url": "={{ $env.IPESSP_CORE_URL }}/crm/leads",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [{ "name": "telefone", "value": "={{ $('Webhook').item.json.body.phone }}" }]
         },
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}" }]
+          "parameters": [{ "name": "x-admin-key", "value": "={{ $env.CORE_API_KEY }}" }]
         },
         "options": {}
       },
