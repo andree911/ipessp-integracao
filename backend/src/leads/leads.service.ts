@@ -49,6 +49,13 @@ export class LeadsService {
   ) {}
 
   async criar(dto: CriarLeadDto): Promise<Lead> {
+    // Origem 'chatbot' é sempre a IA — telefone já vem automático do webhook,
+    // então o risco real é ela pular email/cursoInteresse e a consultora
+    // receber um lead sem contato útil ou sem saber o que oferecer.
+    if (dto.origem === 'chatbot' && (!dto.email || !dto.cursoInteresse)) {
+      throw new BadRequestException('Lead via chatbot precisa de email e cursoInteresse preenchidos');
+    }
+
     if (dto.telefone) {
       const existente = await this.leadRepo.findOne({
         where: { telefone: dto.telefone, status: Not(In(['perdido', 'matriculado'])) },
