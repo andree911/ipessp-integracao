@@ -18,7 +18,7 @@ IPESSP = Instituto de Pesquisa e Educação em Saúde de São Paulo.
 | Mensageria | Z-API (WhatsApp) |
 | E-mail | SMTP (Nodemailer) |
 | Automação | n8n |
-| Deploy | Render (free tier — dorme por inatividade) |
+| Deploy | VPS própria (Docker Compose), atrás de Caddy — ver seção "Deploy" |
 
 ---
 
@@ -40,12 +40,12 @@ Site institucional
 WhatsApp (usuário) ──► Z-API ──► n8n Bot Flow (AI Agent + Tools)
                                        │
                                        ▼
-                               NestJS Backend (Render)
+                               NestJS Backend (VPS, Docker Compose)
                                ├── /ia/*          → Dados do aluno/professor (Sophia + Supabase)
                                ├── /v1/ti/*       → Abertura e consulta de chamados (Supabase)
                                ├── /v1/leads/*    → CRM de leads (usado pelo n8n e pelo dashboard)
                                ├── /v1/admin/*    → Endpoints administrativos / debug
-                               └── /health        → Keep-alive ping (evita sleep do Render)
+                               └── /health        → Health check
 
 SophiaService (cron horário) ──► Sync ──► cache local (clientes_cache / lancamentos_cache)
                                                 │
@@ -271,7 +271,7 @@ O ciclo (`SyncService.runSync`) busca todos os alunos do Sophia, para cada um bu
 ### `/` — Diversos
 
 #### `GET /health`
-Endpoint público para keep-alive. Retorna `{ status: 'ok' }`. O fluxo n8n **Keep-alive backend** faz GET neste endpoint a cada 10 minutos para evitar que o Render coloque o serviço para dormir.
+Endpoint público de health check. Retorna `{ status: 'ok' }`. O fluxo n8n **Keep-alive backend** ainda faz GET neste endpoint a cada 10 minutos (herança da época do Render) — na VPS atual o serviço não dorme, então isso hoje serve só como monitoramento passivo, sem efeito prático de "acordar" nada.
 
 #### `GET /como-pagar`
 Página HTML estática (sem dependência de banco) explicando ao aluno como pagar a mensalidade pelo Portal do Aluno Sophia — usada como link em e-mails/WhatsApp de cobrança.
@@ -388,11 +388,11 @@ Mensagens geradas por status:
 | Arquivo | Descrição |
 |---|---|
 | `Bot-IPESSP-WhatsApp.json` | Bot de atendimento (AI Agent) — financeiro, secretaria, TI, avisos, calendário, cursos, captura de lead e envio de boleto em PDF |
-| `Keep-alive-backend.json` | Ping a `/health` a cada 10 min (evita sleep do Render) |
+| `Keep-alive-backend.json` | Ping a `/health` a cada 10 min (herança do Render — sem efeito na VPS atual, que não dorme) |
 | `Notificação-chamado-TI.json` | Notifica solicitante via WhatsApp quando chamado muda de status |
 | `CRM-IPESSP-Leads-completo.json` | CRM de leads: notificação de novo lead, nutrição automática (a cada 30 min), relatórios diário/semanal e reativação de leads pausados |
 
-Todos os 4 usam `$env.NOME` (n8n auto-hospedado no Render — variáveis reais configuradas no painel do serviço n8n, não pela feature paga "Variables" do n8n Cloud).
+Todos os 4 usam `$env.NOME` (n8n auto-hospedado na mesma VPS via Docker Compose — variáveis reais configuradas em `n8n-vars.env`, não pela feature paga "Variables" do n8n Cloud).
 
 ---
 
@@ -419,8 +419,39 @@ Todos os 4 usam `$env.NOME` (n8n auto-hospedado no Render — variáveis reais c
 
 ---
 
-## Deploy (Render)
+## Deploy (VPS, Docker Compose)
 
-- Free tier: dorme após ~15 min de inatividade
-- Solução: fluxo n8n Keep-alive faz GET `/health` a cada 10 min enquanto ativo
-- Para produção real: considerar upgrade para paid tier ou migrar para Railway/Fly.io
+Migrado do Render (free tier, que dormia por inatividade) para uma VPS
+própria (Hostinger). Roda via Docker Compose ao lado do n8n e do Caddy
+(proxy reverso/TLS), tudo em `/opt/ipessp/` no servidor:
+
+- `docker-compose.yml` — define os serviços `caddy`, `n8n`, `n8n-postgres` e
+  `integracao-service` (este último faz `build` a partir da pasta
+  `./integracao-service`).
+- `Caddyfile` — roteia `srv1835634.hstgr.cloud/n8n/*` pro n8n e o resto
+  (`/health`, `/v1/*`, `/ia/*`, `/portal/*` etc.) pro `integracao-service`.
+- `integracao-service/` no servidor **não é um clone git** — é só a árvore de
+  arquivos (o `.env` real fica em `/opt/ipessp/integracao.env`, referenciado
+  pelo `docker-compose.yml`, fora da pasta do serviço).
+
+**Deploy de uma mudança nova:**
+```bash
+# 1. Local: empacota o HEAD do repo (só arquivos versionados) e manda pro servidor
+git archive HEAD | ssh -i ~/.ssh/ipessp_vps root@179.197.237.177 \
+  "rm -rf /tmp/integracao-deploy && mkdir -p /tmp/integracao-deploy && tar -x -C /tmp/integracao-deploy"
+
+# 2. Servidor: sincroniza por cima da pasta viva SEM --delete
+#    (preserva node_modules, .env, data/*.db, .claude/ que não estão no git)
+ssh -i ~/.ssh/ipessp_vps root@179.197.237.177 \
+  "rsync -a /tmp/integracao-deploy/ /opt/ipessp/integracao-service/ && rm -rf /tmp/integracao-deploy"
+
+# 3. Servidor: rebuild + restart só do serviço afetado
+ssh -i ~/.ssh/ipessp_vps root@179.197.237.177 \
+  "cd /opt/ipessp && docker compose build integracao-service && docker compose up -d integracao-service"
+```
+
+**Verificação pós-deploy:**
+- `docker logs ipessp-integracao-service-1 --tail 60` — confirmar "Nest
+  application successfully started" sem erro.
+- `curl -s -o /dev/null -w '%{http_code}\n' https://srv1835634.hstgr.cloud/health`
+  deve devolver `200`.
