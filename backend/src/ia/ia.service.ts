@@ -7,7 +7,7 @@ import { FinanceiroService } from '../financeiro/financeiro.service';
 import { WhatsAppService } from '../email/whatsapp.service';
 import { ResponsavelCache } from './entities/responsavel-cache.entity';
 import { TelefoneCpfCache } from './entities/telefone-cpf-cache.entity';
-import { SupabaseService } from './supabase.service';
+import { SupabaseService } from '../common/supabase.service';
 import { AssociarTelefoneDto } from './dto/associar-telefone.dto';
 
 @Injectable()

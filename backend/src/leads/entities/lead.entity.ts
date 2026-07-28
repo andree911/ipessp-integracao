@@ -22,6 +22,12 @@ export class Lead {
   @Column({ nullable: true })
   cursoInteresse: string;
 
+  // Código do curso na Sophia (bate com curso_conteudo.codigo_curso), usado
+  // pra achar a URL exata da página do curso no site na hora do email de
+  // boas-vindas — cursoInteresse sozinho é texto livre demais pra isso
+  @Column({ nullable: true, type: 'integer' })
+  codigoCurso: number | null;
+
   // Consentimento explícito para mensagens de WhatsApp marketing (nurturing) —
   // exigido pela Meta para templates categoria Marketing na Cloud API
   @Column({ default: false })

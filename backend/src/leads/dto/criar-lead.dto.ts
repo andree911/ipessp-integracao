@@ -1,5 +1,5 @@
 import { Transform } from 'class-transformer';
-import { IsBoolean, IsEmail, IsNotEmpty, IsOptional, IsString, IsIn, Matches, MaxLength } from 'class-validator';
+import { IsBoolean, IsEmail, IsInt, IsNotEmpty, IsOptional, IsString, IsIn, Matches, MaxLength } from 'class-validator';
 
 // n8n (via $fromAI) sempre manda string, nunca omite o campo: quando a IA não
 // tem a informação, o valor vem como "". @IsOptional() só ignora null/undefined,
@@ -11,6 +11,14 @@ const undefinedSeVazio = ({ value }: { value: string }) => (value === '' ? undef
 // (campo não enviado — diferente de false explícito, ver atualizarInteresseExistente).
 const paraBooleano = ({ value }: { value: unknown }) =>
   value === undefined ? undefined : value === true || value === 'true';
+
+// Mesmo motivo, pra número: $fromAI manda o código do curso como string (ou
+// "" quando a IA não tem/não usou a tool Consultar Cursos antes de registrar).
+const paraInteiroOuUndefined = ({ value }: { value: unknown }) => {
+  if (value === undefined || value === null || value === '') return undefined;
+  const n = Number(value);
+  return Number.isNaN(n) ? undefined : n;
+};
 
 export class CriarLeadDto {
   @IsNotEmpty()
@@ -34,6 +42,13 @@ export class CriarLeadDto {
   @IsString()
   @MaxLength(300)
   cursoInteresse?: string;
+
+  // Código do curso na Sophia (retornado pela tool "Consultar Cursos"), usado
+  // pra linkar a página exata do curso no email de boas-vindas
+  @Transform(paraInteiroOuUndefined)
+  @IsOptional()
+  @IsInt()
+  codigoCurso?: number;
 
   @Transform(paraBooleano)
   @IsOptional()

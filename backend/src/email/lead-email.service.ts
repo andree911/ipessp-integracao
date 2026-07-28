@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Cron } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
 import { errMsg } from '../common/err.util';
+import { SupabaseService } from '../common/supabase.service';
 import { EmailService } from './email.service';
 import { EmailLog } from './entities/email-log.entity';
 import { Lead } from '../leads/entities/lead.entity';
@@ -22,6 +23,7 @@ export class LeadEmailService {
     @InjectRepository(Lead) private readonly leadRepo: Repository<Lead>,
     private readonly emailService: EmailService,
     private readonly config: ConfigService,
+    private readonly supabase: SupabaseService,
   ) {}
 
   async enviarBoasVindas(lead: Lead): Promise<void> {
@@ -29,7 +31,8 @@ export class LeadEmailService {
     const jaEnviado = await this.logRepo.findOne({ where: { leadId: lead.id, tipo: 'lead_boas_vindas' } });
     if (jaEnviado) return;
 
-    const html = this.templateBoasVindas(lead.nome, lead.cursoInteresse);
+    const urlCurso = await this.buscarUrlCurso(lead.codigoCurso);
+    const html = this.templateBoasVindas(lead.nome, lead.cursoInteresse, urlCurso);
     try {
       await this.emailService.enviar(lead.email, 'Bem-vindo(a) ao IPESSP — seu futuro começa aqui!', html);
       await this.logRepo.save({ codigoLancamento: '', leadId: lead.id, nome: lead.nome, tipo: 'lead_boas_vindas', destinatario: lead.email, enviado: true });
@@ -93,6 +96,27 @@ export class LeadEmailService {
     }
   }
 
+  // Busca a URL da página do curso (ipessp.edu.br/site/cursos/...) pelo código
+  // Sophia do curso de interesse — null se não tiver código, tabela sem essa
+  // linha, ou coluna ainda vazia (curso sem página mapeada).
+  private async buscarUrlCurso(codigoCurso: number | null): Promise<string | null> {
+    if (!codigoCurso) return null;
+    const sb = this.supabase.getClient();
+    if (!sb) return null;
+
+    const { data, error } = await sb
+      .from('curso_conteudo')
+      .select('url_pagina')
+      .eq('codigo_curso', codigoCurso)
+      .maybeSingle();
+
+    if (error) {
+      this.logger.warn(`Erro ao buscar url_pagina do curso #${codigoCurso}: ${error.message}`);
+      return null;
+    }
+    return data?.url_pagina ?? null;
+  }
+
   // ─── Templates ───────────────────────────────────────────────────────────────
   // Reusam o mesmo cabeçalho/rodapé/cor institucional dos templates financeiros
   // (`baseConteudoLivre` em email.templates.ts) em vez de manter um layout
@@ -116,14 +140,14 @@ export class LeadEmailService {
     };
   }
 
-  private templateBoasVindas(nome: string, curso?: string): string {
+  private templateBoasVindas(nome: string, curso?: string, urlCurso?: string | null): string {
     const marca = this.dadosMarca();
     const cursoTexto = curso ? ` no curso <strong>${curso}</strong>` : '';
     const corpo = `
     <p style="margin:0 0 6px;font-size:16px;font-weight:bold;color:#222222;font-family:Arial,sans-serif;">Recebemos seu interesse no IPESSP.</p>
     <p style="margin:0 0 18px;font-size:17px;font-weight:bold;color:#7C2529;text-transform:uppercase;font-family:Arial,sans-serif;">${nome},</p>
     <p style="margin:0 0 24px;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">Ficamos muito felizes com seu interesse${cursoTexto} no IPESSP. Nossa equipe já foi notificada e entrará em contato em breve. Enquanto isso, que tal conhecer mais sobre nossos cursos e estrutura?</p>
-    ${botaoCta('Ver nossos cursos', marca.siteUrl ?? SITE_URL_FALLBACK)}`;
+    ${botaoCta(urlCurso ? 'Ver detalhes do curso' : 'Ver nossos cursos', urlCurso ?? marca.siteUrl ?? SITE_URL_FALLBACK)}`;
     return baseConteudoLivre('Bem-vindo(a) ao IPESSP', marca, corpo, `Ficamos felizes com seu interesse${cursoTexto ? ' no curso escolhido' : ''}. Nossa equipe já foi notificada.`);
   }
 

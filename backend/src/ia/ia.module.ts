@@ -6,7 +6,7 @@ import { EmailModule } from '../email/email.module';
 import { IaController } from './ia.controller';
 import { IaService } from './ia.service';
 import { IaBearerGuard } from './ia.guard';
-import { SupabaseService } from './supabase.service';
+import { SupabaseService } from '../common/supabase.service';
 import { ResponsavelCache } from './entities/responsavel-cache.entity';
 import { TelefoneCpfCache } from './entities/telefone-cpf-cache.entity';
 
