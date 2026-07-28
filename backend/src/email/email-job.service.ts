@@ -178,17 +178,29 @@ export class EmailJobService {
 
     // Remetente próprio (EMAIL_CANCELAMENTO_FROM) — financeiro, pedagógico e
     // trancamento recebem cópia em CC (vars opcionais; endereços vazios
-    // ignorados). Reembolso é assunto só do financeiro (dados bancários) —
-    // única cópia é matricula.financeiro (email.from), sem pedagógico/trancamento.
+    // ignorados). Reembolso é assunto do financeiro (dados bancários): fica em
+    // cópia o financeiro, o pedagógico, a própria caixa de cancelamento e a
+    // matricula.financeiro (ESCOLA_EMAIL_NOTIFICACOES, endereço fixo — não dá
+    // pra assumir que SMTP_FROM seja esse endereço) — só trancamento fica de
+    // fora (não se aplica a reembolso).
     const cancelamentoFrom = this.config.get<string>('email.cancelamentoFrom');
-    const ccEnderecos = (tipo === 'reembolso'
-      ? [this.config.get<string>('email.from')]
-      : [
-          this.config.get<string>('email.from'),
-          this.config.get<string>('email.cancelamentoCcPedagogico'),
-          this.config.get<string>('email.cancelamentoCcTrancamento'),
-        ]
-    ).filter(Boolean).join(', ');
+    const ccEnderecos = [
+      ...new Set(
+        (tipo === 'reembolso'
+          ? [
+              this.config.get<string>('email.emailNotificacoes'),
+              cancelamentoFrom,
+              this.config.get<string>('email.cancelamentoCcPedagogico'),
+              this.config.get<string>('email.cancelamentoCcFinanceiro'),
+            ]
+          : [
+              this.config.get<string>('email.from'),
+              this.config.get<string>('email.cancelamentoCcPedagogico'),
+              this.config.get<string>('email.cancelamentoCcTrancamento'),
+            ]
+        ).filter(Boolean),
+      ),
+    ].join(', ');
     try {
       await this.emailService.enviar(
         resumo.emailResponsavel,

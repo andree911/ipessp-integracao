@@ -35,6 +35,7 @@ export default () => ({
     cancelamentoFrom: process.env.EMAIL_CANCELAMENTO_FROM ?? '',
     cancelamentoCcPedagogico: process.env.EMAIL_CANCELAMENTO_CC_PEDAGOGICO ?? '',
     cancelamentoCcTrancamento: process.env.EMAIL_CANCELAMENTO_CC_TRANCAMENTO ?? '',
+    cancelamentoCcFinanceiro: process.env.EMAIL_CANCELAMENTO_CC_FINANCEIRO ?? '',
     nomeEscola: process.env.ESCOLA_NOME ?? 'Escola',
     telefoneEscola: process.env.ESCOLA_TELEFONE ?? '',
     diasAntes: (process.env.EMAIL_DIAS_ANTES ?? '7,5,3,1')
