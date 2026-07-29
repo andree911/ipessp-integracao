@@ -80,7 +80,7 @@ A resposta esperada é `{ codigoAluno, pagamento: { linkPagamento, linkSandbox }
 
 ## Variáveis de ambiente
 
-Não existe `.env`/`.env.example` no repo — precisam ser configuradas externamente (ex.: settings do projeto na Vercel).
+Documentadas em `.env.example` (o `.env` real não é versionado); em produção são configuradas externamente (ex.: settings do projeto na Vercel).
 
 | Variável | Uso | Exposta ao browser? |
 |---|---|---|
