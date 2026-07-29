@@ -387,12 +387,13 @@ Mensagens geradas por status:
 
 | Arquivo | Descrição |
 |---|---|
-| `Bot-IPESSP-WhatsApp.json` | Bot de atendimento (AI Agent) — financeiro, secretaria, TI, avisos, calendário, cursos, captura de lead e envio de boleto em PDF |
+| `Bot-IPESSP-WhatsApp.json` | Bot de atendimento (AI Agent) — financeiro, secretaria, TI, cursos, captura de lead e envio de boleto em PDF |
 | `Keep-alive-backend.json` | Ping a `/health` a cada 10 min (herança do Render — sem efeito na VPS atual, que não dorme) |
 | `Notificação-chamado-TI.json` | Notifica solicitante via WhatsApp quando chamado muda de status |
-| `CRM-IPESSP-Leads-completo.json` | CRM de leads: notificação de novo lead, nutrição automática (a cada 30 min), relatórios diário/semanal e reativação de leads pausados |
 
-Todos os 4 usam `$env.NOME` (n8n auto-hospedado na mesma VPS via Docker Compose — variáveis reais configuradas em `n8n-vars.env`, não pela feature paga "Variables" do n8n Cloud).
+O CRM de leads (notificação de novo lead, nutrição automática, relatórios diário/semanal e reativação de leads pausados) roda como fluxo n8n próprio, versionado no repositório `ipessp-core` — não existe cópia dele aqui em `docs/`. As tools de CRM do bot acima (`Verificar Lead CRM`, `Registrar Lead CRM`, `Registrar Interação Bot`) chamam esse outro backend via `IPESSP_CORE_URL` (ver `n8n.env.example`).
+
+Todos os 3 usam `$env.NOME` (n8n auto-hospedado na mesma VPS via Docker Compose — variáveis reais configuradas em `n8n-vars.env`, não pela feature paga "Variables" do n8n Cloud).
 
 ---
 
