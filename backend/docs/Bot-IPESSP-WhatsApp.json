@@ -9,7 +9,10 @@
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
-      "position": [0, 0],
+      "position": [
+        0,
+        0
+      ],
       "id": "8d51b63a-3864-473b-8386-2e77c53ab492",
       "name": "Webhook",
       "webhookId": "930c3dd4-8cd0-4d66-a615-e2a959fedaf8"
@@ -17,13 +20,22 @@
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 3 },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
           "conditions": [
             {
               "id": "acc6de8f-e2d0-4085-acfa-41d00cc7a1b3",
               "leftValue": "={{ $json.body.fromMe }}",
               "rightValue": "false",
-              "operator": { "type": "string", "operation": "equals", "name": "filter.operator.equals" }
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
             }
           ],
           "combinator": "and"
@@ -33,7 +45,10 @@
       },
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
-      "position": [208, 0],
+      "position": [
+        208,
+        0
+      ],
       "id": "5295bbf2-ed64-4e33-b671-bbfcf1c5eb74",
       "name": "If"
     },
@@ -47,7 +62,10 @@
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
-      "position": [416, -96],
+      "position": [
+        416,
+        -96
+      ],
       "id": "93e71c4e-8ad9-4883-bbba-ca573e5af5a7",
       "name": "AI Agent"
     },
@@ -59,7 +77,10 @@
       },
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.4,
-      "position": [432, 112],
+      "position": [
+        432,
+        112
+      ],
       "id": "f38f8a81-9640-435f-8637-8c6e538528cb",
       "name": "Simple Memory"
     },
@@ -69,51 +90,32 @@
         "url": "={{ $env.INTEGRACAO_API_URL }}/ia/financeiro",
         "sendQuery": true,
         "queryParameters": {
-          "parameters": [{ "name": "cpf", "value": "={{ $fromAI('cpf', 'CPF do responsável financeiro, somente números') }}" }]
+          "parameters": [
+            {
+              "name": "cpf",
+              "value": "={{ $fromAI('cpf', 'CPF do responsável financeiro, somente números') }}"
+            }
+          ]
         },
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}" }]
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}"
+            }
+          ]
         },
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.4,
-      "position": [576, 112],
+      "position": [
+        576,
+        112
+      ],
       "id": "2e9a0279-64e1-433d-b6d8-4c8b0265e765",
       "name": "Consultar Financeiro"
-    },
-    {
-      "parameters": {
-        "toolDescription": "Busca os avisos e comunicados ativos da escola. Use quando o usuário perguntar sobre avisos, comunicados, informações ou novidades da escola.",
-        "url": "={{ $env.CORE_API_URL }}/ia/avisos",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [{ "name": "x-admin-key", "value": "={{ $env.CORE_API_KEY }}" }]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequestTool",
-      "typeVersion": 4.4,
-      "position": [672, 208],
-      "id": "6bc24b09-19cf-4bcc-8724-1d44ead55e71",
-      "name": "Consultar Avisos"
-    },
-    {
-      "parameters": {
-        "toolDescription": "Busca os próximos eventos do calendário escolar. Use quando o usuário perguntar sobre eventos, datas, reuniões, feriados ou agenda da escola.",
-        "url": "={{ $env.CORE_API_URL }}/ia/calendario",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [{ "name": "x-admin-key", "value": "={{ $env.CORE_API_KEY }}" }]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequestTool",
-      "typeVersion": 4.4,
-      "position": [768, 304],
-      "id": "0e0a9dd1-4a94-4d31-b0dc-6af53db5d1ba",
-      "name": "Consultar Calendário"
     },
     {
       "parameters": {
@@ -121,7 +123,10 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [592, -96],
+      "position": [
+        592,
+        -96
+      ],
       "id": "c7a8b9d0-1111-4444-8888-000000000010",
       "name": "Corrigir Formatação WhatsApp"
     },
@@ -132,8 +137,14 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Client-Token", "value": "={{ $env.ZAPI_CLIENT_TOKEN }}" },
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "Client-Token",
+              "value": "={{ $env.ZAPI_CLIENT_TOKEN }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
@@ -143,7 +154,10 @@
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [768, -96],
+      "position": [
+        768,
+        -96
+      ],
       "id": "12ad979e-126f-48c9-9ba1-681ae611ce17",
       "name": "Enviar Resposta WhatsApp"
     },
@@ -154,8 +168,14 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "x-admin-key", "value": "={{ $env.CORE_API_KEY }}" },
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "x-admin-key",
+              "value": "={{ $env.CORE_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
@@ -165,7 +185,10 @@
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [960, -96],
+      "position": [
+        960,
+        -96
+      ],
       "id": "c1d2e3f4-2222-2222-2222-000000000003",
       "name": "Registrar Interação Bot",
       "onError": "continueRegularOutput"
@@ -173,13 +196,22 @@
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 3 },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
           "conditions": [
             {
               "id": "7bcf7305-e89e-4b42-96cb-416ea40410de",
               "leftValue": "={{ $json.body.text.message }}",
               "rightValue": "",
-              "operator": { "type": "string", "operation": "exists", "singleValue": true }
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
             }
           ],
           "combinator": "and"
@@ -188,7 +220,10 @@
       },
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
-      "position": [304, -208],
+      "position": [
+        304,
+        -208
+      ],
       "id": "4d8c4981-d2a4-4708-aece-5f8f97909284",
       "name": "If1"
     },
@@ -199,8 +234,14 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Client-Token", "value": "={{ $env.ZAPI_CLIENT_TOKEN }}" },
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "Client-Token",
+              "value": "={{ $env.ZAPI_CLIENT_TOKEN }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
@@ -210,7 +251,10 @@
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [752, -272],
+      "position": [
+        752,
+        -272
+      ],
       "id": "bf3daa82-2ef0-42a1-8f3f-8bd9f6e4f688",
       "name": "Responder Mídia Não Suportada"
     },
@@ -222,8 +266,14 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Content-Type", "value": "application/json" },
-            { "name": "x-admin-key", "value": "={{ $env.CORE_API_KEY }}" }
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "x-admin-key",
+              "value": "={{ $env.CORE_API_KEY }}"
+            }
           ]
         },
         "sendBody": true,
@@ -233,7 +283,10 @@
       },
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.4,
-      "position": [864, 400],
+      "position": [
+        864,
+        400
+      ],
       "id": "dd93ad17-74ca-48ed-9d0e-70f7dd616e71",
       "name": "Registrar Lead CRM"
     },
@@ -249,7 +302,10 @@
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
-      "position": [288, 112],
+      "position": [
+        288,
+        112
+      ],
       "id": "e470ec20-f620-429d-891e-c9fd6ddca25c",
       "name": "OpenAI Chat Model",
       "credentials": {
@@ -262,22 +318,35 @@
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "strict", "version": 3 },
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
           "conditions": [
             {
               "id": "33162f65-fed3-48a0-832d-6b2029a90ff2",
               "leftValue": "={{ $json.body.text.message }}",
               "rightValue": "^(oi+|ol[áa]|bom dia|boa tarde|boa noite|hi|hello|hey|e ?a[íi]|blz|beleza|salve|fala\\b|menu|in[íi]cio|come[çc]ar|ajuda|help|start|opa|ei|tudo bem|td bem|prazer)",
-              "operator": { "type": "string", "operation": "regex" }
+              "operator": {
+                "type": "string",
+                "operation": "regex"
+              }
             }
           ],
           "combinator": "and"
         },
-        "options": { "ignoreCase": true }
+        "options": {
+          "ignoreCase": true
+        }
       },
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
-      "position": [400, -496],
+      "position": [
+        400,
+        -496
+      ],
       "id": "0142f6c9-6f74-4cd3-a8d4-92ad1beec7cc",
       "name": "If2"
     },
@@ -288,8 +357,14 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Client-Token", "value": "={{ $env.ZAPI_CLIENT_TOKEN }}" },
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "Client-Token",
+              "value": "={{ $env.ZAPI_CLIENT_TOKEN }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
@@ -299,20 +374,32 @@
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [512, -272],
+      "position": [
+        512,
+        -272
+      ],
       "id": "15705528-818b-4218-a921-946f1764aef8",
       "name": "Enviar Menu Inicial"
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 3 },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
           "conditions": [
             {
               "id": "75abb9e4-9ccc-4d21-aaae-078a3a477f55",
               "leftValue": "={{ $json.body.listResponseMessage?.selectedRowId }}",
               "rightValue": "",
-              "operator": { "type": "string", "operation": "exists", "singleValue": true }
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
             }
           ],
           "combinator": "and"
@@ -321,7 +408,10 @@
       },
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
-      "position": [784, -432],
+      "position": [
+        784,
+        -432
+      ],
       "id": "5d5933cc-9e1f-4e48-be41-774711af500d",
       "name": "If3"
     },
@@ -331,7 +421,10 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1008, -544],
+      "position": [
+        1008,
+        -544
+      ],
       "id": "53bbe2c1-a480-4336-bc5e-c41388de4ca9",
       "name": "Mapear Seleção do Menu"
     },
@@ -340,17 +433,30 @@
         "url": "={{ $env.INTEGRACAO_API_URL }}/ia/cpf-por-telefone",
         "sendQuery": true,
         "queryParameters": {
-          "parameters": [{ "name": "telefone", "value": "={{ $('Webhook').item.json.body.phone }}" }]
+          "parameters": [
+            {
+              "name": "telefone",
+              "value": "={{ $('Webhook').item.json.body.phone }}"
+            }
+          ]
         },
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}" }]
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}"
+            }
+          ]
         },
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [608, -592],
+      "position": [
+        608,
+        -592
+      ],
       "id": "b25e373b-72d9-4915-93f2-24d92af55757",
       "name": "Buscar CPF por Telefone",
       "onError": "continueRegularOutput"
@@ -361,7 +467,10 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [816, -592],
+      "position": [
+        816,
+        -592
+      ],
       "id": "a32d0ca6-3f5e-45be-96fb-227928b4e666",
       "name": "Injetar CPF no Contexto"
     },
@@ -373,8 +482,14 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Authorization", "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}" },
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
@@ -384,7 +499,10 @@
       },
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.4,
-      "position": [960, 352],
+      "position": [
+        960,
+        352
+      ],
       "id": "b56d9a10-4f2c-4eb6-ab34-91a597e9fe7a",
       "name": "Salvar CPF do Telefone"
     },
@@ -395,7 +513,12 @@
         "url": "={{ $env.CORE_API_URL }}/chamados",
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "x-admin-key", "value": "={{ $env.CORE_API_KEY }}" }]
+          "parameters": [
+            {
+              "name": "x-admin-key",
+              "value": "={{ $env.CORE_API_KEY }}"
+            }
+          ]
         },
         "sendBody": true,
         "specifyBody": "json",
@@ -404,7 +527,10 @@
       },
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.4,
-      "position": [960, 496],
+      "position": [
+        960,
+        496
+      ],
       "id": "0265ede2-8d01-4067-a909-994474a35ac0",
       "name": "Abrir Chamado TI"
     },
@@ -414,17 +540,30 @@
         "url": "={{ $env.CORE_API_URL }}/chamados/por-telefone",
         "sendQuery": true,
         "queryParameters": {
-          "parameters": [{ "name": "telefone", "value": "={{ $('Webhook').item.json.body.phone }}" }]
+          "parameters": [
+            {
+              "name": "telefone",
+              "value": "={{ $('Webhook').item.json.body.phone }}"
+            }
+          ]
         },
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "x-admin-key", "value": "={{ $env.CORE_API_KEY }}" }]
+          "parameters": [
+            {
+              "name": "x-admin-key",
+              "value": "={{ $env.CORE_API_KEY }}"
+            }
+          ]
         },
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.4,
-      "position": [1056, 592],
+      "position": [
+        1056,
+        592
+      ],
       "id": "5c5a574a-782e-4406-b0e7-17659206dd06",
       "name": "Consultar Chamados TI"
     },
@@ -434,17 +573,30 @@
         "url": "={{ $env.INTEGRACAO_API_URL }}/ia/secretaria",
         "sendQuery": true,
         "queryParameters": {
-          "parameters": [{ "name": "cpf", "value": "={{ $fromAI('cpf', 'CPF do aluno ou responsável, somente números') }}" }]
+          "parameters": [
+            {
+              "name": "cpf",
+              "value": "={{ $fromAI('cpf', 'CPF do aluno ou responsável, somente números') }}"
+            }
+          ]
         },
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}" }]
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}"
+            }
+          ]
         },
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.4,
-      "position": [1152, 496],
+      "position": [
+        1152,
+        496
+      ],
       "id": "a72c4c3a-b59c-4b2e-87fd-372a0affbb5d",
       "name": "Consultar Secretaria"
     },
@@ -454,17 +606,30 @@
         "url": "={{ $env.INTEGRACAO_API_URL }}/ia/secretaria/professor",
         "sendQuery": true,
         "queryParameters": {
-          "parameters": [{ "name": "email", "value": "={{ $fromAI('email', 'Email institucional do professor') }}" }]
+          "parameters": [
+            {
+              "name": "email",
+              "value": "={{ $fromAI('email', 'Email institucional do professor') }}"
+            }
+          ]
         },
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}" }]
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}"
+            }
+          ]
         },
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.4,
-      "position": [1152, 688],
+      "position": [
+        1152,
+        688
+      ],
       "id": "f23b2ff4-07b2-45e4-9c9e-c60932f641aa",
       "name": "Consultar Professor"
     },
@@ -474,17 +639,30 @@
         "url": "={{ $env.INTEGRACAO_API_URL }}/ia/secretaria/professor/alunos",
         "sendQuery": true,
         "queryParameters": {
-          "parameters": [{ "name": "disciplinaId", "value": "={{ $fromAI('disciplinaId', 'ID da disciplina retornado pela consulta do professor') }}" }]
+          "parameters": [
+            {
+              "name": "disciplinaId",
+              "value": "={{ $fromAI('disciplinaId', 'ID da disciplina retornado pela consulta do professor') }}"
+            }
+          ]
         },
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}" }]
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}"
+            }
+          ]
         },
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.4,
-      "position": [1248, 624],
+      "position": [
+        1248,
+        624
+      ],
       "id": "79c261d9-2391-4ada-8708-0499ab7f9fd5",
       "name": "Listar Alunos da Disciplina"
     },
@@ -494,17 +672,30 @@
         "url": "={{ $env.IPESSP_CORE_URL }}/crm/leads/verificar",
         "sendQuery": true,
         "queryParameters": {
-          "parameters": [{ "name": "telefone", "value": "={{ $('Webhook').item.json.body.phone }}" }]
+          "parameters": [
+            {
+              "name": "telefone",
+              "value": "={{ $('Webhook').item.json.body.phone }}"
+            }
+          ]
         },
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "x-admin-key", "value": "={{ $env.CORE_API_KEY }}" }]
+          "parameters": [
+            {
+              "name": "x-admin-key",
+              "value": "={{ $env.CORE_API_KEY }}"
+            }
+          ]
         },
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.4,
-      "position": [1344, 624],
+      "position": [
+        1344,
+        624
+      ],
       "id": "c1d2e3f4-2222-2222-2222-000000000001",
       "name": "Verificar Lead CRM"
     },
@@ -513,17 +704,30 @@
         "url": "={{ $env.INTEGRACAO_API_URL }}/ia/cpf-por-telefone",
         "sendQuery": true,
         "queryParameters": {
-          "parameters": [{ "name": "telefone", "value": "={{ $('Webhook').item.json.body.phone }}" }]
+          "parameters": [
+            {
+              "name": "telefone",
+              "value": "={{ $('Webhook').item.json.body.phone }}"
+            }
+          ]
         },
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}" }]
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}"
+            }
+          ]
         },
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [1200, -544],
+      "position": [
+        1200,
+        -544
+      ],
       "id": "b25e373b-72d9-4915-93f2-24d92af55758",
       "name": "Buscar CPF por Telefone (Menu)",
       "onError": "continueRegularOutput"
@@ -534,7 +738,10 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1400, -544],
+      "position": [
+        1400,
+        -544
+      ],
       "id": "a32d0ca6-3f5e-45be-96fb-227928b4e667",
       "name": "Injetar CPF no Menu"
     },
@@ -544,13 +751,21 @@
         "url": "={{ $env.CORE_API_URL }}/ia/cursos",
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "x-admin-key", "value": "={{ $env.CORE_API_KEY }}" }]
+          "parameters": [
+            {
+              "name": "x-admin-key",
+              "value": "={{ $env.CORE_API_KEY }}"
+            }
+          ]
         },
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.4,
-      "position": [1440, 400],
+      "position": [
+        1440,
+        400
+      ],
       "id": "d4e5f6a7-3333-3333-3333-000000000001",
       "name": "Consultar Cursos"
     },
@@ -562,8 +777,14 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Authorization", "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}" },
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
@@ -573,7 +794,10 @@
       },
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.4,
-      "position": [1536, 496],
+      "position": [
+        1536,
+        496
+      ],
       "id": "d4e5f6a7-3333-3333-3333-000000000002",
       "name": "Enviar Boleto PDF"
     }
@@ -585,60 +809,322 @@
           "body": {
             "phone": "5511999999999",
             "fromMe": false,
-            "text": { "message": "Olá bom dia" }
+            "text": {
+              "message": "Olá bom dia"
+            }
           }
         }
       }
     ]
   },
   "connections": {
-    "Webhook": { "main": [[{ "node": "If", "type": "main", "index": 0 }]] },
-    "If": { "main": [[{ "node": "If1", "type": "main", "index": 0 }]] },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "If1": {
       "main": [
-        [{ "node": "If2", "type": "main", "index": 0 }],
-        [{ "node": "If3", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If3",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "If2": {
       "main": [
-        [{ "node": "Enviar Menu Inicial", "type": "main", "index": 0 }],
-        [{ "node": "Buscar CPF por Telefone", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Enviar Menu Inicial",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Buscar CPF por Telefone",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "If3": {
       "main": [
-        [{ "node": "Mapear Seleção do Menu", "type": "main", "index": 0 }],
-        [{ "node": "Responder Mídia Não Suportada", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Mapear Seleção do Menu",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder Mídia Não Suportada",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
-    "Mapear Seleção do Menu": { "main": [[{ "node": "Buscar CPF por Telefone (Menu)", "type": "main", "index": 0 }]] },
-    "Buscar CPF por Telefone (Menu)": { "main": [[{ "node": "Injetar CPF no Menu", "type": "main", "index": 0 }]] },
-    "Injetar CPF no Menu": { "main": [[{ "node": "AI Agent", "type": "main", "index": 0 }]] },
-    "Buscar CPF por Telefone": { "main": [[{ "node": "Injetar CPF no Contexto", "type": "main", "index": 0 }]] },
-    "Injetar CPF no Contexto": { "main": [[{ "node": "AI Agent", "type": "main", "index": 0 }]] },
-    "AI Agent": { "main": [[{ "node": "Corrigir Formatação WhatsApp", "type": "main", "index": 0 }]] },
-    "Corrigir Formatação WhatsApp": { "main": [[{ "node": "Enviar Resposta WhatsApp", "type": "main", "index": 0 }]] },
-    "Enviar Resposta WhatsApp": { "main": [[{ "node": "Registrar Interação Bot", "type": "main", "index": 0 }]] },
-    "Simple Memory": { "ai_memory": [[{ "node": "AI Agent", "type": "ai_memory", "index": 0 }]] },
-    "OpenAI Chat Model": { "ai_languageModel": [[{ "node": "AI Agent", "type": "ai_languageModel", "index": 0 }]] },
-    "Consultar Financeiro": { "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]] },
-    "Consultar Avisos": { "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]] },
-    "Consultar Calendário": { "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]] },
-    "Registrar Lead CRM": { "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]] },
-    "Salvar CPF do Telefone": { "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]] },
-    "Abrir Chamado TI": { "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]] },
-    "Consultar Chamados TI": { "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]] },
-    "Consultar Secretaria": { "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]] },
-    "Consultar Professor": { "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]] },
-    "Listar Alunos da Disciplina": { "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]] },
-    "Consultar Cursos": { "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]] },
-    "Enviar Boleto PDF": { "ai_tool": [[{ "node": "AI Agent", "type": "ai_tool", "index": 0 }]] }
+    "Mapear Seleção do Menu": {
+      "main": [
+        [
+          {
+            "node": "Buscar CPF por Telefone (Menu)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar CPF por Telefone (Menu)": {
+      "main": [
+        [
+          {
+            "node": "Injetar CPF no Menu",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Injetar CPF no Menu": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar CPF por Telefone": {
+      "main": [
+        [
+          {
+            "node": "Injetar CPF no Contexto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Injetar CPF no Contexto": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Corrigir Formatação WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Corrigir Formatação WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Enviar Resposta WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Resposta WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Registrar Interação Bot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar Financeiro": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar Lead CRM": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Salvar CPF do Telefone": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Abrir Chamado TI": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar Chamados TI": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar Secretaria": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar Professor": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Listar Alunos da Disciplina": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar Cursos": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Boleto PDF": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
   },
   "active": true,
-  "settings": { "executionOrder": "v1", "binaryMode": "separate", "availableInMCP": false },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
   "versionId": "c3d4e5f6-a7b8-9012-cdef-f12345678905",
-  "meta": { "templateCredsSetupCompleted": true },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
   "nodeGroups": [],
   "id": "GWBxdNDxtAgrI8vk",
   "tags": []
