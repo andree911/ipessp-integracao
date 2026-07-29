@@ -1,9 +1,12 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { PortalAlunoAuthService } from './portal-aluno-auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RefreshDto } from './dto/refresh.dto';
 
 @Controller('portal/auth')
+@UseGuards(ThrottlerGuard)
+@Throttle({ default: { limit: 5, ttl: 60000 } })
 export class PortalAlunoAuthController {
   constructor(private readonly auth: PortalAlunoAuthService) {}
 

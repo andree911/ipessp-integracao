@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createClient } from '@supabase/supabase-js';
 import { SophiaService } from '../sophia/sophia.service';
@@ -28,16 +28,31 @@ export class PortalAlunoDadosService {
     }));
   }
 
-  async minhasNotas(idMatricula: number) {
+  async minhasNotas(codigoSophia: number, idMatricula: number) {
+    await this.verificarMatriculaPertenceAoAluno(codigoSophia, idMatricula);
     return this.sophia.getNotasAvaliacoes(idMatricula);
   }
 
-  async minhaFrequencia(idMatricula: number) {
+  async minhaFrequencia(codigoSophia: number, idMatricula: number) {
+    await this.verificarMatriculaPertenceAoAluno(codigoSophia, idMatricula);
     return this.sophia.getFrequenciaCompleta(idMatricula);
   }
 
-  async meuHorario(idMatricula: number) {
+  async meuHorario(codigoSophia: number, idMatricula: number) {
+    await this.verificarMatriculaPertenceAoAluno(codigoSophia, idMatricula);
     return this.sophia.getHorarioDetalhado(idMatricula);
+  }
+
+  // Sem isso, qualquer aluno autenticado podia trocar o "matricula" da query
+  // string e ler notas/frequência/horário de outro aluno (o token só prova
+  // quem é o aluno, nunca qual matrícula ele pode consultar) — ver
+  // financeiro/curso acima, que já usavam só o codigoSophia do token.
+  private async verificarMatriculaPertenceAoAluno(codigoSophia: number, idMatricula: number): Promise<void> {
+    const matriculas = await this.sophia.getMatriculasAluno(codigoSophia);
+    const pertence = matriculas.some((m) => m.codigoMatricula === idMatricula);
+    if (!pertence) {
+      throw new ForbiddenException('Matrícula não pertence ao aluno autenticado.');
+    }
   }
 
   // Sophia não aceita arquivo direto (POST /clientes/{id}/Documentos só recebe

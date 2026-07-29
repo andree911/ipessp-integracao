@@ -48,18 +48,18 @@ export class PortalAlunoDadosController {
   }
 
   @Get('notas')
-  notas(@Query('matricula', ParseIntPipe) matricula: number) {
-    return this.dados.minhasNotas(matricula);
+  notas(@Req() req: RequestComPortalAluno, @Query('matricula', ParseIntPipe) matricula: number) {
+    return this.dados.minhasNotas(req.portalAluno.codigoSophia, matricula);
   }
 
   @Get('frequencia')
-  frequencia(@Query('matricula', ParseIntPipe) matricula: number) {
-    return this.dados.minhaFrequencia(matricula);
+  frequencia(@Req() req: RequestComPortalAluno, @Query('matricula', ParseIntPipe) matricula: number) {
+    return this.dados.minhaFrequencia(req.portalAluno.codigoSophia, matricula);
   }
 
   @Get('horario')
-  horario(@Query('matricula', ParseIntPipe) matricula: number) {
-    return this.dados.meuHorario(matricula);
+  horario(@Req() req: RequestComPortalAluno, @Query('matricula', ParseIntPipe) matricula: number) {
+    return this.dados.meuHorario(req.portalAluno.codigoSophia, matricula);
   }
 
   @Post('documentos')
