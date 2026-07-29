@@ -86,10 +86,10 @@
     {
       "parameters": {
         "toolDescription": "Busca os avisos e comunicados ativos da escola. Use quando o usuário perguntar sobre avisos, comunicados, informações ou novidades da escola.",
-        "url": "={{ $env.INTEGRACAO_API_URL }}/ia/avisos",
+        "url": "={{ $env.CORE_API_URL }}/ia/avisos",
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}" }]
+          "parameters": [{ "name": "x-admin-key", "value": "={{ $env.CORE_API_KEY }}" }]
         },
         "options": {}
       },
@@ -102,10 +102,10 @@
     {
       "parameters": {
         "toolDescription": "Busca os próximos eventos do calendário escolar. Use quando o usuário perguntar sobre eventos, datas, reuniões, feriados ou agenda da escola.",
-        "url": "={{ $env.INTEGRACAO_API_URL }}/ia/calendario",
+        "url": "={{ $env.CORE_API_URL }}/ia/calendario",
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}" }]
+          "parameters": [{ "name": "x-admin-key", "value": "={{ $env.CORE_API_KEY }}" }]
         },
         "options": {}
       },
@@ -392,14 +392,14 @@
       "parameters": {
         "toolDescription": "Abre um chamado de suporte TI. Use quando o usuário tiver problema com acesso, senha, email ou sistemas. Colete título e descrição antes de chamar.",
         "method": "POST",
-        "url": "={{ $env.INTEGRACAO_API_URL }}/v1/ti/chamados",
+        "url": "={{ $env.CORE_API_URL }}/chamados",
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}" }]
+          "parameters": [{ "name": "x-admin-key", "value": "={{ $env.CORE_API_KEY }}" }]
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"titulo\": \"{{ $fromAI('titulo', 'Título curto do problema, ex: Sem acesso ao portal') }}\",\n  \"descricao\": \"{{ $fromAI('descricao', 'Descrição detalhada do problema relatado') }}\",\n  \"categoria\": \"{{ $fromAI('categoria', 'Categoria: Hardware, Software, Acesso, Rede, Email ou Outro') }}\",\n  \"prioridade\": \"{{ $fromAI('prioridade', 'Prioridade: baixa, media, alta ou urgente') }}\",\n  \"telefoneSolicitante\": \"{{ $('Webhook').item.json.body.phone }}\",\n  \"criadoPorNome\": \"{{ $fromAI('criadoPorNome', 'Nome do usuário se conhecido, senão string vazia') }}\",\n  \"setor\": \"{{ $fromAI('setor', 'Tipo do usuário: aluno, professor ou funcionario') }}\"\n}",
+        "jsonBody": "={\n  \"callerEmail\": \"bot@ipessp.edu.br\",\n  \"callerRole\": \"bot\",\n  \"callerNome\": \"{{ $fromAI('criadoPorNome', 'Nome do usuário se conhecido, senão string vazia') }}\",\n  \"titulo\": \"{{ $fromAI('titulo', 'Título curto do problema, ex: Sem acesso ao portal') }}\",\n  \"descricao\": \"{{ $fromAI('descricao', 'Descrição detalhada do problema relatado') }}\",\n  \"categoria\": \"{{ $fromAI('categoria', 'Categoria: Hardware, Software, Acesso, Rede, Email ou Outro') }}\",\n  \"prioridade\": \"{{ $fromAI('prioridade', 'Prioridade: baixa, media, alta ou urgente') }}\",\n  \"telefoneSolicitante\": \"{{ $('Webhook').item.json.body.phone }}\",\n  \"setor\": \"{{ $fromAI('setor', 'Tipo do usuário: aluno, professor ou funcionario') }}\"\n}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequestTool",
@@ -411,14 +411,14 @@
     {
       "parameters": {
         "toolDescription": "Consulta os chamados de TI abertos pelo usuário. Use quando perguntar sobre status de um chamado.",
-        "url": "={{ $env.INTEGRACAO_API_URL }}/v1/ti/chamados",
+        "url": "={{ $env.CORE_API_URL }}/chamados/por-telefone",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [{ "name": "telefone", "value": "={{ $('Webhook').item.json.body.phone }}" }]
         },
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}" }]
+          "parameters": [{ "name": "x-admin-key", "value": "={{ $env.CORE_API_KEY }}" }]
         },
         "options": {}
       },
