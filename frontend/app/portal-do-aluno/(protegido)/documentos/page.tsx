@@ -57,13 +57,21 @@ export default function DocumentosPage() {
           />
         </Field>
         <Field label="Arquivo">
-          <input
-            type="file"
-            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-            className="w-full text-sm"
-            required
-          />
+          <div className="flex items-center gap-3 flex-wrap">
+            <label className="btn btn-outline cursor-pointer w-fit">
+              Escolher arquivo
+              <input
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                className="sr-only"
+                required
+              />
+            </label>
+            <span className="text-sm truncate" style={{ color: 'var(--ink-700)' }}>
+              {file ? file.name : 'Nenhum arquivo selecionado'}
+            </span>
+          </div>
         </Field>
 
         {erro && <p className="text-sm" style={{ color: 'var(--brand-600)' }}>{erro}</p>}
