@@ -66,7 +66,7 @@
     {
       "parameters": {
         "toolDescription": "Consulta pendências financeiras pelo CPF do responsável. Use quando o usuário perguntar sobre boletos, mensalidades ou situação financeira.",
-        "url": "={{ $env.CORE_API_URL }}/ia/financeiro",
+        "url": "={{ $env.INTEGRACAO_API_URL }}/ia/financeiro",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [{ "name": "cpf", "value": "={{ $fromAI('cpf', 'CPF do responsável financeiro, somente números') }}" }]
@@ -86,7 +86,7 @@
     {
       "parameters": {
         "toolDescription": "Busca os avisos e comunicados ativos da escola. Use quando o usuário perguntar sobre avisos, comunicados, informações ou novidades da escola.",
-        "url": "={{ $env.CORE_API_URL }}/ia/avisos",
+        "url": "={{ $env.INTEGRACAO_API_URL }}/ia/avisos",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}" }]
@@ -102,7 +102,7 @@
     {
       "parameters": {
         "toolDescription": "Busca os próximos eventos do calendário escolar. Use quando o usuário perguntar sobre eventos, datas, reuniões, feriados ou agenda da escola.",
-        "url": "={{ $env.CORE_API_URL }}/ia/calendario",
+        "url": "={{ $env.INTEGRACAO_API_URL }}/ia/calendario",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}" }]
@@ -337,7 +337,7 @@
     },
     {
       "parameters": {
-        "url": "={{ $env.CORE_API_URL }}/ia/cpf-por-telefone",
+        "url": "={{ $env.INTEGRACAO_API_URL }}/ia/cpf-por-telefone",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [{ "name": "telefone", "value": "={{ $('Webhook').item.json.body.phone }}" }]
@@ -369,7 +369,7 @@
       "parameters": {
         "toolDescription": "Salva a associação entre o telefone do usuário e o CPF informado, para não pedir o CPF novamente em futuras conversas. Use SEMPRE após uma consulta financeira bem-sucedida onde o usuário informou o CPF.",
         "method": "POST",
-        "url": "={{ $env.CORE_API_URL }}/ia/associar-telefone",
+        "url": "={{ $env.INTEGRACAO_API_URL }}/ia/associar-telefone",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -392,7 +392,7 @@
       "parameters": {
         "toolDescription": "Abre um chamado de suporte TI. Use quando o usuário tiver problema com acesso, senha, email ou sistemas. Colete título e descrição antes de chamar.",
         "method": "POST",
-        "url": "={{ $env.CORE_API_URL }}/v1/ti/chamados",
+        "url": "={{ $env.INTEGRACAO_API_URL }}/v1/ti/chamados",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}" }]
@@ -411,7 +411,7 @@
     {
       "parameters": {
         "toolDescription": "Consulta os chamados de TI abertos pelo usuário. Use quando perguntar sobre status de um chamado.",
-        "url": "={{ $env.CORE_API_URL }}/v1/ti/chamados",
+        "url": "={{ $env.INTEGRACAO_API_URL }}/v1/ti/chamados",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [{ "name": "telefone", "value": "={{ $('Webhook').item.json.body.phone }}" }]
@@ -431,7 +431,7 @@
     {
       "parameters": {
         "toolDescription": "Consulta a situação de matrícula do aluno. Use quando perguntar sobre matrícula, curso, turma ou situação escolar.",
-        "url": "={{ $env.CORE_API_URL }}/ia/secretaria",
+        "url": "={{ $env.INTEGRACAO_API_URL }}/ia/secretaria",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [{ "name": "cpf", "value": "={{ $fromAI('cpf', 'CPF do aluno ou responsável, somente números') }}" }]
@@ -451,7 +451,7 @@
     {
       "parameters": {
         "toolDescription": "Consulta as disciplinas do professor. Use quando o professor perguntar sobre suas aulas, horários ou disciplinas.",
-        "url": "={{ $env.CORE_API_URL }}/ia/secretaria/professor",
+        "url": "={{ $env.INTEGRACAO_API_URL }}/ia/secretaria/professor",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [{ "name": "email", "value": "={{ $fromAI('email', 'Email institucional do professor') }}" }]
@@ -471,7 +471,7 @@
     {
       "parameters": {
         "toolDescription": "Retorna a lista de alunos de uma disciplina específica. Use após consultar as disciplinas do professor e ele pedir a lista de alunos de uma delas.",
-        "url": "={{ $env.CORE_API_URL }}/ia/secretaria/professor/alunos",
+        "url": "={{ $env.INTEGRACAO_API_URL }}/ia/secretaria/professor/alunos",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [{ "name": "disciplinaId", "value": "={{ $fromAI('disciplinaId', 'ID da disciplina retornado pela consulta do professor') }}" }]
@@ -510,7 +510,7 @@
     },
     {
       "parameters": {
-        "url": "={{ $env.CORE_API_URL }}/ia/cpf-por-telefone",
+        "url": "={{ $env.INTEGRACAO_API_URL }}/ia/cpf-por-telefone",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [{ "name": "telefone", "value": "={{ $('Webhook').item.json.body.phone }}" }]
@@ -544,7 +544,7 @@
         "url": "={{ $env.CORE_API_URL }}/ia/cursos",
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}" }]
+          "parameters": [{ "name": "x-admin-key", "value": "={{ $env.CORE_API_KEY }}" }]
         },
         "options": {}
       },
@@ -558,7 +558,7 @@
       "parameters": {
         "toolDescription": "Manda o PDF do boleto direto no WhatsApp do usuário. Use SOMENTE quando o usuário pedir explicitamente o boleto em PDF/arquivo (para linha digitável ou PIX copia-e-cola, esses dados já vêm da consulta financeira e não precisam desta tool). Precisa do CPF e do codigoBoleto retornado pela tool de consultar financeiro.",
         "method": "POST",
-        "url": "={{ $env.CORE_API_URL }}/ia/boleto/enviar",
+        "url": "={{ $env.INTEGRACAO_API_URL }}/ia/boleto/enviar",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
