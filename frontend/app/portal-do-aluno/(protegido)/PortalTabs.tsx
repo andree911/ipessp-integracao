@@ -24,7 +24,7 @@ export default function PortalTabs() {
 
   return (
     <div className="flex items-center justify-between border-b" style={{ borderColor: 'var(--line)' }}>
-      <nav className="flex gap-1 overflow-x-auto">
+      <nav className="flex gap-1 overflow-x-auto overflow-y-hidden">
         {TABS.map(tab => {
           const ativo = pathname === tab.href;
           return (
