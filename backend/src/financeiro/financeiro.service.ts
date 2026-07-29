@@ -78,7 +78,7 @@ export class FinanceiroService {
         pendencias.push({
           codigo: l.id,
           descricao: l.descricao ?? 'Mensalidade',
-          vencimento: l.dataVencimento.substring(0, 10),
+          vencimento: venc.toISOString().substring(0, 10),
           valor: Number(l.valorPrevisto),
           diasAtraso: diffDias > 0 ? diffDias : 0,
           linhaDigitavel: l.linhaDigitavel ?? undefined,
@@ -122,7 +122,7 @@ export class FinanceiroService {
         pendencias.push({
           codigo: l.id,
           descricao: l.descricao ?? 'Mensalidade',
-          vencimento: l.dataVencimento.substring(0, 10),
+          vencimento: venc.toISOString().substring(0, 10),
           valor: Number(l.valorPrevisto),
           diasAtraso: diffDias > 0 ? diffDias : 0,
           linhaDigitavel: l.linhaDigitavel ?? undefined,
