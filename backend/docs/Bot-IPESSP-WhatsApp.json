@@ -1141,6 +1141,17 @@
           }
         ]
       ]
+    },
+    "Verificar Lead CRM": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
