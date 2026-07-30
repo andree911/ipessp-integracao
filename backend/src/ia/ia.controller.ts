@@ -3,6 +3,7 @@ import { IaBearerGuard } from './ia.guard';
 import { IaService } from './ia.service';
 import { AssociarTelefoneDto } from './dto/associar-telefone.dto';
 import { EnviarBoletoDto } from './dto/enviar-boleto.dto';
+import { EnviarPdfCursoDto } from './dto/enviar-pdf-curso.dto';
 
 @Controller('ia')
 @UseGuards(IaBearerGuard)
@@ -69,6 +70,11 @@ export class IaController {
   @Get('cursos')
   getCursos() {
     return this.iaService.getCursos();
+  }
+
+  @Post('curso-pdf/enviar')
+  enviarPdfCurso(@Body() dto: EnviarPdfCursoDto) {
+    return this.iaService.enviarPdfCursoWhatsapp(dto.codigoCurso, dto.telefone);
   }
 
   @Get('turma-detalhada')

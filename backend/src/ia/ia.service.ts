@@ -216,6 +216,43 @@ export class IaService {
     });
   }
 
+  /** Busca o PDF informativo do curso e manda direto pro WhatsApp do usuário — usado pela tool do bot. */
+  async enviarPdfCursoWhatsapp(
+    codigoCurso: number,
+    telefone: string,
+  ): Promise<{ ok: boolean; erro?: string }> {
+    const sb = this.supabase.getClient();
+    if (!sb) return { ok: false, erro: 'Supabase não configurado.' };
+
+    const { data, error } = await sb
+      .from('curso_conteudo')
+      .select('nome, pdf_informativo_url')
+      .eq('codigo_curso', codigoCurso)
+      .eq('ativo', true)
+      .maybeSingle();
+
+    if (error || !data) {
+      return { ok: false, erro: `Curso ${codigoCurso} não encontrado ou inativo.` };
+    }
+    if (!data.pdf_informativo_url) {
+      return {
+        ok: false,
+        erro: `Ainda não temos o PDF informativo de "${data.nome}" cadastrado. Ofereça registrar o interesse do lead mesmo assim.`,
+      };
+    }
+
+    try {
+      await this.whatsapp.enviarDocumentoDeUrl(telefone, data.pdf_informativo_url, `${data.nome}.pdf`);
+    } catch {
+      return {
+        ok: false,
+        erro: 'Falha ao enviar o PDF agora. Peça pro lead aguardar um instante e tente de novo, ou ofereça outro canal.',
+      };
+    }
+
+    return { ok: true };
+  }
+
   private async getCursosConteudo() {
     const sb = this.supabase.getClient();
     if (!sb) return [];

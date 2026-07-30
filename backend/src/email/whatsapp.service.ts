@@ -166,4 +166,24 @@ export class WhatsAppService {
       throw err;
     }
   }
+
+  /** Baixa um PDF de uma URL pública (ex.: material servido pela VPS) e manda como documento. Propaga erro — quem chama decide o fallback. */
+  async enviarDocumentoDeUrl(
+    telefone: string,
+    url: string,
+    fileName: string,
+  ): Promise<void> {
+    let base64: string;
+    try {
+      const resposta = await firstValueFrom(
+        this.http.get(url, { responseType: 'arraybuffer' }),
+      );
+      base64 = Buffer.from(resposta.data as ArrayBuffer).toString('base64');
+    } catch (err) {
+      this.logger.warn(`WhatsApp: falha ao baixar PDF de ${url} — ${detalheErro(err)}`);
+      throw err;
+    }
+
+    await this.enviarDocumento(telefone, base64, fileName, 'pdf');
+  }
 }
