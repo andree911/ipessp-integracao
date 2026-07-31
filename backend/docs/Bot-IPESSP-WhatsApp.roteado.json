@@ -4,7 +4,7 @@
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "930c3dd4-8cd0-4d66-a615-e2a959fedaf8",
+        "path": "91b8cdcd-7d20-4220-948e-0e227cec1feb",
         "options": {}
       },
       "type": "n8n-nodes-base.webhook",
@@ -15,7 +15,7 @@
       ],
       "id": "8d51b63a-3864-473b-8386-2e77c53ab492",
       "name": "Webhook",
-      "webhookId": "930c3dd4-8cd0-4d66-a615-e2a959fedaf8"
+      "webhookId": "91b8cdcd-7d20-4220-948e-0e227cec1feb"
     },
     {
       "parameters": {
@@ -262,24 +262,23 @@
       "parameters": {
         "model": {
           "__rl": true,
-          "value": "sabiazinho-4",
+          "value": "claude-sonnet-5",
           "mode": "id"
         },
-        "responsesApiEnabled": false,
         "options": {}
       },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
       "typeVersion": 1.3,
       "position": [
         288,
         112
       ],
-      "id": "e470ec20-f620-429d-891e-c9fd6ddca25c",
-      "name": "OpenAI Chat Model",
+      "id": "66c10349-ce56-4338-932c-0ff9a69d87dc",
+      "name": "Anthropic Chat Model",
       "credentials": {
-        "openAiApi": {
-          "id": "hjpnmhjkVj7j9r4Y",
-          "name": "OpenAI account"
+        "anthropicApi": {
+          "id": "IBJRSLTP25idgYLs",
+          "name": "Anthropic account"
         }
       }
     },
@@ -337,7 +336,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ phone: $('Webhook').item.json.body.phone, message: ['Olá! Sou a Eliza 👋\\nAssistente virtual do IPESSP. Como posso ajudar?', 'Olá! Aqui é a Eliza 👋\\nEstou à disposição para ajudar no que você precisar do IPESSP.', 'Olá! Sou a Eliza, assistente virtual do IPESSP 👋\\nEm que posso ser útil hoje?'][Math.floor(Math.random() * 3)], optionList: { title: 'Menu Principal', buttonLabel: 'Ver opções', options: [{ id: 'financeiro', title: '💰 Situação financeira', description: 'Boletos e pendências' }, { id: 'secretaria', title: '📋 Secretaria', description: 'Matrícula, documentos e declarações' }, { id: 'ti', title: '💻 Suporte TI', description: 'Acesso, senha e sistemas' }, { id: 'avisos', title: '📢 Avisos', description: 'Comunicados e novidades' }, { id: 'calendario', title: '📅 Calendário', description: 'Datas e agenda escolar' }, { id: 'matricula', title: '📝 Quero me matricular', description: 'Informações sobre cursos' }] }, delayMessage: Math.floor(Math.random() * 4) + 2 }) }}",
+        "jsonBody": "={{ JSON.stringify({ phone: $('Webhook').item.json.body.phone, message: ['Olá! Sou a Eliza 👋\\nAssistente virtual do IPESSP. Como posso ajudar?', 'Olá! Aqui é a Eliza 👋\\nEstou à disposição para ajudar no que você precisar do IPESSP.', 'Olá! Sou a Eliza, assistente virtual do IPESSP 👋\\nEm que posso ser útil hoje?'][Math.floor(Math.random() * 3)], optionList: { title: 'Menu Principal', buttonLabel: 'Ver opções', options: [{ id: 'matricula', title: '📚 Informações de cursos', description: 'Cursos, valores e matrícula' }, { id: 'financeiro', title: '💰 Situação financeira', description: 'Boletos e pendências' }, { id: 'secretaria', title: '📋 Secretaria', description: 'Matrícula, documentos e declarações' }, { id: 'ti', title: '💻 Suporte TI', description: 'Acesso, senha e sistemas' }, { id: 'avisos', title: '📢 Avisos', description: 'Comunicados e novidades' }, { id: 'calendario', title: '📅 Calendário', description: 'Datas e agenda escolar' }] }, delayMessage: Math.floor(Math.random() * 4) + 2 }) }}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -1114,7 +1113,7 @@
         "promptType": "define",
         "text": "={{ $json.body.text.message }}",
         "options": {
-          "systemMessage": "Você é \"Eliza\", assistente virtual do IPESSP no WhatsApp. Seja cordial, objetiva e profissional -- nunca use gírias (\"tô\", \"cê\", \"e aí\", \"blz\").\n\nFORMATAÇÃO WHATSAPP (não é markdown padrão): negrito usa UM asterisco de cada lado, tipo *assim* -- nunca **assim** com dois. Itálico é _assim_, com um underline. Não use #, ##, nem blocos de código.\nListas: um item por linha começando com \"- \" ou um emoji, com uma linha em branco entre cada item.\nFormate valores em R$ e datas no padrão brasileiro. Respostas curtas.\n\nNunca invente informação -- use só dados retornados pelas tools. Nunca mencione nenhum código/ID interno retornado pelas tools (\"codigo\", \"codigoBoleto\" etc.) -- refira-se pela descrição/data, nunca pelo número solto.\n\nNunca use as palavras \"CRM\" ou \"lead\" com o usuário, nem diga que ele \"já está registrado/cadastrado\" de uma conversa anterior -- trate sempre como se fosse a primeira vez, mesmo que internamente já exista um registro.\n\nSe a mensagem trouxer um trecho \"[Sistema: CPF: ...]\", é um dado pré-identificado só pra seu uso interno -- nunca confirme, mencione ou mostre esse CPF ao usuário (nem mascarado).\n\nSe a dúvida estiver fora do que você resolve aqui, direcione: Secretaria wa.me/5511997738431 · TI/Suporte wa.me/5511968566862 · Financeiro wa.me/5511998393640.\n\nVocê atende quem AINDA NÃO é aluno e quer conhecer cursos ou se matricular. Esse atendimento é uma TRIAGEM curta -- o objetivo é coletar o essencial rápido e encaminhar pra um consultor humano, não fazer uma consultoria completa de cursos pelo chat.\n\nSe esta for a primeira mensagem desta conversa (sem nenhum histórico anterior), responda EXATAMENTE com este texto, sem alterar nada, sem adicionar nem remover nada, nem antes nem depois:\n\n\"Olá! Aqui é a Eliza! Seja muito bem-vindo(a) à Faculdade IPESSP, é um prazer ter você aqui.\n\nPara te direcionar ao consultor e agilizar seu atendimento, poderia me informar:\n\n- Seu nome completo\n- Seu melhor e-mail\n- Curso de interesse\n- Sua formação atual\"\n\nDepois que a pessoa responder essas informações (nome, email, curso de interesse e formação atual):\n1. Pergunte se pode enviar novidades e promoções por WhatsApp, e registre a resposta em whatsappOptin.\n2. Chame \"Registrar Lead CRM\" com nome, email e cursoInteresse (texto livre da resposta da pessoa é suficiente aqui -- não precisa consultar \"Consultar Cursos\" só pra isso), e em observacao inclua \"Formação atual: <o que a pessoa respondeu>\".\n3. Depois de registrar, responda EXATAMENTE, sem parafrasear e sem adicionar nada antes ou depois: \"✅ Seus dados foram registrados! Em breve nossa equipe entrará em contato.\"\n\nSe em algum momento a pessoa perguntar especificamente sobre um curso (duração, valores, modalidade), aí sim use \"Consultar Cursos\" e responda só com dados reais -- nunca invente nome, duração ou valor de curso. Mas não ofereça esse detalhamento por conta própria antes de coletar os 4 dados acima -- o objetivo aqui é agilizar o encaminhamento pro consultor, não vender o curso pelo chat.\n\nMesmo que a pessoa já tenha demonstrado interesse antes, trate sempre como se fosse a primeira conversa -- nunca diga que ela já tem cadastro ou interesse registrado.\n\nNão peça CPF nesse atendimento -- isso só entra depois, no fluxo de inscrição, que não é feito por aqui."
+          "systemMessage": "Você é \"Eliza\", assistente virtual do IPESSP no WhatsApp. Seja cordial, objetiva e profissional -- nunca use gírias (\"tô\", \"cê\", \"e aí\", \"blz\").\n\nFORMATAÇÃO WHATSAPP (não é markdown padrão): negrito usa UM asterisco de cada lado, tipo *assim* -- nunca **assim** com dois. Itálico é _assim_, com um underline. Não use #, ##, nem blocos de código.\nListas: um item por linha começando com \"- \" ou um emoji, com uma linha em branco entre cada item.\nFormate valores em R$ e datas no padrão brasileiro. Respostas curtas.\n\nNunca invente informação -- use só dados retornados pelas tools. Nunca mencione nenhum código/ID interno retornado pelas tools (\"codigo\", \"codigoBoleto\" etc.) -- refira-se pela descrição/data, nunca pelo número solto.\n\nNunca use as palavras \"CRM\" ou \"lead\" com o usuário, nem diga que ele \"já está registrado/cadastrado\" de uma conversa anterior -- trate sempre como se fosse a primeira vez, mesmo que internamente já exista um registro.\n\nSe a mensagem trouxer um trecho \"[Sistema: CPF: ...]\", é um dado pré-identificado só pra seu uso interno -- nunca confirme, mencione ou mostre esse CPF ao usuário (nem mascarado).\n\nSe a dúvida estiver fora do que você resolve aqui, direcione: Secretaria wa.me/5511997738431 · TI/Suporte wa.me/5511968566862 · Financeiro wa.me/5511998393640.\n\nVocê atende quem AINDA NÃO é aluno e quer conhecer cursos ou se matricular. Esse atendimento é uma TRIAGEM curta -- o objetivo é coletar o essencial rápido e encaminhar pra um consultor humano, não fazer uma consultoria completa de cursos pelo chat.\n\nSe esta for a primeira mensagem desta conversa (sem nenhum histórico anterior), responda EXATAMENTE com este texto, sem alterar nada, sem adicionar nem remover nada, nem antes nem depois:\n\n\"Olá! Aqui é a Eliza! Seja muito bem-vindo(a) à Faculdade IPESSP, é um prazer ter você aqui.\n\nPara te direcionar ao consultor e agilizar seu atendimento, poderia me informar:\n\n- Seu nome completo\n- Seu melhor e-mail\n- Curso de interesse\"\n\nDepois que a pessoa responder essas informações (nome, email e curso de interesse):\n1. Pergunte se pode enviar novidades e promoções por WhatsApp, e registre a resposta em whatsappOptin.\n2. Chame \"Registrar Lead CRM\" com nome, email e cursoInteresse (texto livre da resposta da pessoa é suficiente aqui -- não precisa consultar \"Consultar Cursos\" só pra isso).\n3. Depois de registrar, responda EXATAMENTE, sem parafrasear, sem adicionar nada antes ou depois, e sem nenhuma frase extra de despedida tipo \"qualquer dúvida estou à disposição\" ou \"fico à disposição\": \"Seus dados foram registrados! Em breve nossa equipe entrará em contato.\" Essa frase sozinha é a resposta inteira.\n\nSe em algum momento a pessoa perguntar especificamente sobre um curso (duração, valores, modalidade), aí sim use \"Consultar Cursos\" e responda só com dados reais -- nunca invente nome, duração ou valor de curso. Mas não ofereça esse detalhamento por conta própria antes de coletar os 3 dados acima -- o objetivo aqui é agilizar o encaminhamento pro consultor, não vender o curso pelo chat.\n\nMesmo que a pessoa já tenha demonstrado interesse antes, trate sempre como se fosse a primeira conversa -- nunca diga que ela já tem cadastro ou interesse registrado.\n\nNão peça CPF nesse atendimento -- isso só entra depois, no fluxo de inscrição, que não é feito por aqui.\n\nSe a pessoa pedir o PDF/material/informativo de um curso específico (depois de identificar o id via \"Consultar Cursos\"), use \"Enviar Informativo do Curso\"."
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
@@ -1291,6 +1290,34 @@
       ],
       "id": "1175efed-8f89-4f83-8d98-16c3d27722e8",
       "name": "Formatar Calendário"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Manda o PDF/material informativo de um curso específico direto no WhatsApp do usuário. Use quando a pessoa pedir o PDF, material ou informativo de um curso (depois de já saber o \"id\" do curso via \"Consultar Cursos\"). Se retornar erro dizendo que o PDF ainda não está cadastrado, avise a pessoa que o material ainda não está disponível e ofereça seguir com o registro do interesse mesmo assim.",
+        "method": "POST",
+        "url": "={{ $env.IPESSP_CORE_URL }}/curso-pdf/enviar",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-admin-key",
+              "value": "={{ $env.CORE_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"cursoId\": {{ $fromAI('cursoId', 'Id numérico do curso (campo id retornado pela tool Consultar Cursos)', 'number') }},\n  \"telefone\": \"{{ $('Webhook').item.json.body.phone }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        832,
+        1100
+      ],
+      "id": "aaa3b0ab-ad12-4c4a-a3e1-272f3dbe10fa",
+      "name": "Enviar Informativo do Curso"
     }
   ],
   "pinData": {
@@ -1457,42 +1484,6 @@
           {
             "node": "Registrar Interação Bot",
             "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "OpenAI Chat Model": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "Agent Financeiro",
-            "type": "ai_languageModel",
-            "index": 0
-          },
-          {
-            "node": "Agent Secretaria",
-            "type": "ai_languageModel",
-            "index": 0
-          },
-          {
-            "node": "Agent TI",
-            "type": "ai_languageModel",
-            "index": 0
-          },
-          {
-            "node": "Agent Leads",
-            "type": "ai_languageModel",
-            "index": 0
-          },
-          {
-            "node": "Agent Professor",
-            "type": "ai_languageModel",
-            "index": 0
-          },
-          {
-            "node": "Classificador de Intenção (IA)",
-            "type": "ai_languageModel",
             "index": 0
           }
         ]
@@ -1938,9 +1929,56 @@
           }
         ]
       ]
+    },
+    "Anthropic Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agent Financeiro",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Agent Secretaria",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Agent TI",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Agent Leads",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Agent Professor",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Classificador de Intenção (IA)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Informativo do Curso": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agent Leads",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate",
