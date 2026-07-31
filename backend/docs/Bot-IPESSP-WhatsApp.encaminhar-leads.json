@@ -1,0 +1,260 @@
+{
+  "name": "Bot IPESSP WhatsApp (Encaminhar Leads)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "930c3dd4-8cd0-4d66-a615-e2a959fedaf8",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "dbf2c02f-a61b-4bbe-b933-4f9d9ce9b47d",
+      "name": "Webhook",
+      "webhookId": "930c3dd4-8cd0-4d66-a615-e2a959fedaf8"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "cbd029cd-58bb-4768-9b3d-a7a091a01516",
+              "leftValue": "={{ $json.body.fromMe }}",
+              "rightValue": "false",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        220,
+        0
+      ],
+      "id": "b032d40e-f1e9-4a4c-8084-bedd8790af7b",
+      "name": "If - FromMe"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "a11faefc-c1cb-4470-b364-87b31b27ab74",
+              "leftValue": "={{ $json.body.text?.message }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        440,
+        0
+      ],
+      "id": "d2f010d5-20ee-4a2b-b177-151eed0b014d",
+      "name": "If - Tem Texto"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.IPESSP_CORE_URL }}/crm/leads/verificar",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "telefone",
+              "value": "={{ $json.body.phone }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-admin-key",
+              "value": "={{ $env.CORE_API_KEY }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        660,
+        0
+      ],
+      "id": "780ec501-509b-4a64-8718-ba81b032a0c7",
+      "name": "Verificar Lead Aberto"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "a3001c1a-2650-420b-b59b-ecba44cd66e9",
+              "leftValue": "={{ $json.existeLeadAberto }}",
+              "rightValue": "false",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        880,
+        0
+      ],
+      "id": "f73fd1e2-9e4e-459c-a7ca-4a0fe416d6c9",
+      "name": "If - Lead Novo"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.IPESSP_CORE_URL }}/crm/leads",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "x-admin-key",
+              "value": "={{ $env.CORE_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ nome: $('If - Tem Texto').item.json.body.senderName, telefone: $('If - Tem Texto').item.json.body.phone, observacao: $('If - Tem Texto').item.json.body.text.message, whatsappOptin: false, origem: 'chatbot' }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1100,
+        0
+      ],
+      "id": "cd7c82d1-0cf8-4fe2-8085-9c5252b651bb",
+      "name": "Encaminhar Lead pra Consultora"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "If - FromMe",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If - FromMe": {
+      "main": [
+        [
+          {
+            "node": "If - Tem Texto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If - Tem Texto": {
+      "main": [
+        [
+          {
+            "node": "Verificar Lead Aberto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verificar Lead Aberto": {
+      "main": [
+        [
+          {
+            "node": "If - Lead Novo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If - Lead Novo": {
+      "main": [
+        [
+          {
+            "node": "Encaminhar Lead pra Consultora",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "c9980c52-74d8-4d7b-bf71-60e01201e06e",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": [],
+  "id": "GWBENCAMINHARLEADS1",
+  "tags": []
+}
