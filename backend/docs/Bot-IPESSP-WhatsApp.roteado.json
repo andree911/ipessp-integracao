@@ -1,0 +1,1956 @@
+{
+  "name": "Bot IPESSP WhatsApp (Roteado)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "930c3dd4-8cd0-4d66-a615-e2a959fedaf8",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "8d51b63a-3864-473b-8386-2e77c53ab492",
+      "name": "Webhook",
+      "webhookId": "930c3dd4-8cd0-4d66-a615-e2a959fedaf8"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "acc6de8f-e2d0-4085-acfa-41d00cc7a1b3",
+              "leftValue": "={{ $json.body.fromMe }}",
+              "rightValue": "false",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        208,
+        0
+      ],
+      "id": "5295bbf2-ed64-4e33-b671-bbfcf1c5eb74",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Consulta pendências financeiras pelo CPF do responsável. Use quando o usuário perguntar sobre boletos, mensalidades ou situação financeira.",
+        "url": "={{ $env.CORE_API_URL }}/ia/financeiro",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "cpf",
+              "value": "={{ $fromAI('cpf', 'CPF do responsável financeiro, somente números') }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        576,
+        112
+      ],
+      "id": "2e9a0279-64e1-433d-b6d8-4c8b0265e765",
+      "name": "Consultar Financeiro"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nlet texto = item.output ?? '';\n\n// WhatsApp só reconhece *negrito* (um asterisco) e _itálico_ (um underline).\n// O modelo às vezes escreve **negrito**/__itálico__ (markdown padrão) mesmo\n// com a instrução no prompt -- corrige aqui de forma determinística, sem\n// depender só do modelo obedecer.\ntexto = texto.replace(/\\*\\*(.+?)\\*\\*/g, '*$1*');\ntexto = texto.replace(/__(.+?)__/g, '_$1_');\n\n// Garante que valor em R$ sempre tenha os centavos (\",00\") -- o modelo às\n// vezes escreve \"R$ 500\" sem casas decimais.\ntexto = texto.replace(/R\\$\\s*\\d{1,3}(?:\\.\\d{3})*(?:,\\d{2})?/g, (m) => {\n  const numero = m.replace(/^R\\$\\s*/, '');\n  return 'R$ ' + (/,\\d{2}$/.test(numero) ? numero : numero + ',00');\n});\n\n// WhatsApp reconhece sequências de dígitos (ex.: \"870\" ou \"1.200\") como se\n// fossem telefone/código e deixa parte do valor sublinhada/colorida, tocável\n// -- quebra a sequência com um caractere invisível (zero-width space) logo\n// após o primeiro dígito, sem mudar o que aparece pro usuário.\ntexto = texto.replace(/R\\$\\s*(\\d)(\\d{0,2}(?:\\.\\d{3})*,\\d{2})/g, 'R$ $1\\u200b$2');\n\n// Remove qualquer divisor de linha inteira (\"---\" ou o antigo ▬▬▬▬) que o\n// modelo ainda tente colocar entre cursos -- o prompt já pede só linha em\n// branco entre eles, sem divisor.\ntexto = texto.replace(/^[ \\t]*(-{3,}|▬{3,})[ \\t]*\\n?/gm, '');\n\nreturn [{ json: { ...item, output: texto } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        592,
+        -96
+      ],
+      "id": "c7a8b9d0-1111-4444-8888-000000000010",
+      "name": "Corrigir Formatação WhatsApp"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://api.z-api.io/instances/' + $env.ZAPI_INSTANCE_ID + '/token/' + $env.ZAPI_TOKEN + '/send-text' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Client-Token",
+              "value": "={{ $env.ZAPI_CLIENT_TOKEN }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ phone: $('Webhook').item.json.body.phone, message: $json.output, delayMessage: Math.floor(Math.random() * 4) + 2, delayTyping: Math.floor(Math.random() * 5) + 4 }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        768,
+        -96
+      ],
+      "id": "12ad979e-126f-48c9-9ba1-681ae611ce17",
+      "name": "Enviar Resposta WhatsApp"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.IPESSP_CORE_URL }}/crm/leads/registrar-interacao-bot",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-admin-key",
+              "value": "={{ $env.CORE_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"telefone\": \"{{ $('Webhook').item.json.body.phone }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        960,
+        -96
+      ],
+      "id": "c1d2e3f4-2222-2222-2222-000000000003",
+      "name": "Registrar Interação Bot",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "7bcf7305-e89e-4b42-96cb-416ea40410de",
+              "leftValue": "={{ $json.body.text.message }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        304,
+        -208
+      ],
+      "id": "4d8c4981-d2a4-4708-aece-5f8f97909284",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://api.z-api.io/instances/' + $env.ZAPI_INSTANCE_ID + '/token/' + $env.ZAPI_TOKEN + '/send-text' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Client-Token",
+              "value": "={{ $env.ZAPI_CLIENT_TOKEN }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ phone: $('Webhook').item.json.body.phone, message: ['Olá! No momento só consigo responder mensagens de texto. Para outras dúvidas, ligue para (11) 99839-3640 ou envie um e-mail para matricula.financeiro@ipessp.edu.br.', 'Oi! Por aqui eu só entendo mensagens de texto por enquanto. Pode escrever o que precisa, ou ligar pra (11) 99839-3640 / matricula.financeiro@ipessp.edu.br.'][Math.floor(Math.random() * 2)], delayMessage: Math.floor(Math.random() * 4) + 2, delayTyping: Math.floor(Math.random() * 5) + 4 }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        752,
+        -272
+      ],
+      "id": "bf3daa82-2ef0-42a1-8f3f-8bd9f6e4f688",
+      "name": "Responder Mídia Não Suportada"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Registra um novo lead/prospecto interessado em cursos do IPESSP. Use depois de coletar nome completo, email, curso de interesse e formação atual na triagem. Antes de chamar, pergunte se pode enviar novidades/promoções por WhatsApp e informe a resposta em whatsappOptin. Se o curso de interesse veio de uma consulta prévia na tool \"Consultar Cursos\", informe também o \"id\" daquele curso em cursoInteresseId (usado só internamente pra linkar a página certa do curso no email de boas-vindas — se não tiver esse id, deixe em branco). Em observacao, inclua a formação atual informada pelo usuário, no formato \"Formação atual: <resposta>\".",
+        "method": "POST",
+        "url": "={{ $env.IPESSP_CORE_URL }}/crm/leads",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "x-admin-key",
+              "value": "={{ $env.CORE_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"nome\": \"{{ $fromAI('nome', 'Nome completo do interessado') }}\",\n  \"email\": \"{{ $fromAI('email', 'Email do interessado, se informado') }}\",\n  \"telefone\": \"{{ $('Webhook').item.json.body.phone }}\",\n  \"cursoInteresse\": \"{{ $fromAI('cursoInteresse', 'Curso ou área de interesse mencionada pelo usuário, em texto livre') }}\",\n  \"cursoInteresseId\": \"{{ $fromAI('cursoInteresseId', 'Id numérico do curso (campo id retornado pela tool Consultar Cursos), se identificável, senão deixe vazio') }}\",\n  \"whatsappOptin\": \"{{ $fromAI('whatsappOptin', 'true se o usuário topou receber novidades/promoções por WhatsApp, false se recusou ou não respondeu') }}\",\n  \"observacao\": \"{{ $fromAI('observacao', 'Formação atual do interessado, no formato: Formação atual: <resposta do usuário>') }}\",\n  \"origem\": \"chatbot\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        864,
+        400
+      ],
+      "id": "dd93ad17-74ca-48ed-9d0e-70f7dd616e71",
+      "name": "Registrar Lead CRM"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "sabiazinho-4",
+          "mode": "id"
+        },
+        "responsesApiEnabled": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        288,
+        112
+      ],
+      "id": "e470ec20-f620-429d-891e-c9fd6ddca25c",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "hjpnmhjkVj7j9r4Y",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "33162f65-fed3-48a0-832d-6b2029a90ff2",
+              "leftValue": "={{ $json.body.text.message }}",
+              "rightValue": "^(oi+|ol[áa]|bom dia|boa tarde|boa noite|hi|hello|hey|e ?a[íi]|blz|beleza|salve|fala\\b|menu|in[íi]cio|come[çc]ar|ajuda|help|start|opa|ei|tudo bem|td bem|prazer)",
+              "operator": {
+                "type": "string",
+                "operation": "regex"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {
+          "ignoreCase": true
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        400,
+        -496
+      ],
+      "id": "0142f6c9-6f74-4cd3-a8d4-92ad1beec7cc",
+      "name": "If2"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://api.z-api.io/instances/' + $env.ZAPI_INSTANCE_ID + '/token/' + $env.ZAPI_TOKEN + '/send-option-list' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Client-Token",
+              "value": "={{ $env.ZAPI_CLIENT_TOKEN }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ phone: $('Webhook').item.json.body.phone, message: ['Olá! Sou a Eliza 👋\\nAssistente virtual do IPESSP. Como posso ajudar?', 'Olá! Aqui é a Eliza 👋\\nEstou à disposição para ajudar no que você precisar do IPESSP.', 'Olá! Sou a Eliza, assistente virtual do IPESSP 👋\\nEm que posso ser útil hoje?'][Math.floor(Math.random() * 3)], optionList: { title: 'Menu Principal', buttonLabel: 'Ver opções', options: [{ id: 'financeiro', title: '💰 Situação financeira', description: 'Boletos e pendências' }, { id: 'secretaria', title: '📋 Secretaria', description: 'Matrícula, documentos e declarações' }, { id: 'ti', title: '💻 Suporte TI', description: 'Acesso, senha e sistemas' }, { id: 'avisos', title: '📢 Avisos', description: 'Comunicados e novidades' }, { id: 'calendario', title: '📅 Calendário', description: 'Datas e agenda escolar' }, { id: 'matricula', title: '📝 Quero me matricular', description: 'Informações sobre cursos' }] }, delayMessage: Math.floor(Math.random() * 4) + 2 }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        512,
+        -272
+      ],
+      "id": "15705528-818b-4218-a921-946f1764aef8",
+      "name": "Enviar Menu Inicial"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "75abb9e4-9ccc-4d21-aaae-078a3a477f55",
+              "leftValue": "={{ $json.body.listResponseMessage?.selectedRowId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        784,
+        -432
+      ],
+      "id": "5d5933cc-9e1f-4e48-be41-774711af500d",
+      "name": "If3"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\nconst sel = data.body.listResponseMessage;\n\nconst categorias = {\n  financeiro: 'financeiro',\n  secretaria: 'secretaria',\n  ti: 'ti',\n  avisos: 'avisos',\n  calendario: 'calendario',\n  matricula: 'lead_novo',\n};\n\nconst contextos = {\n  financeiro: 'O usuário selecionou situação financeira. Solicite o CPF para consultar boletos em aberto.',\n  secretaria: 'O usuário selecionou Secretaria (assunto de quem já é aluno matriculado). Pergunte o que precisa: documentos, declarações, prazos ou outro assunto administrativo.',\n  ti: 'O usuário selecionou Suporte TI. Pergunte qual problema está tendo: acesso ao portal, senha, email ou outro sistema.',\n  avisos: 'O usuário selecionou avisos da escola.',\n  calendario: 'O usuário selecionou calendário.',\n  matricula: 'O usuário demonstrou interesse em se matricular. Colete nome completo, email e curso de interesse para registrar o contato.',\n};\n\nconst categoria = categorias[sel?.selectedRowId] || null;\nconst mensagem = contextos[sel?.selectedRowId] || `O usuário selecionou: ${sel?.title}`;\n\nreturn [{ json: { ...data, categoria, body: { ...data.body, text: { message: mensagem } } } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1008,
+        -544
+      ],
+      "id": "53bbe2c1-a480-4336-bc5e-c41388de4ca9",
+      "name": "Mapear Seleção do Menu"
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.CORE_API_URL }}/ia/cpf-por-telefone",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "telefone",
+              "value": "={{ $('Webhook').item.json.body.phone }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        608,
+        -592
+      ],
+      "id": "b25e373b-72d9-4915-93f2-24d92af55757",
+      "name": "Buscar CPF por Telefone",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const cpfData = $input.first().json;\nconst webhook = $('Webhook').first().json;\nconst msg = webhook.body.text.message;\n\nlet enriched = msg;\nlet cpfInfo = null;\n\nif (cpfData.cpf && !cpfData.error && !cpfData.message) {\n  cpfInfo = { cpf: cpfData.cpf, tipo: cpfData.tipo || null, nomeResponsavel: cpfData.nomeResponsavel || null, email: cpfData.email || null };\n  enriched = `[Sistema: CPF: ${cpfData.cpf}${cpfData.nomeResponsavel ? `, responsável: ${cpfData.nomeResponsavel}` : ''}${cpfData.tipo ? `, tipo: ${cpfData.tipo}` : ''}${cpfData.email ? `, email: ${cpfData.email}` : ''}. Use-o diretamente sem pedir ao usuário, mas NUNCA diga ao usuário que você já sabe o CPF dele nem mencione ter esse dado -- se o assunto não for pagamento/boleto/mensalidade, aja como se não soubesse.]\\n\\n${msg}`;\n}\n\nreturn [{ json: { ...webhook, cpfInfo, body: { ...webhook.body, text: { message: enriched } } } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        816,
+        -592
+      ],
+      "id": "a32d0ca6-3f5e-45be-96fb-227928b4e666",
+      "name": "Injetar CPF no Contexto"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Salva a associação entre o telefone do usuário e o CPF informado, para não pedir o CPF novamente em futuras conversas. Use SEMPRE após uma consulta financeira bem-sucedida onde o usuário informou o CPF.",
+        "method": "POST",
+        "url": "={{ $env.CORE_API_URL }}/ia/associar-telefone",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"telefone\": \"{{ $('Webhook').item.json.body.phone }}\",\n  \"cpf\": \"{{ $fromAI('cpf', 'CPF informado pelo usuário, somente números') }}\",\n  \"nomeResponsavel\": \"{{ $fromAI('nomeResponsavel', 'Nome do responsável se informado, senão string vazia') }}\",\n  \"tipo\": \"{{ $fromAI('tipo', 'Tipo do usuário: aluno, professor ou funcionario. Pergunte ao usuário caso não saiba.') }}\",\n  \"email\": \"{{ $fromAI('email', 'Email institucional se informado pelo professor, senão string vazia') }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        960,
+        352
+      ],
+      "id": "b56d9a10-4f2c-4eb6-ab34-91a597e9fe7a",
+      "name": "Salvar CPF do Telefone"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Abre um chamado de suporte TI. Use quando o usuário tiver problema com acesso, senha, email ou sistemas. Colete título e descrição antes de chamar.",
+        "method": "POST",
+        "url": "={{ $env.CORE_API_URL }}/v1/ti/chamados",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"titulo\": \"{{ $fromAI('titulo', 'Título curto do problema, ex: Sem acesso ao portal') }}\",\n  \"descricao\": \"{{ $fromAI('descricao', 'Descrição detalhada do problema relatado') }}\",\n  \"categoria\": \"{{ $fromAI('categoria', 'Categoria: Hardware, Software, Acesso, Rede, Email ou Outro') }}\",\n  \"prioridade\": \"{{ $fromAI('prioridade', 'Prioridade: baixa, media, alta ou urgente') }}\",\n  \"telefoneSolicitante\": \"{{ $('Webhook').item.json.body.phone }}\",\n  \"criadoPorNome\": \"{{ $fromAI('criadoPorNome', 'Nome do usuário se conhecido, senão string vazia') }}\",\n  \"setor\": \"{{ $fromAI('setor', 'Tipo do usuário: aluno, professor ou funcionario') }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        960,
+        496
+      ],
+      "id": "0265ede2-8d01-4067-a909-994474a35ac0",
+      "name": "Abrir Chamado TI"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Consulta os chamados de TI abertos pelo usuário. Use quando perguntar sobre status de um chamado.",
+        "url": "={{ $env.CORE_API_URL }}/v1/ti/chamados",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "telefone",
+              "value": "={{ $('Webhook').item.json.body.phone }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        1056,
+        592
+      ],
+      "id": "5c5a574a-782e-4406-b0e7-17659206dd06",
+      "name": "Consultar Chamados TI"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Consulta a situação de matrícula do aluno. Use quando perguntar sobre matrícula, curso, turma ou situação escolar.",
+        "url": "={{ $env.CORE_API_URL }}/ia/secretaria",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "cpf",
+              "value": "={{ $fromAI('cpf', 'CPF do aluno ou responsável, somente números') }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        1152,
+        496
+      ],
+      "id": "a72c4c3a-b59c-4b2e-87fd-372a0affbb5d",
+      "name": "Consultar Secretaria"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Consulta as disciplinas do professor. Use quando o professor perguntar sobre suas aulas, horários ou disciplinas.",
+        "url": "={{ $env.CORE_API_URL }}/ia/secretaria/professor",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "email",
+              "value": "={{ $fromAI('email', 'Email institucional do professor') }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        1152,
+        688
+      ],
+      "id": "f23b2ff4-07b2-45e4-9c9e-c60932f641aa",
+      "name": "Consultar Professor"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Retorna a lista de alunos de uma disciplina específica. Use após consultar as disciplinas do professor e ele pedir a lista de alunos de uma delas.",
+        "url": "={{ $env.CORE_API_URL }}/ia/secretaria/professor/alunos",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "disciplinaId",
+              "value": "={{ $fromAI('disciplinaId', 'ID da disciplina retornado pela consulta do professor') }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        1248,
+        624
+      ],
+      "id": "79c261d9-2391-4ada-8708-0499ab7f9fd5",
+      "name": "Listar Alunos da Disciplina"
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.CORE_API_URL }}/ia/cpf-por-telefone",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "telefone",
+              "value": "={{ $('Webhook').item.json.body.phone }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1200,
+        -544
+      ],
+      "id": "b25e373b-72d9-4915-93f2-24d92af55758",
+      "name": "Buscar CPF por Telefone (Menu)",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const cpfData = $input.first().json;\nconst mapped = $('Mapear Seleção do Menu').first().json;\nconst msg = mapped.body.text.message;\n\nlet enriched = msg;\nlet cpfInfo = null;\n\nif (cpfData.cpf && !cpfData.error && !cpfData.message) {\n  cpfInfo = { cpf: cpfData.cpf, tipo: cpfData.tipo || null, nomeResponsavel: cpfData.nomeResponsavel || null, email: cpfData.email || null };\n  enriched = `[Sistema: CPF: ${cpfData.cpf}${cpfData.nomeResponsavel ? `, responsável: ${cpfData.nomeResponsavel}` : ''}${cpfData.tipo ? `, tipo: ${cpfData.tipo}` : ''}${cpfData.email ? `, email: ${cpfData.email}` : ''}. Use-o diretamente sem pedir ao usuário, mas NUNCA diga ao usuário que você já sabe o CPF dele nem mencione ter esse dado -- se o assunto não for pagamento/boleto/mensalidade, aja como se não soubesse.]\\n\\n${msg}`;\n}\n\nreturn [{ json: { ...mapped, cpfInfo, body: { ...mapped.body, text: { message: enriched } } } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1400,
+        -544
+      ],
+      "id": "a32d0ca6-3f5e-45be-96fb-227928b4e667",
+      "name": "Injetar CPF no Menu"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Lista os cursos oferecidos pelo IPESSP (graduação, pós-graduação, cursos livres), incluindo id, descricao, duracao e precoMensalidade quando cadastrados. Esses três últimos podem vir null se ainda não foram preenchidos para aquele curso — nesse caso, NÃO invente o valor; diga que ainda não tem essa informação e ofereça registrar o lead. Use quando o usuário perguntar quais cursos existem ou pedir informações sobre um curso específico, antes de registrar um lead com o curso de interesse. IMPORTANTE: guarde o campo \"id\" do curso que a pessoa escolher — ele é usado internamente na hora de registrar o lead (campo cursoInteresseId da tool \"Registrar Lead CRM\"), mas nunca é mencionado ao usuário (mesma regra dos outros códigos internos).",
+        "url": "={{ $env.CORE_API_URL }}/ia/cursos",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        1440,
+        400
+      ],
+      "id": "d4e5f6a7-3333-3333-3333-000000000001",
+      "name": "Consultar Cursos"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Manda o PDF do boleto direto no WhatsApp do usuário. Use SOMENTE quando o usuário pedir explicitamente o boleto em PDF/arquivo (para linha digitável ou PIX copia-e-cola, esses dados já vêm da consulta financeira e não precisam desta tool). Precisa do CPF e do codigoBoleto retornado pela tool de consultar financeiro.",
+        "method": "POST",
+        "url": "={{ $env.CORE_API_URL }}/ia/boleto/enviar",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"cpf\": \"{{ $fromAI('cpf', 'CPF do responsável financeiro, somente números') }}\",\n  \"codigoBoleto\": {{ $fromAI('codigoBoleto', 'Código do boleto retornado pela consulta financeira', 'number') }},\n  \"telefone\": \"{{ $('Webhook').item.json.body.phone }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        1536,
+        496
+      ],
+      "id": "d4e5f6a7-3333-3333-3333-000000000002",
+      "name": "Enviar Boleto PDF"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nconst msg = (item.body?.text?.message || '').toLowerCase();\nconst tipo = item.cpfInfo?.tipo || null;\nconst phone = item.body.phone;\n\nlet categoria = item.categoria || null; // já vem definida se veio do menu\n\nif (!categoria) {\n  const regras = [\n    { categoria: 'lead_novo', re: /matr[íi]cul|quero (fazer|estudar)|quais (s[ãa]o os )?cursos|todos os cursos|lista(r)? (os )?cursos|mostra(r)? (os )?cursos|ver (os )?cursos|informa[cç][ãa]o.*curso|interessad[oa] (em|no|na)|quero saber sobre o curso|come[çc]ar a estudar|pré[- ]?matr[íi]cula/i },\n    { categoria: 'financeiro', re: /boleto|mensalidade|pend[êe]ncia|d[ée]bito|pagar|pagamento|pix|fatura|parcela|vencimento/i },\n    { categoria: 'secretaria', re: /declara[cç][ãa]o|hist[óo]rico escolar|documento|comprovante de matr[íi]cula|transfer[êe]ncia|trancamento|prazo/i },\n    { categoria: 'ti', re: /senha|acesso ao portal|login|n[ãa]o consigo entrar|teams|email institucional|sistema fora/i },\n    { categoria: 'avisos', re: /\\baviso|comunicado|novidade/i },\n    { categoria: 'calendario', re: /calend[áa]rio|feriado|pr[óo]xima(s)? (aula|evento|prova)|data d[ae]/i },\n    { categoria: 'professor', re: /disciplina|minhas turmas|meus alunos|minhas aulas/i },\n  ];\n  for (const r of regras) {\n    if (r.re.test(msg)) { categoria = r.categoria; break; }\n  }\n}\n\n// professores não usam financeiro; categoria \"professor\" só se o cache confirmar o tipo\nif (categoria === 'financeiro' && tipo === 'professor') categoria = null;\nif (categoria === 'professor' && tipo !== 'professor') categoria = null;\n\n// \"sticky category\": guarda a última categoria ativa da conversa (mesmo telefone),\n// e reaproveita por até 30 minutos quando a mensagem atual não tem palavra-chave --\n// evita que continuações curtas (\"sim\", só o CPF, \"liste todos\") percam o contexto.\nconst staticData = $getWorkflowStaticData('global');\nstaticData.categorias = staticData.categorias || {};\nconst agora = Date.now();\nconst TTL_MS = 30 * 60 * 1000;\nconst sticky = staticData.categorias[phone];\nconst categoriaAnterior = sticky ? sticky.categoria : null;\n\nif (categoria) {\n  staticData.categorias[phone] = { categoria, ts: agora };\n} else if (sticky && (agora - sticky.ts) < TTL_MS) {\n  categoria = sticky.categoria;\n  sticky.ts = agora;\n}\n\nreturn [{ json: { ...item, categoria, categoriaAnterior } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        -592
+      ],
+      "id": "b3ee3f29-2c6b-4755-81bd-623bbee31927",
+      "name": "Classificar por Regra"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "2aca8a78-a853-4dbc-bdc4-b95e8ce7fd33",
+              "leftValue": "={{ $json.categoria }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1232,
+        -592
+      ],
+      "id": "c6b12996-2e8f-4283-a2f9-347eb7350032",
+      "name": "If4"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Categoria da conversa até agora (pode não existir, ou não ter mais relação com a mensagem atual): {{ $json.categoriaAnterior || 'nenhuma' }}\n\nMensagem atual do usuário: {{ $json.body.text.message }}",
+        "options": {
+          "systemMessage": "Classifique a mensagem do usuário em UMA destas palavras, e responda SOMENTE com essa palavra, sem pontuação, sem explicação, sem repetir a pergunta:\n\nfinanceiro, secretaria, ti, avisos, calendario, lead_novo, professor, outro\n\n- financeiro = boleto/mensalidade/pagamento de quem já é aluno\n- secretaria = documento/declaração/prazo administrativo de quem já é aluno\n- ti = acesso/senha/sistema/portal\n- avisos = comunicados e novidades da escola\n- calendario = datas/eventos/feriados escolares\n- lead_novo = quer conhecer cursos ou se matricular, ainda não é aluno\n- professor = professor perguntando sobre suas disciplinas ou alunos\n- outro = qualquer outra coisa, incluindo saudação isolada, elogio, despedida ou mensagem confusa/incompreensível\n\nSe a mensagem atual for uma continuação genérica sem assunto novo claro (ex.: \"liste todos\", \"mostra mais\", \"sim\", \"não\", só um nome, só um número, só um e-mail), e houver uma \"categoria da conversa até agora\" informada, responda com essa mesma categoria em vez de \"outro\".\n\nExemplos:\nCategoria da conversa até agora: lead_novo / Mensagem: \"liste todos os cursos\" -> lead_novo\nCategoria da conversa até agora: financeiro / Mensagem: \"228.865.111-00\" -> financeiro\nCategoria da conversa até agora: nenhuma / Mensagem: \"bom dia\" -> outro\nCategoria da conversa até agora: nenhuma / Mensagem: \"quero saber sobre o curso de estética\" -> lead_novo"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1440,
+        -496
+      ],
+      "id": "4d3b879c-4543-47ea-93f8-dc38a8df5008",
+      "name": "Classificador de Intenção (IA)"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = (($input.first().json.output) || '').toLowerCase().trim();\nconst validas = ['financeiro', 'secretaria', 'ti', 'avisos', 'calendario', 'lead_novo', 'professor'];\n\n// match exato (resposta limpa, sem pontuação) tem prioridade -- é o caso esperado\n// quando o modelo obedece a instrução de responder só a palavra\nconst limpo = raw.replace(/[^a-z_À-ú\\s]/g, '').trim();\nlet categoria = validas.includes(limpo) ? limpo : null;\n\nif (!categoria) {\n  // fallback pra quando o modelo escreve uma frase em vez de só a palavra: pega a\n  // ÚLTIMA categoria válida mencionada (não a primeira por ordem arbitrária do array\n  // -- isso já causou um bug real: uma resposta tipo \"não é financeiro, é lead_novo\"\n  // escolhia \"financeiro\" errado só porque vem primeiro na lista de válidas)\n  const palavras = limpo.split(/\\s+/);\n  for (let i = palavras.length - 1; i >= 0; i--) {\n    if (validas.includes(palavras[i])) { categoria = palavras[i]; break; }\n  }\n}\n\ncategoria = categoria || 'outro';\n\nconst original = $('Classificar por Regra').first().json;\nconst phone = original.body.phone;\n\nif (categoria !== 'outro') {\n  const staticData = $getWorkflowStaticData('global');\n  staticData.categorias = staticData.categorias || {};\n  staticData.categorias[phone] = { categoria, ts: Date.now() };\n}\n\nreturn [{ json: { ...original, categoria } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1648,
+        -496
+      ],
+      "id": "edfba8a8-d5ff-41b9-88e9-6db47dc70e02",
+      "name": "Interpretar Categoria IA"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "e98c8c3d-660b-48fe-87e4-69f7e6a063b0",
+              "leftValue": "={{ $json.categoria }}",
+              "rightValue": "financeiro",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1856,
+        -800
+      ],
+      "id": "d31b05bf-854c-411a-b6e4-008f292a4d46",
+      "name": "Roteador: Financeiro"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "18edc1a2-b166-427a-824a-5d25491bfcfe",
+              "leftValue": "={{ $json.categoria }}",
+              "rightValue": "secretaria",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2064,
+        -700
+      ],
+      "id": "d8796516-427a-4536-92e4-48b73c231ab4",
+      "name": "Roteador: Secretaria"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "df9c8a62-89b2-47f4-8bdc-afc3b5d4db04",
+              "leftValue": "={{ $json.categoria }}",
+              "rightValue": "ti",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2272,
+        -600
+      ],
+      "id": "089b592d-3056-4206-84f7-a60ad30ae2ae",
+      "name": "Roteador: TI"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c600b186-64b2-4c8a-a24b-51e442588c29",
+              "leftValue": "={{ $json.categoria }}",
+              "rightValue": "avisos",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2480,
+        -500
+      ],
+      "id": "fd9fa4dd-86a2-47ff-976d-90a8bf0dbcc0",
+      "name": "Roteador: Avisos"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "44f7a782-207c-401d-a2f0-7dd7a8ad4ccd",
+              "leftValue": "={{ $json.categoria }}",
+              "rightValue": "calendario",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2688,
+        -400
+      ],
+      "id": "f8d0c633-1014-4098-bc26-4170208076ca",
+      "name": "Roteador: Calendário"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "a6cde2ab-9972-4f56-9bdb-299860838ba1",
+              "leftValue": "={{ $json.categoria }}",
+              "rightValue": "lead_novo",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2896,
+        -300
+      ],
+      "id": "076dbd2a-a1a2-4845-b612-33b2fdead0bc",
+      "name": "Roteador: Leads"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c61e66cf-e81c-4c31-a022-f84ba2159d83",
+              "leftValue": "={{ $json.categoria }}",
+              "rightValue": "professor",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3104,
+        -200
+      ],
+      "id": "baabaa75-d4a8-4389-bfcf-42e722c532fe",
+      "name": "Roteador: Professor"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.text.message }}",
+        "options": {
+          "systemMessage": "Você é \"Eliza\", assistente virtual do IPESSP no WhatsApp. Seja cordial, objetiva e profissional -- nunca use gírias (\"tô\", \"cê\", \"e aí\", \"blz\").\n\nFORMATAÇÃO WHATSAPP (não é markdown padrão): negrito usa UM asterisco de cada lado, tipo *assim* -- nunca **assim** com dois. Itálico é _assim_, com um underline. Não use #, ##, nem blocos de código.\nListas: um item por linha começando com \"- \" ou um emoji, com uma linha em branco entre cada item.\nFormate valores em R$ e datas no padrão brasileiro. Respostas curtas.\n\nNunca invente informação -- use só dados retornados pelas tools. Nunca mencione nenhum código/ID interno retornado pelas tools (\"codigo\", \"codigoBoleto\" etc.) -- refira-se pela descrição/data, nunca pelo número solto.\n\nNunca use as palavras \"CRM\" ou \"lead\" com o usuário, nem diga que ele \"já está registrado/cadastrado\" de uma conversa anterior -- trate sempre como se fosse a primeira vez, mesmo que internamente já exista um registro.\n\nSe a mensagem trouxer um trecho \"[Sistema: CPF: ...]\", é um dado pré-identificado só pra seu uso interno -- nunca confirme, mencione ou mostre esse CPF ao usuário (nem mascarado).\n\nSe a dúvida estiver fora do que você resolve aqui, direcione: Secretaria wa.me/5511997738431 · TI/Suporte wa.me/5511968566862 · Financeiro wa.me/5511998393640.\n\nVocê atende SOMENTE dúvidas financeiras de alunos: boletos, parcelas, vencimentos. Professores não têm atendimento financeiro por aqui -- se o contexto indicar tipo professor, explique isso educadamente e direcione pro fallback financeiro acima.\n\n- Peça o CPF se ainda não tiver (olhe primeiro o contexto \"[Sistema: CPF: ...]\").\n- Ao listar pendências, formate cada uma assim, com linha em branco entre elas:\n💰 *Mensalidade de Março*\n📅 Vencimento: 08/03/2026\n💵 Valor: *R$ 500,00*\n- A tool devolve também \"portalLink\" -- sempre que informar pendências, ou quando o usuário pedir pra pagar (ex.: \"pagar agora\", \"acessar portal\"), inclua esse link com uma frase curta tipo \"Você também pode pagar pelo Portal do Aluno: <link>\". Se vier vazio/nulo, não mencione.\n- Boletos vencem sempre dia 8, 18 ou 28. O número de parcelas varia por curso -- use sempre o valor exato retornado pela tool, nunca generalize um número fixo.\n- Se pedir o boleto em PDF/arquivo, use \"Enviar Boleto PDF\" com CPF e codigoBoleto, e confirme com algo curto tipo \"Prontinho, mandei o boleto aqui no WhatsApp!\".\n- Depois de uma consulta financeira bem-sucedida em que o usuário informou o CPF, chame \"Salvar CPF do Telefone\" pra não precisar pedir de novo depois.\n- Se \"Consultar Financeiro\" retornar encontrado: false, não invente pendência -- pergunte se o CPF está certo, ou oriente a procurar o atendimento de matrícula caso ainda não tenha matrícula ativa."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        2064,
+        -880
+      ],
+      "id": "5b566366-a9e9-4c2c-bf09-10316c7199e6",
+      "name": "Agent Financeiro"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.text.message }}",
+        "options": {
+          "systemMessage": "Você é \"Eliza\", assistente virtual do IPESSP no WhatsApp. Seja cordial, objetiva e profissional -- nunca use gírias (\"tô\", \"cê\", \"e aí\", \"blz\").\n\nFORMATAÇÃO WHATSAPP (não é markdown padrão): negrito usa UM asterisco de cada lado, tipo *assim* -- nunca **assim** com dois. Itálico é _assim_, com um underline. Não use #, ##, nem blocos de código.\nListas: um item por linha começando com \"- \" ou um emoji, com uma linha em branco entre cada item.\nFormate valores em R$ e datas no padrão brasileiro. Respostas curtas.\n\nNunca invente informação -- use só dados retornados pelas tools. Nunca mencione nenhum código/ID interno retornado pelas tools (\"codigo\", \"codigoBoleto\" etc.) -- refira-se pela descrição/data, nunca pelo número solto.\n\nNunca use as palavras \"CRM\" ou \"lead\" com o usuário, nem diga que ele \"já está registrado/cadastrado\" de uma conversa anterior -- trate sempre como se fosse a primeira vez, mesmo que internamente já exista um registro.\n\nSe a mensagem trouxer um trecho \"[Sistema: CPF: ...]\", é um dado pré-identificado só pra seu uso interno -- nunca confirme, mencione ou mostre esse CPF ao usuário (nem mascarado).\n\nSe a dúvida estiver fora do que você resolve aqui, direcione: Secretaria wa.me/5511997738431 · TI/Suporte wa.me/5511968566862 · Financeiro wa.me/5511998393640.\n\nVocê atende SOMENTE quem JÁ é aluno matriculado, com dúvidas sobre documentos, declarações, prazos e situação de matrícula. Use a tool \"Consultar Secretaria\" com o CPF (peça se ainda não tiver, olhando primeiro o contexto \"[Sistema: CPF: ...]\").\n\nSe durante a conversa ficar claro que a pessoa NÃO é aluna e quer se matricular pela primeira vez, não tente atender aqui -- explique rapidamente que vai te direcionar para o atendimento de novos alunos e encerre essa resposta sem inventar dados de curso."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        2272,
+        -780
+      ],
+      "id": "b7d45b90-28c3-426f-a4b2-26d841b1b853",
+      "name": "Agent Secretaria"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.text.message }}",
+        "options": {
+          "systemMessage": "Você é \"Eliza\", assistente virtual do IPESSP no WhatsApp. Seja cordial, objetiva e profissional -- nunca use gírias (\"tô\", \"cê\", \"e aí\", \"blz\").\n\nFORMATAÇÃO WHATSAPP (não é markdown padrão): negrito usa UM asterisco de cada lado, tipo *assim* -- nunca **assim** com dois. Itálico é _assim_, com um underline. Não use #, ##, nem blocos de código.\nListas: um item por linha começando com \"- \" ou um emoji, com uma linha em branco entre cada item.\nFormate valores em R$ e datas no padrão brasileiro. Respostas curtas.\n\nNunca invente informação -- use só dados retornados pelas tools. Nunca mencione nenhum código/ID interno retornado pelas tools (\"codigo\", \"codigoBoleto\" etc.) -- refira-se pela descrição/data, nunca pelo número solto.\n\nNunca use as palavras \"CRM\" ou \"lead\" com o usuário, nem diga que ele \"já está registrado/cadastrado\" de uma conversa anterior -- trate sempre como se fosse a primeira vez, mesmo que internamente já exista um registro.\n\nSe a mensagem trouxer um trecho \"[Sistema: CPF: ...]\", é um dado pré-identificado só pra seu uso interno -- nunca confirme, mencione ou mostre esse CPF ao usuário (nem mascarado).\n\nSe a dúvida estiver fora do que você resolve aqui, direcione: Secretaria wa.me/5511997738431 · TI/Suporte wa.me/5511968566862 · Financeiro wa.me/5511998393640.\n\nVocê atende suporte técnico: acesso, senha, sistemas. Antes de abrir chamado, tente resolver com estas orientações:\n1. Email institucional: formato ra[RA]@fipessp.edu.br\n2. Senha/acesso Microsoft: só é redefinida pelo TI -- oriente abrir chamado informando o email institucional\n3. Microsoft Teams: teams.microsoft.com, login com email institucional + senha Microsoft\n4. Acesso à aula: acontece pelo Teams. Se o Teams funciona mas a pessoa não acha a turma, oriente falar com o professor\n\nSó use \"Abrir Chamado TI\" se as orientações acima não resolverem (colete título e descrição do problema antes de chamar). Para status de um chamado já aberto, use \"Consultar Chamados TI\"."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        2480,
+        -680
+      ],
+      "id": "c996a144-06d6-4949-b672-2172f2a5ce70",
+      "name": "Agent TI"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.text.message }}",
+        "options": {
+          "systemMessage": "Você é \"Eliza\", assistente virtual do IPESSP no WhatsApp. Seja cordial, objetiva e profissional -- nunca use gírias (\"tô\", \"cê\", \"e aí\", \"blz\").\n\nFORMATAÇÃO WHATSAPP (não é markdown padrão): negrito usa UM asterisco de cada lado, tipo *assim* -- nunca **assim** com dois. Itálico é _assim_, com um underline. Não use #, ##, nem blocos de código.\nListas: um item por linha começando com \"- \" ou um emoji, com uma linha em branco entre cada item.\nFormate valores em R$ e datas no padrão brasileiro. Respostas curtas.\n\nNunca invente informação -- use só dados retornados pelas tools. Nunca mencione nenhum código/ID interno retornado pelas tools (\"codigo\", \"codigoBoleto\" etc.) -- refira-se pela descrição/data, nunca pelo número solto.\n\nNunca use as palavras \"CRM\" ou \"lead\" com o usuário, nem diga que ele \"já está registrado/cadastrado\" de uma conversa anterior -- trate sempre como se fosse a primeira vez, mesmo que internamente já exista um registro.\n\nSe a mensagem trouxer um trecho \"[Sistema: CPF: ...]\", é um dado pré-identificado só pra seu uso interno -- nunca confirme, mencione ou mostre esse CPF ao usuário (nem mascarado).\n\nSe a dúvida estiver fora do que você resolve aqui, direcione: Secretaria wa.me/5511997738431 · TI/Suporte wa.me/5511968566862 · Financeiro wa.me/5511998393640.\n\nVocê atende quem AINDA NÃO é aluno e quer conhecer cursos ou se matricular. Esse atendimento é uma TRIAGEM curta -- o objetivo é coletar o essencial rápido e encaminhar pra um consultor humano, não fazer uma consultoria completa de cursos pelo chat.\n\nSe esta for a primeira mensagem desta conversa (sem nenhum histórico anterior), responda EXATAMENTE com este texto, sem alterar nada, sem adicionar nem remover nada, nem antes nem depois:\n\n\"Olá! Aqui é a Eliza! Seja muito bem-vindo(a) à Faculdade IPESSP, é um prazer ter você aqui.\n\nPara te direcionar ao consultor e agilizar seu atendimento, poderia me informar:\n\n- Seu nome completo\n- Seu melhor e-mail\n- Curso de interesse\n- Sua formação atual\"\n\nDepois que a pessoa responder essas informações (nome, email, curso de interesse e formação atual):\n1. Pergunte se pode enviar novidades e promoções por WhatsApp, e registre a resposta em whatsappOptin.\n2. Chame \"Registrar Lead CRM\" com nome, email e cursoInteresse (texto livre da resposta da pessoa é suficiente aqui -- não precisa consultar \"Consultar Cursos\" só pra isso), e em observacao inclua \"Formação atual: <o que a pessoa respondeu>\".\n3. Depois de registrar, responda EXATAMENTE, sem parafrasear e sem adicionar nada antes ou depois: \"✅ Seus dados foram registrados! Em breve nossa equipe entrará em contato.\"\n\nSe em algum momento a pessoa perguntar especificamente sobre um curso (duração, valores, modalidade), aí sim use \"Consultar Cursos\" e responda só com dados reais -- nunca invente nome, duração ou valor de curso. Mas não ofereça esse detalhamento por conta própria antes de coletar os 4 dados acima -- o objetivo aqui é agilizar o encaminhamento pro consultor, não vender o curso pelo chat.\n\nMesmo que a pessoa já tenha demonstrado interesse antes, trate sempre como se fosse a primeira conversa -- nunca diga que ela já tem cadastro ou interesse registrado.\n\nNão peça CPF nesse atendimento -- isso só entra depois, no fluxo de inscrição, que não é feito por aqui."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        3104,
+        -380
+      ],
+      "id": "02a94921-530b-47af-8090-6eee204eb783",
+      "name": "Agent Leads"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.text.message }}",
+        "options": {
+          "systemMessage": "Você é \"Eliza\", assistente virtual do IPESSP no WhatsApp. Seja cordial, objetiva e profissional -- nunca use gírias (\"tô\", \"cê\", \"e aí\", \"blz\").\n\nFORMATAÇÃO WHATSAPP (não é markdown padrão): negrito usa UM asterisco de cada lado, tipo *assim* -- nunca **assim** com dois. Itálico é _assim_, com um underline. Não use #, ##, nem blocos de código.\nListas: um item por linha começando com \"- \" ou um emoji, com uma linha em branco entre cada item.\nFormate valores em R$ e datas no padrão brasileiro. Respostas curtas.\n\nNunca invente informação -- use só dados retornados pelas tools. Nunca mencione nenhum código/ID interno retornado pelas tools (\"codigo\", \"codigoBoleto\" etc.) -- refira-se pela descrição/data, nunca pelo número solto.\n\nNunca use as palavras \"CRM\" ou \"lead\" com o usuário, nem diga que ele \"já está registrado/cadastrado\" de uma conversa anterior -- trate sempre como se fosse a primeira vez, mesmo que internamente já exista um registro.\n\nSe a mensagem trouxer um trecho \"[Sistema: CPF: ...]\", é um dado pré-identificado só pra seu uso interno -- nunca confirme, mencione ou mostre esse CPF ao usuário (nem mascarado).\n\nSe a dúvida estiver fora do que você resolve aqui, direcione: Secretaria wa.me/5511997738431 · TI/Suporte wa.me/5511968566862 · Financeiro wa.me/5511998393640.\n\nVocê atende professores. Se não tiver o email institucional dele no contexto, pergunte: \"Qual seu email institucional?\"\n\nUse \"Consultar Professor\" (com o email) para ver as disciplinas dele. Se pedir a lista de alunos de uma disciplina específica, use \"Listar Alunos da Disciplina\" com o disciplinaId retornado pela consulta anterior."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        3312,
+        -280
+      ],
+      "id": "271988c2-f0cb-455c-8d00-08d922fa94fe",
+      "name": "Agent Professor"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Webhook').first().json.body.phone }}:financeiro",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        2064,
+        -1040
+      ],
+      "id": "1de5cb1a-ec32-4b85-8199-3df2c38e4c14",
+      "name": "Memory Financeiro"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Webhook').first().json.body.phone }}:secretaria",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        2272,
+        -940
+      ],
+      "id": "5a4e5c64-2c3c-4e6b-a6ff-8d15e9628242",
+      "name": "Memory Secretaria"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Webhook').first().json.body.phone }}:ti",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        2480,
+        -840
+      ],
+      "id": "3630bb3b-4769-419a-a93a-c1332d94a46c",
+      "name": "Memory TI"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Webhook').first().json.body.phone }}:lead_novo",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        3104,
+        -540
+      ],
+      "id": "aedf7e95-4de0-4a1c-b5aa-70ac86557efe",
+      "name": "Memory Leads"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Webhook').first().json.body.phone }}:professor",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        3312,
+        -440
+      ],
+      "id": "29d1c970-a1fe-405d-80b9-1d0a79ed88c0",
+      "name": "Memory Professor"
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.CORE_API_URL }}/ia/avisos",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2688,
+        -560
+      ],
+      "id": "b1f081ef-e3d2-4e51-b042-7aea353654b3",
+      "name": "Buscar Avisos",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const avisos = $input.first().json;\nconst lista = Array.isArray(avisos) ? avisos : [];\n\nif (lista.length === 0) {\n  return [{ json: { output: 'No momento não há nenhum aviso ativo. Posso ajudar com mais alguma coisa?' } }];\n}\n\nconst data = (iso) => new Date(iso).toLocaleDateString('pt-BR');\nconst blocos = lista.map((a) => `📢 *${a.titulo}*\\n${a.mensagem}\\n_${data(a.criado_em)}_`);\n\nreturn [{ json: { output: blocos.join('\\n\\n') } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2896,
+        -560
+      ],
+      "id": "8eaccd98-0e4f-490f-9c3c-29346582034e",
+      "name": "Formatar Avisos"
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.CORE_API_URL }}/ia/calendario",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2896,
+        -460
+      ],
+      "id": "a54b3173-8332-45ce-b0d9-515ab0718766",
+      "name": "Buscar Calendário",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const eventos = $input.first().json;\nconst lista = Array.isArray(eventos) ? eventos : [];\n\nif (lista.length === 0) {\n  return [{ json: { output: 'Não há eventos futuros cadastrados no calendário no momento.' } }];\n}\n\nconst data = (iso) => new Date(iso + 'T00:00:00').toLocaleDateString('pt-BR');\nconst blocos = lista.map((e) => `📅 *${e.titulo}*\\n${data(e.data_evento)}${e.descricao ? `\\n${e.descricao}` : ''}`);\n\nreturn [{ json: { output: blocos.join('\\n\\n') } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3104,
+        -460
+      ],
+      "id": "1175efed-8f89-4f83-8d98-16c3d27722e8",
+      "name": "Formatar Calendário"
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "body": {
+            "phone": "5511999999999",
+            "fromMe": false,
+            "text": {
+              "message": "Olá bom dia"
+            }
+          }
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "Enviar Menu Inicial",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Buscar CPF por Telefone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If3": {
+      "main": [
+        [
+          {
+            "node": "Mapear Seleção do Menu",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder Mídia Não Suportada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mapear Seleção do Menu": {
+      "main": [
+        [
+          {
+            "node": "Buscar CPF por Telefone (Menu)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar CPF por Telefone (Menu)": {
+      "main": [
+        [
+          {
+            "node": "Injetar CPF no Menu",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Injetar CPF no Menu": {
+      "main": [
+        [
+          {
+            "node": "Classificar por Regra",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar CPF por Telefone": {
+      "main": [
+        [
+          {
+            "node": "Injetar CPF no Contexto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Injetar CPF no Contexto": {
+      "main": [
+        [
+          {
+            "node": "Classificar por Regra",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Corrigir Formatação WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Enviar Resposta WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Resposta WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Registrar Interação Bot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agent Financeiro",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Agent Secretaria",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Agent TI",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Agent Leads",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Agent Professor",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Classificador de Intenção (IA)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar Financeiro": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agent Financeiro",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar Lead CRM": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agent Leads",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Salvar CPF do Telefone": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agent Financeiro",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Abrir Chamado TI": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agent TI",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar Chamados TI": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agent TI",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar Secretaria": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agent Secretaria",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar Professor": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agent Professor",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Listar Alunos da Disciplina": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agent Professor",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar Cursos": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agent Leads",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Boleto PDF": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agent Financeiro",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classificar por Regra": {
+      "main": [
+        [
+          {
+            "node": "If4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If4": {
+      "main": [
+        [
+          {
+            "node": "Roteador: Financeiro",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Classificador de Intenção (IA)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classificador de Intenção (IA)": {
+      "main": [
+        [
+          {
+            "node": "Interpretar Categoria IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Interpretar Categoria IA": {
+      "main": [
+        [
+          {
+            "node": "Roteador: Financeiro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Roteador: Financeiro": {
+      "main": [
+        [
+          {
+            "node": "Agent Financeiro",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Roteador: Secretaria",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Roteador: Secretaria": {
+      "main": [
+        [
+          {
+            "node": "Agent Secretaria",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Roteador: TI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Roteador: TI": {
+      "main": [
+        [
+          {
+            "node": "Agent TI",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Roteador: Avisos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Roteador: Avisos": {
+      "main": [
+        [
+          {
+            "node": "Buscar Avisos",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Roteador: Calendário",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Roteador: Calendário": {
+      "main": [
+        [
+          {
+            "node": "Buscar Calendário",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Roteador: Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Roteador: Leads": {
+      "main": [
+        [
+          {
+            "node": "Agent Leads",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Roteador: Professor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Roteador: Professor": {
+      "main": [
+        [
+          {
+            "node": "Agent Professor",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Enviar Menu Inicial",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Avisos": {
+      "main": [
+        [
+          {
+            "node": "Formatar Avisos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatar Avisos": {
+      "main": [
+        [
+          {
+            "node": "Corrigir Formatação WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Calendário": {
+      "main": [
+        [
+          {
+            "node": "Formatar Calendário",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatar Calendário": {
+      "main": [
+        [
+          {
+            "node": "Corrigir Formatação WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent Financeiro": {
+      "main": [
+        [
+          {
+            "node": "Corrigir Formatação WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent Secretaria": {
+      "main": [
+        [
+          {
+            "node": "Corrigir Formatação WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent TI": {
+      "main": [
+        [
+          {
+            "node": "Corrigir Formatação WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent Leads": {
+      "main": [
+        [
+          {
+            "node": "Corrigir Formatação WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent Professor": {
+      "main": [
+        [
+          {
+            "node": "Corrigir Formatação WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memory Financeiro": {
+      "ai_memory": [
+        [
+          {
+            "node": "Agent Financeiro",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memory Secretaria": {
+      "ai_memory": [
+        [
+          {
+            "node": "Agent Secretaria",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memory TI": {
+      "ai_memory": [
+        [
+          {
+            "node": "Agent TI",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memory Leads": {
+      "ai_memory": [
+        [
+          {
+            "node": "Agent Leads",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memory Professor": {
+      "ai_memory": [
+        [
+          {
+            "node": "Agent Professor",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "96a8db99-fe0f-471c-a709-58fb78823c9f",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": [],
+  "id": "GWBxdNDxtAgrI8vk",
+  "tags": []
+}
