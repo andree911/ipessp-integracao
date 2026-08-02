@@ -357,43 +357,18 @@ E-mail institucional padrão de aluno: `ra[RA]@fipessp.edu.br`
 
 ---
 
-## Notificação de chamados TI (webhook Supabase)
-
-Quando o status de um chamado muda no Supabase, um **Database Webhook** dispara o fluxo n8n **Notificação Chamado TI**:
-
-```
-Supabase Webhook (UPDATE em chamados)
-    │
-    ▼
-n8n: Validar Notificação
-    │  ✓ telefone_solicitante existe
-    │  ✓ status mudou (old_record ≠ record)
-    ▼
-Gerar Mensagem (Code node)
-    │  Mapeia status → mensagem WhatsApp
-    ▼
-Enviar WhatsApp via Z-API
-```
-
-Mensagens geradas por status:
-- `em_andamento` → "Sua equipe de TI já está trabalhando nisso"
-- `aguardando` → "O TI precisa de mais informações — contato: wa.me/NUMERO_TI"
-- `resolvido` → "Chamado resolvido" + campo `resolucao`
-- `fechado` → "Chamado encerrado" + campo `resolucao`
-
----
-
 ## Fluxos n8n em `docs/`
 
 | Arquivo | Descrição |
 |---|---|
-| `Bot-IPESSP-WhatsApp.json` | Bot de atendimento (AI Agent) — financeiro, secretaria, TI, cursos, captura de lead e envio de boleto em PDF |
-| `Keep-alive-backend.json` | Ping a `/health` a cada 10 min (herança do Render — sem efeito na VPS atual, que não dorme) |
-| `Notificação-chamado-TI.json` | Notifica solicitante via WhatsApp quando chamado muda de status |
+| `Bot-IPESSP-WhatsApp.roteado.json` | Bot de atendimento (AI Agent) — financeiro, secretaria, TI, cursos, captura de lead e envio de boleto em PDF. Confirmado idêntico ao workflow inativo "Bot IPESSP WhatsApp (Roteado)" no n8n (2026-08-02) |
+| `Bot-IPESSP-WhatsApp.encaminhar-leads.json` | Variante do bot que roda ativa no n8n hoje ("Bot IPESSP WhatsApp (Encaminhar Leads)") |
 
 O CRM de leads (notificação de novo lead, nutrição automática, relatórios diário/semanal e reativação de leads pausados) roda como fluxo n8n próprio, versionado no repositório `ipessp-core` — não existe cópia dele aqui em `docs/`. As tools de CRM do bot acima (`Verificar Lead CRM`, `Registrar Lead CRM`, `Registrar Interação Bot`) chamam esse outro backend via `IPESSP_CORE_URL` (ver `n8n.env.example`).
 
-Todos os 3 usam `$env.NOME` (n8n auto-hospedado na mesma VPS via Docker Compose — variáveis reais configuradas em `n8n-vars.env`, não pela feature paga "Variables" do n8n Cloud).
+`Keep-alive-backend.json` e `Notificação-chamado-TI.json` eram citados aqui mas não existem em nenhum workflow do n8n atualmente (removidos ou nunca importados na VPS atual) — os arquivos foram removidos de `docs/` em 2026-08-02.
+
+Os fluxos acima usam `$env.NOME` (n8n auto-hospedado na mesma VPS via Docker Compose — variáveis reais configuradas em `n8n-vars.env`, não pela feature paga "Variables" do n8n Cloud).
 
 ---
 
