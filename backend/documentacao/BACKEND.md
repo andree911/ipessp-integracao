@@ -271,7 +271,7 @@ O ciclo (`SyncService.runSync`) busca todos os alunos do Sophia, para cada um bu
 ### `/` — Diversos
 
 #### `GET /health`
-Endpoint público de health check. Retorna `{ status: 'ok' }`. O fluxo n8n **Keep-alive backend** ainda faz GET neste endpoint a cada 10 minutos (herança da época do Render) — na VPS atual o serviço não dorme, então isso hoje serve só como monitoramento passivo, sem efeito prático de "acordar" nada.
+Endpoint público de health check. Retorna `{ status: 'ok' }`. O fluxo n8n **Keep-alive backend** que fazia GET aqui a cada 10 minutos (herança da época do Render, pra evitar cold start) não existe mais no n8n da VPS atual — removido em 2026-08-02 junto com o `docs/Keep-alive-backend.json`, já que o serviço na VPS não dorme e o ping não tinha mais efeito prático. Endpoint continua existindo, só não tem mais nada chamando ele periodicamente.
 
 #### `GET /como-pagar`
 Página HTML estática (sem dependência de banco) explicando ao aluno como pagar a mensalidade pelo Portal do Aluno Sophia — usada como link em e-mails/WhatsApp de cobrança.
