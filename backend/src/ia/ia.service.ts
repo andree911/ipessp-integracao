@@ -7,7 +7,9 @@ import { FinanceiroService } from '../financeiro/financeiro.service';
 import { WhatsAppService } from '../email/whatsapp.service';
 import { ResponsavelCache } from './entities/responsavel-cache.entity';
 import { TelefoneCpfCache } from './entities/telefone-cpf-cache.entity';
-import { SupabaseService } from '../common/supabase.service';
+import { Aviso } from './entities/aviso.entity';
+import { CalendarioEvento } from './entities/calendario.entity';
+import { CursoConteudo } from './entities/curso-conteudo.entity';
 import { AssociarTelefoneDto } from './dto/associar-telefone.dto';
 
 @Injectable()
@@ -18,12 +20,17 @@ export class IaService {
     private readonly sophia: SophiaService,
     private readonly financeiro: FinanceiroService,
     private readonly whatsapp: WhatsAppService,
-    private readonly supabase: SupabaseService,
     private readonly config: ConfigService,
     @InjectRepository(ResponsavelCache)
     private readonly cacheRepo: Repository<ResponsavelCache>,
     @InjectRepository(TelefoneCpfCache)
     private readonly telefoneCpfRepo: Repository<TelefoneCpfCache>,
+    @InjectRepository(Aviso)
+    private readonly avisoRepo: Repository<Aviso>,
+    @InjectRepository(CalendarioEvento)
+    private readonly calendarioRepo: Repository<CalendarioEvento>,
+    @InjectRepository(CursoConteudo)
+    private readonly cursoConteudoRepo: Repository<CursoConteudo>,
   ) {}
 
   async getFinanceiroByCpf(cpf: string) {
@@ -93,38 +100,33 @@ export class IaService {
   }
 
   async getAvisos() {
-    const sb = this.supabase.getClient();
-    if (!sb) return [];
-
-    const { data, error } = await sb
-      .from('avisos')
-      .select('id, titulo, mensagem, criado_em')
-      .eq('ativo', true)
-      .order('criado_em', { ascending: false });
-
-    if (error) {
-      this.logger.error(`Erro ao buscar avisos: ${error.message}`);
+    try {
+      const avisos = await this.avisoRepo.find({
+        where: { ativo: true },
+        order: { criadoEm: 'DESC' },
+      });
+      // Formato snake_case pra bater 1:1 com o que o bot/n8n já espera (linha
+      // direta do Supabase antes da migração) — evita reescrever o consumidor.
+      return avisos.map((a) => ({ id: a.id, titulo: a.titulo, mensagem: a.mensagem, criado_em: a.criadoEm }));
+    } catch (err: any) {
+      this.logger.error(`Erro ao buscar avisos: ${err.message}`);
       return [];
     }
-    return data ?? [];
   }
 
   async getCalendario() {
-    const sb = this.supabase.getClient();
-    if (!sb) return [];
-
     const hoje = new Date().toISOString().substring(0, 10);
-    const { data, error } = await sb
-      .from('calendario')
-      .select('id, titulo, descricao, data_evento, tipo')
-      .gte('data_evento', hoje)
-      .order('data_evento', { ascending: true });
-
-    if (error) {
-      this.logger.error(`Erro ao buscar calendário: ${error.message}`);
+    try {
+      const eventos = await this.calendarioRepo
+        .createQueryBuilder('c')
+        .where('c.dataEvento >= :hoje', { hoje })
+        .orderBy('c.dataEvento', 'ASC')
+        .getMany();
+      return eventos.map((c) => ({ id: c.id, titulo: c.titulo, descricao: c.descricao, data_evento: c.dataEvento, tipo: c.tipo }));
+    } catch (err: any) {
+      this.logger.error(`Erro ao buscar calendário: ${err.message}`);
       return [];
     }
-    return data ?? [];
   }
 
   async getSecretariaByCpf(cpf: string) {
@@ -221,28 +223,20 @@ export class IaService {
     codigoCurso: number,
     telefone: string,
   ): Promise<{ ok: boolean; erro?: string }> {
-    const sb = this.supabase.getClient();
-    if (!sb) return { ok: false, erro: 'Supabase não configurado.' };
+    const curso = await this.cursoConteudoRepo.findOne({ where: { codigoCurso, ativo: true } });
 
-    const { data, error } = await sb
-      .from('curso_conteudo')
-      .select('nome, pdf_informativo_url')
-      .eq('codigo_curso', codigoCurso)
-      .eq('ativo', true)
-      .maybeSingle();
-
-    if (error || !data) {
+    if (!curso) {
       return { ok: false, erro: `Curso ${codigoCurso} não encontrado ou inativo.` };
     }
-    if (!data.pdf_informativo_url) {
+    if (!curso.pdfInformativoUrl) {
       return {
         ok: false,
-        erro: `Ainda não temos o PDF informativo de "${data.nome}" cadastrado. Ofereça registrar o interesse do lead mesmo assim.`,
+        erro: `Ainda não temos o PDF informativo de "${curso.nome}" cadastrado. Ofereça registrar o interesse do lead mesmo assim.`,
       };
     }
 
     try {
-      await this.whatsapp.enviarDocumentoDeUrl(telefone, data.pdf_informativo_url, `${data.nome}.pdf`);
+      await this.whatsapp.enviarDocumentoDeUrl(telefone, curso.pdfInformativoUrl, `${curso.nome}.pdf`);
     } catch {
       return {
         ok: false,
@@ -254,19 +248,18 @@ export class IaService {
   }
 
   private async getCursosConteudo() {
-    const sb = this.supabase.getClient();
-    if (!sb) return [];
-
-    const { data, error } = await sb
-      .from('curso_conteudo')
-      .select('codigo_curso, descricao, duracao, preco_mensalidade')
-      .eq('ativo', true);
-
-    if (error) {
-      this.logger.error(`Erro ao buscar conteúdo de cursos: ${error.message}`);
+    try {
+      const cursos = await this.cursoConteudoRepo.find({ where: { ativo: true } });
+      return cursos.map((c) => ({
+        codigo_curso: c.codigoCurso,
+        descricao: c.descricao,
+        duracao: c.duracao,
+        preco_mensalidade: c.precoMensalidade,
+      }));
+    } catch (err: any) {
+      this.logger.error(`Erro ao buscar conteúdo de cursos: ${err.message}`);
       return [];
     }
-    return data ?? [];
   }
 
   async getTurmaDetalhada(codigoTurma: number) {

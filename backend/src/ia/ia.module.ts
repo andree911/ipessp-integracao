@@ -6,14 +6,21 @@ import { EmailModule } from '../email/email.module';
 import { IaController } from './ia.controller';
 import { IaService } from './ia.service';
 import { IaBearerGuard } from './ia.guard';
-import { SupabaseService } from '../common/supabase.service';
 import { ResponsavelCache } from './entities/responsavel-cache.entity';
 import { TelefoneCpfCache } from './entities/telefone-cpf-cache.entity';
+import { Aviso } from './entities/aviso.entity';
+import { CalendarioEvento } from './entities/calendario.entity';
+import { CursoConteudo } from './entities/curso-conteudo.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([ResponsavelCache, TelefoneCpfCache]), SophiaModule, FinanceiroModule, EmailModule],
+  imports: [
+    TypeOrmModule.forFeature([ResponsavelCache, TelefoneCpfCache, Aviso, CalendarioEvento, CursoConteudo]),
+    SophiaModule,
+    FinanceiroModule,
+    EmailModule,
+  ],
   controllers: [IaController],
-  providers: [IaService, IaBearerGuard, SupabaseService],
+  providers: [IaService, IaBearerGuard],
   exports: [TypeOrmModule],
 })
 export class IaModule {}

@@ -2,8 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
-import { createClient } from '@supabase/supabase-js';
 import { errMsg } from '../common/err.util';
+import { StorageService } from '../common/storage.service';
 import { EmailService } from '../email/email.service';
 import { Candidatura } from './entities/candidatura.entity';
 import { CandidaturaDto } from './dto/candidatura.dto';
@@ -28,6 +28,7 @@ export class CandidaturasService {
     private readonly repo: Repository<Candidatura>,
     private readonly emailService: EmailService,
     private readonly config: ConfigService,
+    private readonly storage: StorageService,
   ) {}
 
   async criar(dto: CandidaturaDto, file?: Express.Multer.File): Promise<Candidatura> {
@@ -36,8 +37,9 @@ export class CandidaturasService {
 
     if (file) {
       curriculoNome = file.originalname;
-      curriculoUrl = await this.uploadSupabase(file).catch((err) => {
-        this.logger.warn(`Falha ao subir currículo no Supabase: ${err.message}`);
+      const path = `curriculos/${Date.now()}_${file.originalname.replace(/\s/g, '_')}`;
+      curriculoUrl = await this.storage.upload('candidaturas', path, file.buffer, file.mimetype).catch((err) => {
+        this.logger.warn(`Falha ao subir currículo no storage: ${err.message}`);
         return undefined;
       });
     }
@@ -49,24 +51,6 @@ export class CandidaturasService {
     void this.notificar(dto, file);
 
     return registro;
-  }
-
-  private async uploadSupabase(file: Express.Multer.File): Promise<string> {
-    const url = this.config.get<string>('supabase.url');
-    const key = this.config.get<string>('supabase.key');
-    if (!url || !key) throw new Error('Supabase não configurado');
-
-    const supabase = createClient(url, key);
-    const path = `curriculos/${Date.now()}_${file.originalname.replace(/\s/g, '_')}`;
-
-    const { error } = await supabase.storage
-      .from('candidaturas')
-      .upload(path, file.buffer, { contentType: file.mimetype, upsert: false });
-
-    if (error) throw new Error(error.message);
-
-    const { data } = supabase.storage.from('candidaturas').getPublicUrl(path);
-    return data.publicUrl;
   }
 
   private async notificar(dto: CandidaturaDto, file?: Express.Multer.File): Promise<void> {

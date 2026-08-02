@@ -19,9 +19,15 @@ export default () => ({
   ia: {
     bearerToken: process.env.IA_BEARER_TOKEN ?? '',
   },
-  supabase: {
-    url: process.env.SUPABASE_URL ?? '',
-    key: process.env.SUPABASE_SERVICE_KEY ?? '',
+  // Storage S3-compatível (MinIO na VPS), substitui o Supabase Storage.
+  minio: {
+    endpoint: process.env.MINIO_ENDPOINT ?? 'minio',
+    port: parseInt(process.env.MINIO_PORT ?? '9000', 10),
+    useSsl: process.env.MINIO_USE_SSL === 'true',
+    accessKey: process.env.MINIO_ACCESS_KEY ?? '',
+    secretKey: process.env.MINIO_SECRET_KEY ?? '',
+    // Base pública servida pelo Caddy (rota /files/*), ex: https://srv1835634.hstgr.cloud/files
+    publicBaseUrl: (process.env.MINIO_PUBLIC_BASE_URL ?? '').replace(/\/$/, ''),
   },
   email: {
     host: process.env.SMTP_HOST ?? '',

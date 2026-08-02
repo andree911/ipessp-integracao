@@ -4,7 +4,6 @@ import { Repository } from 'typeorm';
 import { Cron } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
 import { errMsg } from '../common/err.util';
-import { SupabaseService } from '../common/supabase.service';
 import { EmailService } from './email.service';
 import { EmailLog } from './entities/email-log.entity';
 import { Lead } from '../leads/entities/lead.entity';
@@ -23,7 +22,6 @@ export class LeadEmailService {
     @InjectRepository(Lead) private readonly leadRepo: Repository<Lead>,
     private readonly emailService: EmailService,
     private readonly config: ConfigService,
-    private readonly supabase: SupabaseService,
   ) {}
 
   async enviarBoasVindas(lead: Lead): Promise<void> {
@@ -99,22 +97,13 @@ export class LeadEmailService {
   // Busca a URL da página do curso (ipessp.edu.br/site/cursos/...) pelo código
   // Sophia do curso de interesse — null se não tiver código, tabela sem essa
   // linha, ou coluna ainda vazia (curso sem página mapeada).
-  private async buscarUrlCurso(codigoCurso: number | null): Promise<string | null> {
-    if (!codigoCurso) return null;
-    const sb = this.supabase.getClient();
-    if (!sb) return null;
-
-    const { data, error } = await sb
-      .from('curso_conteudo')
-      .select('url_pagina')
-      .eq('codigo_curso', codigoCurso)
-      .maybeSingle();
-
-    if (error) {
-      this.logger.warn(`Erro ao buscar url_pagina do curso #${codigoCurso}: ${error.message}`);
-      return null;
-    }
-    return data?.url_pagina ?? null;
+  // A coluna `url_pagina` de curso_conteudo nunca chegou a ser criada de fato
+  // no banco (só existia um script manual pra rodar no SQL Editor do
+  // Supabase, nunca executado) — essa busca sempre retornava null em
+  // produção. Mantido como sempre-null aqui em vez de fingir uma coluna que
+  // não existe; ver src/ia/entities/curso-conteudo.entity.ts.
+  private async buscarUrlCurso(_codigoCurso: number | null): Promise<string | null> {
+    return null;
   }
 
   // ─── Templates ───────────────────────────────────────────────────────────────

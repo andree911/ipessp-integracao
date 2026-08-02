@@ -1,15 +1,14 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { createClient } from '@supabase/supabase-js';
 import { SophiaService } from '../sophia/sophia.service';
 import { FinanceiroService } from '../financeiro/financeiro.service';
+import { StorageService } from '../common/storage.service';
 
 @Injectable()
 export class PortalAlunoDadosService {
   constructor(
     private readonly sophia: SophiaService,
     private readonly financeiro: FinanceiroService,
-    private readonly config: ConfigService,
+    private readonly storage: StorageService,
   ) {}
 
   async meuFinanceiro(codigoSophia: number) {
@@ -56,30 +55,14 @@ export class PortalAlunoDadosService {
   }
 
   // Sophia não aceita arquivo direto (POST /clientes/{id}/Documentos só recebe
-  // uma url pra download), então sobe primeiro pro Supabase Storage e manda a
-  // URL pública. Mesmo padrão usado em CandidaturasService.uploadSupabase.
+  // uma url pra download), então sobe primeiro pro storage e manda a URL
+  // pública. Mesmo padrão usado em CandidaturasService.
   // {id} assumido como o mesmo codigoSophia do aluno logado — não dá pra
   // confirmar isso só pelo swagger, revisar no primeiro teste real.
   async enviarDocumento(codigoSophia: number, descricao: string, file: Express.Multer.File) {
-    const url = await this.uploadSupabase(file);
+    const path = `documentos/${Date.now()}_${file.originalname.replace(/\s/g, '_')}`;
+    const url = await this.storage.upload('portal-aluno', path, file.buffer, file.mimetype);
     const extensao = (file.originalname.split('.').pop() ?? '').toLowerCase();
     return this.sophia.postDocumentoCliente(codigoSophia, { descricao, url, extensao });
-  }
-
-  private async uploadSupabase(file: Express.Multer.File): Promise<string> {
-    const url = this.config.get<string>('supabase.url');
-    const key = this.config.get<string>('supabase.key');
-    if (!url || !key) throw new Error('Supabase não configurado');
-
-    const supabase = createClient(url, key);
-    const path = `documentos/${Date.now()}_${file.originalname.replace(/\s/g, '_')}`;
-
-    const { error } = await supabase.storage
-      .from('portal-aluno')
-      .upload(path, file.buffer, { contentType: file.mimetype, upsert: false });
-    if (error) throw new Error(error.message);
-
-    const { data } = supabase.storage.from('portal-aluno').getPublicUrl(path);
-    return data.publicUrl;
   }
 }
