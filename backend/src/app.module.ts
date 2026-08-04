@@ -54,7 +54,9 @@ import { MatriculaCache } from './matriculas/entities/matricula-cache.entity';
           PortalAlunoRefreshToken,
         ],
         synchronize: false,
-        ssl: { rejectUnauthorized: false },
+        ssl: config.get<boolean>('database.ssl')
+          ? { rejectUnauthorized: false }
+          : false,
         extra: { max: 10, idleTimeoutMillis: 30000, connectionTimeoutMillis: 5000 },
       }),
     }),

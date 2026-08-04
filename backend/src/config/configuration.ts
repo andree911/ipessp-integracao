@@ -8,6 +8,10 @@ export default () => ({
   },
   database: {
     url: process.env.DATABASE_URL ?? '',
+    // Supabase (origem antiga) exige SSL; o Postgres da VPS não tem SSL
+    // configurado -- default true preserva o comportamento anterior pra
+    // quem ainda não setou a var.
+    ssl: process.env.DATABASE_SSL !== 'false',
   },
   sync: {
     cron: process.env.SYNC_CRON ?? '0 * * * *',
