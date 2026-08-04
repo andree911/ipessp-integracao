@@ -9,6 +9,7 @@ import { PortalAlunoDadosController } from './portal-aluno-dados.controller';
 import { PortalAlunoGuard } from './portal-aluno.guard';
 import { SophiaModule } from '../sophia/sophia.module';
 import { FinanceiroModule } from '../financeiro/financeiro.module';
+import { StorageService } from '../common/storage.service';
 
 @Module({
   imports: [
@@ -17,6 +18,6 @@ import { FinanceiroModule } from '../financeiro/financeiro.module';
     FinanceiroModule,
   ],
   controllers: [PortalAlunoAuthController, PortalAlunoDadosController],
-  providers: [PortalAlunoAuthService, PortalAlunoDadosService, PortalAlunoGuard],
+  providers: [PortalAlunoAuthService, PortalAlunoDadosService, PortalAlunoGuard, StorageService],
 })
 export class PortalAlunoModule {}
