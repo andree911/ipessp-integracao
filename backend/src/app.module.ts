@@ -32,6 +32,9 @@ import { Manifestacao } from './formularios/entities/manifestacao.entity';
 import { SolicitacaoEvento } from './formularios/entities/solicitacao-evento.entity';
 import { Candidatura } from './candidaturas/entities/candidatura.entity';
 import { MatriculaCache } from './matriculas/entities/matricula-cache.entity';
+import { Aviso } from './ia/entities/aviso.entity';
+import { CalendarioEvento } from './ia/entities/calendario.entity';
+import { CursoConteudo } from './ia/entities/curso-conteudo.entity';
 
 @Module({
   controllers: [AppController],
@@ -51,7 +54,7 @@ import { MatriculaCache } from './matriculas/entities/matricula-cache.entity';
         entities: [
           EmailLog, ResponsavelCache, TelefoneCpfCache, Lead, LeadHistorico, MensagemContato, Manifestacao,
           SolicitacaoEvento, Candidatura, ClienteCache, LancamentoCache, Chamado, MatriculaCache,
-          PortalAlunoRefreshToken,
+          PortalAlunoRefreshToken, Aviso, CalendarioEvento, CursoConteudo,
         ],
         synchronize: false,
         ssl: config.get<boolean>('database.ssl')
