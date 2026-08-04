@@ -64,7 +64,7 @@
           "conditions": [
             {
               "id": "a11faefc-c1cb-4470-b364-87b31b27ab74",
-              "leftValue": "={{ $json.body.text?.message }}",
+              "leftValue": "={{ $json.body.text?.message ?? $json.body.listResponseMessage?.title ?? null }}",
               "rightValue": "",
               "operator": {
                 "type": "string",
@@ -117,7 +117,8 @@
         0
       ],
       "id": "780ec501-509b-4a64-8718-ba81b032a0c7",
-      "name": "Verificar Lead Aberto"
+      "name": "Verificar Lead Aberto",
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -131,12 +132,12 @@
           "conditions": [
             {
               "id": "a3001c1a-2650-420b-b59b-ecba44cd66e9",
-              "leftValue": "={{ $json.existeLeadAberto }}",
-              "rightValue": "false",
+              "leftValue": "={{ $json.existeLeadAberto === true ? 'sim' : 'nao' }}",
+              "rightValue": "sim",
               "operator": {
                 "type": "string",
-                "operation": "equals",
-                "name": "filter.operator.equals"
+                "operation": "notEquals",
+                "name": "filter.operator.notEquals"
               }
             }
           ],
@@ -173,7 +174,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ nome: $('If - Tem Texto').item.json.body.senderName, telefone: $('If - Tem Texto').item.json.body.phone, observacao: $('If - Tem Texto').item.json.body.text.message, whatsappOptin: false, origem: 'chatbot' }) }}",
+        "jsonBody": "={{ JSON.stringify({ nome: $('If - Tem Texto').item.json.body.senderName, telefone: $('If - Tem Texto').item.json.body.phone, observacao: $('If - Tem Texto').item.json.body.text?.message ?? $('If - Tem Texto').item.json.body.listResponseMessage?.title ?? '', whatsappOptin: false, origem: 'chatbot' }) }}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -184,6 +185,37 @@
       ],
       "id": "cd7c82d1-0cf8-4fe2-8085-9c5252b651bb",
       "name": "Encaminhar Lead pra Consultora"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://api.z-api.io/instances/' + $env.ZAPI_INSTANCE_ID + '/token/' + $env.ZAPI_TOKEN + '/send-text' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Client-Token",
+              "value": "={{ $env.ZAPI_CLIENT_TOKEN }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ phone: $('If - Tem Texto').item.json.body.phone, message: '✅ Seus dados foram registrados! Em breve nossa equipe entrará em contato.', delayMessage: Math.floor(Math.random() * 4) + 2, delayTyping: Math.floor(Math.random() * 5) + 4 }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1320,
+        0
+      ],
+      "id": "a1b26208-e2fb-4e5b-8fca-c9329a011db3",
+      "name": "Confirmar Registro pro Lead"
     }
   ],
   "pinData": {},
@@ -237,6 +269,17 @@
         [
           {
             "node": "Encaminhar Lead pra Consultora",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Encaminhar Lead pra Consultora": {
+      "main": [
+        [
+          {
+            "node": "Confirmar Registro pro Lead",
             "type": "main",
             "index": 0
           }
