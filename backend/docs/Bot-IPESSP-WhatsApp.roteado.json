@@ -55,7 +55,7 @@
     {
       "parameters": {
         "toolDescription": "Consulta pendências financeiras pelo CPF do responsável. Use quando o usuário perguntar sobre boletos, mensalidades ou situação financeira.",
-        "url": "={{ $env.CORE_API_URL }}/ia/financeiro",
+        "url": "={{ $env.INTEGRACAO_API_URL }}/ia/financeiro",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
@@ -397,7 +397,7 @@
     },
     {
       "parameters": {
-        "url": "={{ $env.CORE_API_URL }}/ia/cpf-por-telefone",
+        "url": "={{ $env.INTEGRACAO_API_URL }}/ia/cpf-por-telefone",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
@@ -445,7 +445,7 @@
       "parameters": {
         "toolDescription": "Salva a associação entre o telefone do usuário e o CPF informado, para não pedir o CPF novamente em futuras conversas. Use SEMPRE após uma consulta financeira bem-sucedida onde o usuário informou o CPF.",
         "method": "POST",
-        "url": "={{ $env.CORE_API_URL }}/ia/associar-telefone",
+        "url": "={{ $env.INTEGRACAO_API_URL }}/ia/associar-telefone",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -477,13 +477,13 @@
       "parameters": {
         "toolDescription": "Abre um chamado de suporte TI. Use quando o usuário tiver problema com acesso, senha, email ou sistemas. Colete título e descrição antes de chamar.",
         "method": "POST",
-        "url": "={{ $env.CORE_API_URL }}/v1/ti/chamados",
+        "url": "={{ $env.IPESSP_CORE_URL }}/ti/chamados",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "Authorization",
-              "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}"
+              "name": "x-admin-key",
+              "value": "={{ $env.CORE_API_KEY }}"
             }
           ]
         },
@@ -504,7 +504,7 @@
     {
       "parameters": {
         "toolDescription": "Consulta os chamados de TI abertos pelo usuário. Use quando perguntar sobre status de um chamado.",
-        "url": "={{ $env.CORE_API_URL }}/v1/ti/chamados",
+        "url": "={{ $env.IPESSP_CORE_URL }}/ti/chamados",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
@@ -518,8 +518,8 @@
         "headerParameters": {
           "parameters": [
             {
-              "name": "Authorization",
-              "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}"
+              "name": "x-admin-key",
+              "value": "={{ $env.CORE_API_KEY }}"
             }
           ]
         },
@@ -537,7 +537,7 @@
     {
       "parameters": {
         "toolDescription": "Consulta a situação de matrícula do aluno. Use quando perguntar sobre matrícula, curso, turma ou situação escolar.",
-        "url": "={{ $env.CORE_API_URL }}/ia/secretaria",
+        "url": "={{ $env.INTEGRACAO_API_URL }}/ia/secretaria",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
@@ -570,7 +570,7 @@
     {
       "parameters": {
         "toolDescription": "Consulta as disciplinas do professor. Use quando o professor perguntar sobre suas aulas, horários ou disciplinas.",
-        "url": "={{ $env.CORE_API_URL }}/ia/secretaria/professor",
+        "url": "={{ $env.INTEGRACAO_API_URL }}/ia/secretaria/professor",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
@@ -603,12 +603,12 @@
     {
       "parameters": {
         "toolDescription": "Retorna a lista de alunos de uma disciplina específica. Use após consultar as disciplinas do professor e ele pedir a lista de alunos de uma delas.",
-        "url": "={{ $env.CORE_API_URL }}/ia/secretaria/professor/alunos",
+        "url": "={{ $env.INTEGRACAO_API_URL }}/ia/secretaria/professor/alunos",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
             {
-              "name": "disciplinaId",
+              "name": "idLista",
               "value": "={{ $fromAI('disciplinaId', 'ID da disciplina retornado pela consulta do professor') }}"
             }
           ]
@@ -635,7 +635,7 @@
     },
     {
       "parameters": {
-        "url": "={{ $env.CORE_API_URL }}/ia/cpf-por-telefone",
+        "url": "={{ $env.INTEGRACAO_API_URL }}/ia/cpf-por-telefone",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
@@ -682,7 +682,7 @@
     {
       "parameters": {
         "toolDescription": "Lista os cursos oferecidos pelo IPESSP (graduação, pós-graduação, cursos livres), incluindo id, descricao, duracao e precoMensalidade quando cadastrados. Esses três últimos podem vir null se ainda não foram preenchidos para aquele curso — nesse caso, NÃO invente o valor; diga que ainda não tem essa informação e ofereça registrar o lead. Use quando o usuário perguntar quais cursos existem ou pedir informações sobre um curso específico, antes de registrar um lead com o curso de interesse. IMPORTANTE: guarde o campo \"id\" do curso que a pessoa escolher — ele é usado internamente na hora de registrar o lead (campo cursoInteresseId da tool \"Registrar Lead CRM\"), mas nunca é mencionado ao usuário (mesma regra dos outros códigos internos).",
-        "url": "={{ $env.CORE_API_URL }}/ia/cursos",
+        "url": "={{ $env.INTEGRACAO_API_URL }}/ia/cursos",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -707,7 +707,7 @@
       "parameters": {
         "toolDescription": "Manda o PDF do boleto direto no WhatsApp do usuário. Use SOMENTE quando o usuário pedir explicitamente o boleto em PDF/arquivo (para linha digitável ou PIX copia-e-cola, esses dados já vêm da consulta financeira e não precisam desta tool). Precisa do CPF e do codigoBoleto retornado pela tool de consultar financeiro.",
         "method": "POST",
-        "url": "={{ $env.CORE_API_URL }}/ia/boleto/enviar",
+        "url": "={{ $env.INTEGRACAO_API_URL }}/ia/boleto/enviar",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -811,6 +811,19 @@
       ],
       "id": "edfba8a8-d5ff-41b9-88e9-6db47dc70e02",
       "name": "Interpretar Categoria IA"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nconst tipo = item.cpfInfo?.tipo || null;\nlet categoria = item.categoria || null;\n\n// Guarda centralizada: roda depois que a categoria foi definida por QUALQUER\n// caminho (regex direto, sticky-cache, ou classificador de IA), pra nunca\n// deixar 'professor' passar sem confirmar tipo === 'professor' no cache --\n// antes essa checagem só rodava no caminho de regex, deixando o fallback de IA\n// sem essa proteção.\nif (categoria === 'professor' && tipo !== 'professor') {\n  categoria = null;\n}\n\nreturn [{ json: { ...item, categoria } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1856,
+        -650
+      ],
+      "id": "b1e5b1a0-0003-4a11-9a11-aplicarguarda1",
+      "name": "Aplicar Guarda de Categoria"
     },
     {
       "parameters": {
@@ -1113,7 +1126,7 @@
         "promptType": "define",
         "text": "={{ $json.body.text.message }}",
         "options": {
-          "systemMessage": "Você é \"Eliza\", assistente virtual do IPESSP no WhatsApp. Seja cordial, objetiva e profissional -- nunca use gírias (\"tô\", \"cê\", \"e aí\", \"blz\").\n\nFORMATAÇÃO WHATSAPP (não é markdown padrão): negrito usa UM asterisco de cada lado, tipo *assim* -- nunca **assim** com dois. Itálico é _assim_, com um underline. Não use #, ##, nem blocos de código.\nListas: um item por linha começando com \"- \" ou um emoji, com uma linha em branco entre cada item.\nFormate valores em R$ e datas no padrão brasileiro. Respostas curtas.\n\nNunca invente informação -- use só dados retornados pelas tools. Nunca mencione nenhum código/ID interno retornado pelas tools (\"codigo\", \"codigoBoleto\" etc.) -- refira-se pela descrição/data, nunca pelo número solto.\n\nNunca use as palavras \"CRM\" ou \"lead\" com o usuário, nem diga que ele \"já está registrado/cadastrado\" de uma conversa anterior -- trate sempre como se fosse a primeira vez, mesmo que internamente já exista um registro.\n\nSe a mensagem trouxer um trecho \"[Sistema: CPF: ...]\", é um dado pré-identificado só pra seu uso interno -- nunca confirme, mencione ou mostre esse CPF ao usuário (nem mascarado).\n\nSe a dúvida estiver fora do que você resolve aqui, direcione: Secretaria wa.me/5511997738431 · TI/Suporte wa.me/5511968566862 · Financeiro wa.me/5511998393640.\n\nVocê atende quem AINDA NÃO é aluno e quer conhecer cursos ou se matricular. Esse atendimento é uma TRIAGEM curta -- o objetivo é coletar o essencial rápido e encaminhar pra um consultor humano, não fazer uma consultoria completa de cursos pelo chat.\n\nSe esta for a primeira mensagem desta conversa (sem nenhum histórico anterior), responda EXATAMENTE com este texto, sem alterar nada, sem adicionar nem remover nada, nem antes nem depois:\n\n\"Olá! Aqui é a Eliza! Seja muito bem-vindo(a) à Faculdade IPESSP, é um prazer ter você aqui.\n\nPara te direcionar ao consultor e agilizar seu atendimento, poderia me informar:\n\n- Seu nome completo\n- Seu melhor e-mail\n- Curso de interesse\"\n\nDepois que a pessoa responder essas informações (nome, email e curso de interesse):\n1. Pergunte se pode enviar novidades e promoções por WhatsApp, e registre a resposta em whatsappOptin.\n2. Chame \"Registrar Lead CRM\" com nome, email e cursoInteresse (texto livre da resposta da pessoa é suficiente aqui -- não precisa consultar \"Consultar Cursos\" só pra isso).\n3. Depois de registrar, responda EXATAMENTE, sem parafrasear, sem adicionar nada antes ou depois, e sem nenhuma frase extra de despedida tipo \"qualquer dúvida estou à disposição\" ou \"fico à disposição\": \"Seus dados foram registrados! Em breve nossa equipe entrará em contato.\" Essa frase sozinha é a resposta inteira.\n\nSe em algum momento a pessoa perguntar especificamente sobre um curso (duração, valores, modalidade), aí sim use \"Consultar Cursos\" e responda só com dados reais -- nunca invente nome, duração ou valor de curso. Mas não ofereça esse detalhamento por conta própria antes de coletar os 3 dados acima -- o objetivo aqui é agilizar o encaminhamento pro consultor, não vender o curso pelo chat.\n\nMesmo que a pessoa já tenha demonstrado interesse antes, trate sempre como se fosse a primeira conversa -- nunca diga que ela já tem cadastro ou interesse registrado.\n\nNão peça CPF nesse atendimento -- isso só entra depois, no fluxo de inscrição, que não é feito por aqui.\n\nSe a pessoa pedir o PDF/material/informativo de um curso específico (depois de identificar o id via \"Consultar Cursos\"), use \"Enviar Informativo do Curso\"."
+          "systemMessage": "Você é \"Eliza\", assistente virtual do IPESSP no WhatsApp. Seja cordial, objetiva e profissional -- nunca use gírias (\"tô\", \"cê\", \"e aí\", \"blz\").\n\nFORMATAÇÃO WHATSAPP (não é markdown padrão): negrito usa UM asterisco de cada lado, tipo *assim* -- nunca **assim** com dois. Itálico é _assim_, com um underline. Não use #, ##, nem blocos de código.\nListas: um item por linha começando com \"- \" ou um emoji, com uma linha em branco entre cada item.\nFormate valores em R$ e datas no padrão brasileiro. Respostas curtas.\n\nNunca invente informação -- use só dados retornados pelas tools. Nunca mencione nenhum código/ID interno retornado pelas tools (\"codigo\", \"codigoBoleto\" etc.) -- refira-se pela descrição/data, nunca pelo número solto.\n\nNunca use as palavras \"CRM\" ou \"lead\" com o usuário, nem diga que ele \"já está registrado/cadastrado\" de uma conversa anterior -- trate sempre como se fosse a primeira vez, mesmo que internamente já exista um registro.\n\nSe a mensagem trouxer um trecho \"[Sistema: CPF: ...]\", é um dado pré-identificado só pra seu uso interno -- nunca confirme, mencione ou mostre esse CPF ao usuário (nem mascarado).\n\nSe a dúvida estiver fora do que você resolve aqui, direcione: Secretaria wa.me/5511997738431 · TI/Suporte wa.me/5511968566862 · Financeiro wa.me/5511998393640.\n\nVocê atende quem AINDA NÃO é aluno e quer conhecer cursos ou se matricular. Esse atendimento é uma TRIAGEM curta -- o objetivo é coletar o essencial rápido e encaminhar pra um consultor humano, não fazer uma consultoria completa de cursos pelo chat.\n\nSe esta for a primeira mensagem desta conversa (sem nenhum histórico anterior), responda EXATAMENTE com este texto, sem alterar nada, sem adicionar nem remover nada, nem antes nem depois:\n\n\"Olá! Aqui é a Eliza! Seja muito bem-vindo(a) à Faculdade IPESSP, é um prazer ter você aqui.\n\nPara te direcionar ao consultor e agilizar seu atendimento, poderia me informar:\n\n- Seu nome completo\n- Seu melhor e-mail\n- Curso de interesse\"\n\nDepois que a pessoa responder essas informações (nome, email e curso de interesse):\n1. Pergunte se pode enviar novidades e promoções por WhatsApp, e registre a resposta em whatsappOptin.\n2. Chame \"Registrar Lead CRM\" com nome, email e cursoInteresse (texto livre da resposta da pessoa é suficiente aqui -- não precisa consultar \"Consultar Cursos\" só pra isso).\n3. Depois de registrar, responda EXATAMENTE, sem parafrasear, sem adicionar nada antes ou depois, e sem nenhuma frase extra de despedida tipo \"qualquer dúvida estou à disposição\" ou \"fico à disposição\": \"Seus dados foram registrados! Em breve nossa equipe entrará em contato.\" Essa frase sozinha é a resposta inteira.\n\nSe em algum momento a pessoa perguntar especificamente sobre um curso (duração, valores, modalidade), aí sim use \"Consultar Cursos\" e responda só com dados reais -- nunca invente nome, duração ou valor de curso. Mas não ofereça esse detalhamento por conta própria antes de coletar os 3 dados acima -- o objetivo aqui é agilizar o encaminhamento pro consultor, não vender o curso pelo chat.\n\nSempre que responder sobre um curso específico (após usar \"Consultar Cursos\"), em seguida chame \"Enviar Informativo do Curso\" com o id desse curso, para mandar o PDF/material informativo complementando sua resposta em texto -- não é preciso a pessoa pedir o PDF, envie automaticamente. Se a tool retornar erro dizendo que o material ainda não está cadastrado, apenas siga a conversa normalmente sem mencionar esse erro para a pessoa.\n\nMesmo que a pessoa já tenha demonstrado interesse antes, trate sempre como se fosse a primeira conversa -- nunca diga que ela já tem cadastro ou interesse registrado.\n\nNão peça CPF nesse atendimento -- isso só entra depois, no fluxo de inscrição, que não é feito por aqui."
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
@@ -1219,7 +1232,7 @@
     },
     {
       "parameters": {
-        "url": "={{ $env.CORE_API_URL }}/ia/avisos",
+        "url": "={{ $env.INTEGRACAO_API_URL }}/ia/avisos",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -1256,7 +1269,7 @@
     },
     {
       "parameters": {
-        "url": "={{ $env.CORE_API_URL }}/ia/calendario",
+        "url": "={{ $env.INTEGRACAO_API_URL }}/ia/calendario",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -1293,9 +1306,9 @@
     },
     {
       "parameters": {
-        "toolDescription": "Manda o PDF/material informativo de um curso específico direto no WhatsApp do usuário. Use quando a pessoa pedir o PDF, material ou informativo de um curso (depois de já saber o \"id\" do curso via \"Consultar Cursos\"). Se retornar erro dizendo que o PDF ainda não está cadastrado, avise a pessoa que o material ainda não está disponível e ofereça seguir com o registro do interesse mesmo assim.",
+        "toolDescription": "Manda o PDF/material informativo de um curso específico direto no WhatsApp do usuário. Use sempre que responder sobre um curso específico via \"Consultar Cursos\" -- chame esta tool logo em seguida, com o \"id\" retornado, para complementar a resposta em texto. Também use se a pessoa pedir o PDF/material diretamente. Se retornar erro dizendo que o PDF ainda não está cadastrado, avise a pessoa que o material ainda não está disponível e ofereça seguir com o registro do interesse mesmo assim.",
         "method": "POST",
-        "url": "={{ $env.IPESSP_CORE_URL }}/curso-pdf/enviar",
+        "url": "={{ $env.IPESSP_CORE_URL }}/ia/curso-pdf/enviar",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -1614,7 +1627,7 @@
       "main": [
         [
           {
-            "node": "Roteador: Financeiro",
+            "node": "Aplicar Guarda de Categoria",
             "type": "main",
             "index": 0
           }
@@ -1640,6 +1653,17 @@
       ]
     },
     "Interpretar Categoria IA": {
+      "main": [
+        [
+          {
+            "node": "Aplicar Guarda de Categoria",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aplicar Guarda de Categoria": {
       "main": [
         [
           {

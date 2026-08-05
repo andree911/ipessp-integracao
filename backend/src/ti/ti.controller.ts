@@ -1,10 +1,11 @@
 import { BadRequestException, Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import { ThrottlerGuard } from '@nestjs/throttler';
 import { TiService } from './ti.service';
 import { CriarChamadoDto } from './dto/criar-chamado.dto';
 import { IaBearerGuard } from '../ia/ia.guard';
 
 @Controller('v1/ti')
-@UseGuards(IaBearerGuard)
+@UseGuards(ThrottlerGuard, IaBearerGuard)
 export class TiController {
   constructor(private readonly tiService: TiService) {}
 

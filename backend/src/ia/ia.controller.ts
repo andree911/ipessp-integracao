@@ -1,4 +1,5 @@
 import { BadRequestException, Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import { ThrottlerGuard } from '@nestjs/throttler';
 import { IaBearerGuard } from './ia.guard';
 import { IaService } from './ia.service';
 import { AssociarTelefoneDto } from './dto/associar-telefone.dto';
@@ -6,7 +7,7 @@ import { EnviarBoletoDto } from './dto/enviar-boleto.dto';
 import { EnviarPdfCursoDto } from './dto/enviar-pdf-curso.dto';
 
 @Controller('ia')
-@UseGuards(IaBearerGuard)
+@UseGuards(ThrottlerGuard, IaBearerGuard)
 export class IaController {
   constructor(private readonly iaService: IaService) {}
 

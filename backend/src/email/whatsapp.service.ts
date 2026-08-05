@@ -34,9 +34,8 @@ export class WhatsAppService {
 
     const url = `https://api.z-api.io/instances/${instanceId}/token/${token}/send-text`;
     const phone = telefone.replace(/\D/g, '');
-
-    try {
-      await firstValueFrom(
+    const enviar = () =>
+      firstValueFrom(
         this.http.post(
           url,
           { phone, message: mensagem },
@@ -45,10 +44,22 @@ export class WhatsAppService {
           },
         ),
       );
+
+    try {
+      await enviar();
     } catch (err) {
-      this.logger.warn(
-        `WhatsApp: falha ao enviar para ${phone} — ${detalheErro(err)}`,
-      );
+      // Retry único após um pequeno atraso: quem chama trata isso como
+      // fire-and-forget (ex.: aviso de pagamento aprovado, notificar
+      // consultora), sem esse retry uma instabilidade passageira da Z-API
+      // perdia a notificação de vez, só com um warn no log.
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      try {
+        await enviar();
+      } catch (err2) {
+        this.logger.warn(
+          `WhatsApp: falha ao enviar para ${phone} (após retry) — ${detalheErro(err2)}`,
+        );
+      }
     }
   }
 
