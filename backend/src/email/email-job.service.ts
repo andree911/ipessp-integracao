@@ -270,23 +270,49 @@ export class EmailJobService {
     hoje.setHours(0, 0, 0, 0);
 
     const BATCH_LIMIT = 500;
-    const pendentes = (await this.financeiro.getLancamentosPendentes()).slice(0, BATCH_LIMIT);
+
+    // BATCH_LIMIT precisa cortar quem VAI RECEBER email hoje, não o total de
+    // pendências em aberto -- getLancamentosPendentes() traz TODO lançamento
+    // com recebido=false (na prática, milhares, considerando parcelas futuras
+    // de todo aluno ativo), e a esmagadora maioria não bate com nenhum marco
+    // de dia hoje. Um bug anterior aplicava o .slice(0, BATCH_LIMIT) direto
+    // nesse total bruto, cortando aleatoriamente ~90% das pendências ANTES de
+    // checar se batiam com o dia de hoje -- na prática, a maior parte dos
+    // alunos que deveriam receber cobrança hoje nunca era nem avaliada.
+    // Agora o filtro por marco de dia (cálculo em memória, sem custo de API)
+    // roda primeiro sobre TODO o cache, e o corte de 500 vale só sobre quem
+    // já bateu com um marco -- preservando a intenção original do limite
+    // (não estourar o volume de emails/chamadas à Sophia numa rodada).
+    const todosPendentes = await this.financeiro.getLancamentosPendentes();
+    const candidatos = todosPendentes
+      .filter(({ cliente }) => !!cliente.emailResponsavel)
+      .map(({ cliente, lancamento }) => {
+        // parseDateBR/calcularTipos não fazem I/O e não lançam exceção hoje,
+        // mas o try/catch aqui preserva a mesma garantia que o loop de envio
+        // já tinha: um lançamento com dado malformado é pulado e logado, sem
+        // derrubar a rodada inteira.
+        try {
+          const venc = parseDateBR(lancamento.dataVencimento);
+          venc.setHours(0, 0, 0, 0);
+          const diffDias = Math.round((venc.getTime() - hoje.getTime()) / 86_400_000);
+          const tipos = this.calcularTipos(diffDias, diasAntes, diasAviso, diasAposVencimento, diasRenegociacaoOverlap);
+          return { cliente, lancamento, venc, diffDias, tipos };
+        } catch (err: unknown) {
+          this.logger.error(`Erro ao calcular marco do lançamento ${lancamento.id}: ${errMsg(err)}`);
+          return { cliente, lancamento, venc: hoje, diffDias: 0, tipos: [] as EmailTipo[] };
+        }
+      })
+      .filter(({ tipos }) => tipos.length > 0);
+
+    const pendentes = candidatos.slice(0, BATCH_LIMIT);
     const cacheAlunos = new Map<number, LancamentoAlunoApiModel[]>();
     let totalEnviados = 0;
     let totalErros = 0;
     let totalJaPagos = 0;
     let totalSemBoleto = 0;
 
-    for (const { cliente, lancamento } of pendentes) {
-      if (!cliente.emailResponsavel) continue;
+    for (const { cliente, lancamento, venc, diffDias, tipos } of pendentes) {
       try {
-        const venc = parseDateBR(lancamento.dataVencimento);
-        venc.setHours(0, 0, 0, 0);
-        const diffDias = Math.round((venc.getTime() - hoje.getTime()) / 86_400_000);
-
-        const tipos = this.calcularTipos(diffDias, diasAntes, diasAviso, diasAposVencimento, diasRenegociacaoOverlap);
-        if (tipos.length === 0) continue;
-
         // Só cobra quem já tem boleto gerado e sincronizado no cache — sem
         // linhaDigitavel o email sairia "vazio" (sem código de barras nem
         // PIX pra pagar), o que confunde mais do que ajuda.
