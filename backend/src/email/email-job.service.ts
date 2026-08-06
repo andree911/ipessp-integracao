@@ -287,6 +287,13 @@ export class EmailJobService {
     const candidatos = todosPendentes
       .filter(({ cliente }) => !!cliente.emailResponsavel)
       .map(({ cliente, lancamento }) => {
+        // cliente.emailResponsavel é string | null no entity -- o filter acima
+        // já garante que não é null aqui, mas o TS não propaga essa checagem
+        // através do .filter()/.map() da array, então captura num campo à
+        // parte já tipado como string pra não perder a garantia de tipo mais
+        // à frente no loop de envio.
+        const email = cliente.emailResponsavel!;
+
         // parseDateBR/calcularTipos não fazem I/O e não lançam exceção hoje,
         // mas o try/catch aqui preserva a mesma garantia que o loop de envio
         // já tinha: um lançamento com dado malformado é pulado e logado, sem
@@ -296,10 +303,10 @@ export class EmailJobService {
           venc.setHours(0, 0, 0, 0);
           const diffDias = Math.round((venc.getTime() - hoje.getTime()) / 86_400_000);
           const tipos = this.calcularTipos(diffDias, diasAntes, diasAviso, diasAposVencimento, diasRenegociacaoOverlap);
-          return { cliente, lancamento, venc, diffDias, tipos };
+          return { cliente, lancamento, email, venc, diffDias, tipos };
         } catch (err: unknown) {
           this.logger.error(`Erro ao calcular marco do lançamento ${lancamento.id}: ${errMsg(err)}`);
-          return { cliente, lancamento, venc: hoje, diffDias: 0, tipos: [] as EmailTipo[] };
+          return { cliente, lancamento, email, venc: hoje, diffDias: 0, tipos: [] as EmailTipo[] };
         }
       })
       .filter(({ tipos }) => tipos.length > 0);
@@ -311,7 +318,7 @@ export class EmailJobService {
     let totalJaPagos = 0;
     let totalSemBoleto = 0;
 
-    for (const { cliente, lancamento, venc, diffDias, tipos } of pendentes) {
+    for (const { cliente, lancamento, email, venc, diffDias, tipos } of pendentes) {
       try {
         // Só cobra quem já tem boleto gerado e sincronizado no cache — sem
         // linhaDigitavel o email sairia "vazio" (sem código de barras nem
@@ -359,13 +366,13 @@ export class EmailJobService {
             codigoLancamento: String(lancamento.id),
             nome: cliente.nomeAluno,
             tipo,
-            destinatario: cliente.emailResponsavel,
+            destinatario: email,
             enviado: false,
           });
 
           try {
             await this.emailService.enviar(
-              cliente.emailResponsavel, template.subject, template.html,
+              email, template.subject, template.html,
               qrBuffer ? [{ cid: QR_CID, buffer: qrBuffer, nome: 'qrpix.png' }] : undefined,
             );
             log.enviado = true;
@@ -373,7 +380,7 @@ export class EmailJobService {
           } catch (err: unknown) {
             log.erro = errMsg(err);
             totalErros++;
-            this.logger.error(`Erro ao enviar email para ${cliente.emailResponsavel}: ${errMsg(err)}`);
+            this.logger.error(`Erro ao enviar email para ${email}: ${errMsg(err)}`);
           }
 
           await this.emailLogRepo.save(log);
