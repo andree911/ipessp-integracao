@@ -197,13 +197,9 @@ function cartaoResumo(data: EmailData, opcoes?: CartaoResumoOpcoes): string {
       </td>
     </tr>` : (!temMeta ? `
     <tr>
-      <td class="dm-bdr" style="padding:14px 20px;border-bottom:1px solid #e8e8e8;">
-        <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-          <td align="right">
-            ${lbl('Vencimento')}
-            <span class="dm-t1" style="font-size:15px;color:#222;font-weight:bold;font-family:Arial,sans-serif;">${data.vencimento}</span>
-          </td>
-        </tr></table>
+      <td class="dm-bdr" style="padding:14px 20px;border-bottom:1px solid #e8e8e8;text-align:center;">
+        ${lbl('Vencimento')}
+        <span class="dm-t1" style="font-size:15px;color:#222;font-weight:bold;font-family:Arial,sans-serif;">${data.vencimento}</span>
       </td>
     </tr>` : '');
 
