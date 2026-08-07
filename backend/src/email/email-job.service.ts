@@ -502,12 +502,18 @@ export class EmailJobService {
     const resultados: { aluno: string; tipo: string; lancamento: number }[] = [];
 
     for (const { cliente, lancamento } of pendentes) {
+      if (!cliente.emailResponsavel) continue;
       const venc = parseDateBR(lancamento.dataVencimento);
       venc.setHours(0, 0, 0, 0);
       const diffDias = Math.round((venc.getTime() - hoje.getTime()) / 86_400_000);
       if (diasSimulados !== undefined && diffDias !== diasSimulados) continue;
       const tipos = this.calcularTipos(diffDias, diasAntes, diasAviso, diasAposVencimento, diasRenegociacaoOverlap);
       if (tipos.length === 0) continue;
+      // Mesmo filtro do job real: sem boleto/PIX gerado o email sairia sem
+      // código pra pagar. Antes esse método (usado por /email/test/sophia)
+      // não tinha essa trava, então o preview "achava" gente que o job real
+      // -- e o próprio Sophia -- nunca notificariam, inflando a comparação.
+      if (!lancamento.linhaDigitavel) continue;
       if (!(await this.aindaPendenteNaSophia(cliente, lancamento, cacheAlunos))) continue;
 
       const emailData: EmailData = {
