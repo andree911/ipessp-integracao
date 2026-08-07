@@ -54,6 +54,12 @@ export class FinanceiroService {
     private readonly lancamentoRepo: Repository<LancamentoCache>,
   ) {}
 
+  /** Diagnóstico: codigoSophia de todo cliente já sincronizado no cache local. */
+  async getCodigosSophiaCache(): Promise<Set<number>> {
+    const clientes = await this.clienteRepo.find({ select: ['codigoSophia'] });
+    return new Set(clientes.map((c) => c.codigoSophia).filter((c): c is number => c != null));
+  }
+
   async getByCpf(cpf: string): Promise<FinanceiroCliente> {
     const cpfLimpo = cpf.replace(/\D/g, '');
     const clientes = await this.clienteRepo.find({ where: { cpf: cpfLimpo } });

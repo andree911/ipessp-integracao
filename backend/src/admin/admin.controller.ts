@@ -204,6 +204,53 @@ export class AdminController {
     return this.sophia.getHorarioDetalhado(matricula);
   }
 
+  // Diagnóstico pontual (não é rota de uso recorrente): compara o total de
+  // Alunos que a Sophia lista contra quem já está no clientes_cache, e pra
+  // quem falta, confere ao vivo se tem lançamento pendente -- confirma se o
+  // gap de sincronização é alunos ativos com cobrança (problema real) ou só
+  // inativos/sem cobrança (não é problema). `limite` corta quantos "faltando"
+  // são checados ao vivo (cada checagem é uma chamada à Sophia, então o
+  // total pode demorar minutos sem limite).
+  @Get('sophia/diagnostico-cobertura')
+  async diagnosticoCobertura(@Query('limite') limiteStr?: string) {
+    const limite = limiteStr ? parseInt(limiteStr, 10) : 300;
+    const [alunos, codigosCache] = await Promise.all([
+      this.sophia.getAllAlunos(),
+      this.financeiroService.getCodigosSophiaCache(),
+    ]);
+
+    const faltando = alunos.filter((a) => !codigosCache.has(a.codigo));
+    const amostra = faltando.slice(0, limite);
+
+    const comCobrancaPendente: { codigo: number; nome: string; qtdPendente: number }[] = [];
+    let semCobranca = 0;
+    let erros = 0;
+
+    for (const aluno of amostra) {
+      try {
+        const lancamentos = await this.sophia.getLancamentosAluno(aluno.codigo);
+        const pendentes = lancamentos.filter((l) => l.recebido <= 0);
+        if (pendentes.length > 0) {
+          comCobrancaPendente.push({ codigo: aluno.codigo, nome: aluno.nome, qtdPendente: pendentes.length });
+        } else {
+          semCobranca++;
+        }
+      } catch {
+        erros++;
+      }
+    }
+
+    return {
+      totalAlunosSophia: alunos.length,
+      totalNoCache: codigosCache.size,
+      totalFaltando: faltando.length,
+      checados: amostra.length,
+      comCobrancaPendente,
+      semCobranca,
+      erros,
+    };
+  }
+
   // ─── Diagnóstico WhatsApp ───────────────────────────────────────────────────
   // Só booleanos (presença/valor de flag) — nunca os valores das credenciais.
   @Get('whatsapp/status')
