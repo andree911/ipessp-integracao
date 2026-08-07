@@ -265,6 +265,7 @@ export class EmailJobService {
     const diasAviso = this.config.get<number[]>('email.diasAviso') ?? [10, 9, 8, 7, 6, 4, 3, 2, 1];
     const diasAposVencimento = this.config.get<number[]>('email.diasAposVencimento') ?? [1, 2, 3, 7, 8, 9, 10, 12, 15, 20, 25, 30];
     const diasRenegociacaoOverlap = this.config.get<number[]>('email.diasRenegociacaoOverlap') ?? [1, 3, 7];
+    const somenteComCodigo = this.config.get<string>('email.somenteComCodigo') === 'true';
     const escola = this.dadosEscola();
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
@@ -302,7 +303,10 @@ export class EmailJobService {
           const venc = parseDateBR(lancamento.dataVencimento);
           venc.setHours(0, 0, 0, 0);
           const diffDias = Math.round((venc.getTime() - hoje.getTime()) / 86_400_000);
-          const tipos = this.calcularTipos(diffDias, diasAntes, diasAviso, diasAposVencimento, diasRenegociacaoOverlap);
+          let tipos = this.calcularTipos(diffDias, diasAntes, diasAviso, diasAposVencimento, diasRenegociacaoOverlap);
+          if (somenteComCodigo) {
+            tipos = tipos.filter((t) => !t.startsWith('aviso') && !t.startsWith('renegociacao'));
+          }
           return { cliente, lancamento, email, venc, diffDias, tipos };
         } catch (err: unknown) {
           this.logger.error(`Erro ao calcular marco do lançamento ${lancamento.id}: ${errMsg(err)}`);

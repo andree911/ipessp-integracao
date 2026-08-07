@@ -62,6 +62,10 @@ export default () => ({
       .map((d) => parseInt(d.trim(), 10)),
     logoUrl: process.env.EMAIL_LOGO_URL ?? '',
     cronHabilitado: process.env.EMAIL_CRON_HABILITADO ?? 'false',
+    // Restringe o job real aos tipos com boleto/PIX embutido (lembrete_*,
+    // cobranca_*, vencimento_hoje) -- pula aviso_*/renegociacao_*. Liga
+    // "somente cobrança" sem precisar desligar o cron inteiro.
+    somenteComCodigo: process.env.EMAIL_SOMENTE_COM_CODIGO ?? 'false',
     siteUrl: process.env.ESCOLA_SITE ?? '',
     // Domínio do site-ipessp-frontend (hero images e ícones dos templates de
     // email) — é um deploy separado do ESCOLA_SITE institucional acima.
