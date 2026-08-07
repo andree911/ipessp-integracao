@@ -509,9 +509,10 @@ export class EmailJobService {
    * sem isso, se ninguém estiver exatamente nesse dia hoje, também dá erro.
    *
    * `somenteComCodigo` (opcional) restringe aos tipos que embutem boleto/PIX
-   * (lembrete_*, cobranca_*, vencimento_hoje) — exclui aviso_*/renegociacao_*,
-   * que não têm código de pagamento. Útil pra comparar contra relatórios tipo
-   * o da própria Sophia, que costuma reportar só a "cobrança" nesse sentido.
+   * (lembrete_*, cobranca_*, vencimento_hoje) — exclui aviso_* e
+   * renegociacao_*, que não têm código de pagamento. Útil pra comparar
+   * contra relatórios tipo o da própria Sophia, que costuma reportar só a
+   * "cobrança" nesse sentido.
    */
   async previewComDadosSophia(destinatario: string, diasSimulados?: number, somenteComCodigo?: boolean): Promise<{ aluno: string; tipo: string; lancamento: number }[]> {
     const escola = this.dadosEscola();
