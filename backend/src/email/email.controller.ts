@@ -61,6 +61,7 @@ export class EmailController {
   async testarSophia(
     @Body('para') para: string,
     @Body('diasSimulados') diasSimulados?: number,
+    @Body('somenteComCodigo') somenteComCodigo?: boolean,
   ): Promise<{
     ok: boolean;
     total: number;
@@ -73,6 +74,7 @@ export class EmailController {
     const enviados = await this.jobService.previewComDadosSophia(
       para,
       diasSimulados,
+      somenteComCodigo,
     );
     return { ok: true, total: enviados.length, enviados };
   }

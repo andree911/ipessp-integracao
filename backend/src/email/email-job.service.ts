@@ -507,8 +507,13 @@ export class EmailJobService {
    * naquele dia hoje. Dá erro se o dia pedido não estiver configurado em
    * EMAIL_DIAS_ANTES/EMAIL_DIAS_APOS (nunca geraria email nenhum) — mesmo
    * sem isso, se ninguém estiver exatamente nesse dia hoje, também dá erro.
+   *
+   * `somenteComCodigo` (opcional) restringe aos tipos que embutem boleto/PIX
+   * (lembrete_*, cobranca_*, vencimento_hoje) — exclui aviso_*/renegociacao_*,
+   * que não têm código de pagamento. Útil pra comparar contra relatórios tipo
+   * o da própria Sophia, que costuma reportar só a "cobrança" nesse sentido.
    */
-  async previewComDadosSophia(destinatario: string, diasSimulados?: number): Promise<{ aluno: string; tipo: string; lancamento: number }[]> {
+  async previewComDadosSophia(destinatario: string, diasSimulados?: number, somenteComCodigo?: boolean): Promise<{ aluno: string; tipo: string; lancamento: number }[]> {
     const escola = this.dadosEscola();
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
@@ -534,7 +539,10 @@ export class EmailJobService {
       venc.setHours(0, 0, 0, 0);
       const diffDias = Math.round((venc.getTime() - hoje.getTime()) / 86_400_000);
       if (diasSimulados !== undefined && diffDias !== diasSimulados) continue;
-      const tipos = this.calcularTipos(diffDias, diasAntes, diasAviso, diasAposVencimento, diasRenegociacaoOverlap);
+      let tipos = this.calcularTipos(diffDias, diasAntes, diasAviso, diasAposVencimento, diasRenegociacaoOverlap);
+      if (somenteComCodigo) {
+        tipos = tipos.filter((t) => !t.startsWith('aviso') && !t.startsWith('renegociacao'));
+      }
       if (tipos.length === 0) continue;
       // Mesmo filtro do job real: sem boleto/PIX gerado o email sairia sem
       // código pra pagar. Antes esse método (usado por /email/test/sophia)
