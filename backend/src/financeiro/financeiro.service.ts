@@ -56,7 +56,7 @@ export class FinanceiroService {
 
   /** Diagnóstico: codigoSophia de todo cliente já sincronizado no cache local. */
   async getCodigosSophiaCache(): Promise<Set<number>> {
-    const clientes = await this.clienteRepo.find({ select: ['codigoSophia'] });
+    const clientes = await this.clienteRepo.find({ select: { codigoSophia: true } });
     return new Set(clientes.map((c) => c.codigoSophia).filter((c): c is number => c != null));
   }
 
