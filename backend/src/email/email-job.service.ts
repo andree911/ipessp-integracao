@@ -415,13 +415,34 @@ export class EmailJobService {
       }
 
       const atual = lancamentosAluno.find((l) => l.codigo === lancamento.codigoSophia);
-      if (!atual) return true; // não achou na Sophia — não bloqueia por segurança
 
-      if (atual.recebido > 0) {
+      if (atual && atual.recebido > 0) {
         await this.lancamentoRepo.update(lancamento.id, { recebido: true });
         this.logger.log(`Lançamento ${lancamento.id} já estava pago na Sophia — pulando email e corrigindo cache local`);
         return false;
       }
+
+      // Renegociação: a Sophia às vezes substitui um lançamento por outro
+      // (codigoSophia diferente) pra mesma data de vencimento, sem nunca
+      // marcar o antigo como pago -- ele fica "órfão" pendente pra sempre
+      // no nosso cache, mesmo com a dívida já quitada pelo substituto.
+      // Confirmado com casos reais: 5 alunos com dois lançamentos pra mesma
+      // data, um antigo (nunca atualizado) e um novo já pago. Se existir
+      // OUTRO lançamento do mesmo aluno com a mesma data de vencimento já
+      // pago, trata este como resolvido também.
+      const vencAtual = parseDateBR(lancamento.dataVencimento).toDateString();
+      const substituto = lancamentosAluno.find((l) =>
+        l.codigo !== lancamento.codigoSophia &&
+        l.recebido > 0 &&
+        new Date(l.dataVencimento).toDateString() === vencAtual,
+      );
+      if (substituto) {
+        await this.lancamentoRepo.update(lancamento.id, { recebido: true });
+        this.logger.log(`Lançamento ${lancamento.id} parece substituído por outro já pago (mesma data de vencimento, codigoSophia diferente) — pulando email e corrigindo cache local`);
+        return false;
+      }
+
+      if (!atual) return true; // não achou na Sophia — não bloqueia por segurança
       return true;
     } catch (err: unknown) {
       this.logger.warn(`Falha ao conferir pagamento ao vivo do lançamento ${lancamento.id}: ${errMsg(err)}`);
