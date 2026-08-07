@@ -430,11 +430,17 @@ export class EmailJobService {
       // data, um antigo (nunca atualizado) e um novo já pago. Se existir
       // OUTRO lançamento do mesmo aluno com a mesma data de vencimento já
       // pago, trata este como resolvido também.
+      // dataVencimento da Sophia (tanto no cache local quanto ao vivo) vem
+      // em "DD/MM/YYYY..." apesar do nome sugerir ISO -- new Date() direto
+      // nesse formato quebra silenciosamente (vira Invalid Date), por isso
+      // usa parseDateBR nos dois lados. O valor ao vivo pode ter sufixo de
+      // hora (por isso o .substring(0, 10) na importação em importacao.
+      // service.ts) -- aplica o mesmo corte aqui antes de parsear.
       const vencAtual = parseDateBR(lancamento.dataVencimento).toDateString();
       const substituto = lancamentosAluno.find((l) =>
         l.codigo !== lancamento.codigoSophia &&
         l.recebido > 0 &&
-        new Date(l.dataVencimento).toDateString() === vencAtual,
+        parseDateBR(l.dataVencimento.substring(0, 10)).toDateString() === vencAtual,
       );
       if (substituto) {
         await this.lancamentoRepo.update(lancamento.id, { recebido: true });
