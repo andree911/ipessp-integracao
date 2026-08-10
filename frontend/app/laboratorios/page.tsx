@@ -257,7 +257,7 @@ export default function LaboratoriosPage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a
-                href="https://wa.me/5511976922127"
+                href="https://wa.me/5511998917111"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn btn-white"

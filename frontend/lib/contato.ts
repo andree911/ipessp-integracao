@@ -1,7 +1,7 @@
-export const FONE_DISPLAY   = '(11) 97692-2127';
-export const FONE_TEL       = 'tel:+5511976922127';
-export const WHATSAPP_URL   = 'https://wa.me/5511976922127';
-export const WHATSAPP_MSG   = 'https://wa.me/5511976922127?text=Ol%C3%A1!%20Gostaria%20de%20mais%20informa%C3%A7%C3%B5es%20sobre%20os%20cursos%20do%20IPESSP.';
+export const FONE_DISPLAY   = '(11) 99891-7111';
+export const FONE_TEL       = 'tel:+5511998917111';
+export const WHATSAPP_URL   = 'https://wa.me/5511998917111';
+export const WHATSAPP_MSG   = 'https://wa.me/5511998917111?text=Ol%C3%A1!%20Gostaria%20de%20mais%20informa%C3%A7%C3%B5es%20sobre%20os%20cursos%20do%20IPESSP.';
 export const EMAIL_CONTATO  = 'marketing@ipessp.edu.br';
 export const EMAIL_HREF     = 'mailto:marketing@ipessp.edu.br';
 export const ENDERECO_RUA   = 'Rua Dona Antônia de Queirós, 333';

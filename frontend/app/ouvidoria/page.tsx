@@ -320,8 +320,8 @@ export default function OuvidoriaPage() {
                         <p style={{ color: 'var(--ink-500)', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }} className="mb-1">
                           Telefone
                         </p>
-                        <a href="tel:+5511976922127" style={{ color: 'var(--ink-900)', fontWeight: 600, fontSize: '0.9375rem' }}>
-                          (11) 97692-2127
+                        <a href="tel:+5511998917111" style={{ color: 'var(--ink-900)', fontWeight: 600, fontSize: '0.9375rem' }}>
+                          (11) 99891-7111
                         </a>
                       </div>
                     </div>

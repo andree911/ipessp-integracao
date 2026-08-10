@@ -9,19 +9,31 @@ const bases = [
   {
     nome: 'BVS – Biblioteca Virtual em Saúde',
     descricao: 'Portal com acesso a literatura científica em saúde da América Latina e Caribe, incluindo LILACS, MEDLINE e outras bases regionais.',
-    href: 'https://bvsalud.org/',
+    href: 'https://pesquisa.bvsalud.org/brasil/',
+    tipo: 'Gratuita',
+  },
+  {
+    nome: 'LILACS – BIREME',
+    descricao: 'Literatura Latino-Americana e do Caribe em Ciências da Saúde, mantida pela BIREME/OPAS/OMS.',
+    href: 'https://bases.bireme.br/cgi-bin/wxislind.exe/iah/online/',
     tipo: 'Gratuita',
   },
   {
     nome: 'SciELO',
     descricao: 'Scientific Electronic Library Online — coleção de periódicos científicos brasileiros e latino-americanos de livre acesso.',
-    href: 'https://www.scielo.org/',
+    href: 'https://www.scielo.br/',
     tipo: 'Gratuita',
   },
   {
     nome: 'PubMed',
-    descricao: 'Base de dados da National Library of Medicine com mais de 35 milhões de referências bibliográficas nas ciências da vida e biomedicina.',
-    href: 'https://pubmed.ncbi.nlm.nih.gov/',
+    descricao: 'Base de dados da National Library of Medicine com referências bibliográficas nas ciências da vida e biomedicina.',
+    href: 'https://www.ncbi.nlm.nih.gov/',
+    tipo: 'Gratuita',
+  },
+  {
+    nome: 'ScienceDirect',
+    descricao: 'Plataforma da Elsevier com artigos científicos e capítulos de livros de diversas áreas do conhecimento.',
+    href: 'https://www.sciencedirect.com/',
     tipo: 'Gratuita',
   },
   {
@@ -29,6 +41,42 @@ const bases = [
     descricao: 'Portal de acesso a periódicos científicos nacionais e internacionais disponível para alunos de instituições de ensino superior credenciadas.',
     href: 'https://www.periodicos.capes.gov.br/',
     tipo: 'Acesso via CPF',
+  },
+  {
+    nome: 'Teses CAPES',
+    descricao: 'Catálogo de teses e dissertações defendidas em programas de pós-graduação no Brasil.',
+    href: 'https://www.gov.br/capes/pt-br',
+    tipo: 'Gratuita',
+  },
+  {
+    nome: 'Biblioteca Digital USP',
+    descricao: 'Acervo digital da Universidade de São Paulo, com obras raras e coleções especiais.',
+    href: 'https://www.bbm.usp.br/',
+    tipo: 'Gratuita',
+  },
+  {
+    nome: 'Teses USP',
+    descricao: 'Repositório de teses e dissertações da Universidade de São Paulo.',
+    href: 'https://www.teses.usp.br/',
+    tipo: 'Gratuita',
+  },
+  {
+    nome: 'Domínio Público',
+    descricao: 'Biblioteca digital do governo federal com obras literárias, artísticas e científicas em domínio público.',
+    href: 'https://www.dominiopublico.gov.br/',
+    tipo: 'Gratuita',
+  },
+  {
+    nome: 'Biblioteca Fiocruz',
+    descricao: 'Acervo digital da Fundação Oswaldo Cruz nas áreas de saúde pública e biomedicina.',
+    href: 'https://www.bvsalutz.coc.fiocruz.br/',
+    tipo: 'Gratuita',
+  },
+  {
+    nome: 'Internet Archive',
+    descricao: 'Uma das maiores bibliotecas digitais do mundo, com livros, artigos e publicações históricas.',
+    href: 'https://archive.org/',
+    tipo: 'Gratuita',
   },
 ];
 

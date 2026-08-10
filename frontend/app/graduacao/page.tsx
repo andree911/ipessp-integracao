@@ -39,10 +39,10 @@ const cursos = [
     ),
   },
   {
-    nome: 'Fisioterapia',
+    nome: 'Enfermagem',
     duracao: '4 anos',
     modalidade: 'Presencial',
-    descricao: 'Especialize-se em reabilitação, fisioterapia esportiva e neurológica. Atue em hospitais, clínicas, times esportivos e atendimento domiciliar, transformando a qualidade de vida dos pacientes.',
+    descricao: 'Forme-se para atuar no cuidado direto ao paciente, na gestão de equipes de enfermagem e em toda a rede de atenção à saúde. Um dos cursos com maior empregabilidade da área da saúde.',
     icon: (
       <svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
         <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
@@ -104,7 +104,7 @@ export default function Graduacao() {
               Graduação
             </h1>
             <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 'var(--fs-body)', maxWidth: '580px', lineHeight: 'var(--lh-body)', marginBottom: '36px' }}>
-              4 cursos de graduação presenciais com diplomas reconhecidos pelo MEC. Comece sua trajetória na área da saúde com quem tem 25 anos de excelência.
+              4 cursos de graduação presenciais com diplomas reconhecidos pelo MEC: Enfermagem, Biomedicina, Estética e Cosmética e Gestão Hospitalar. Comece sua trajetória na área da saúde com quem tem 25 anos de excelência.
             </p>
             <a href="#cursos" className="btn btn-primary">
               Ver cursos

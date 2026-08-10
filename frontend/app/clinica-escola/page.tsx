@@ -92,7 +92,7 @@ export default function ClinicaEscolaPage() {
               style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--fs-h1)' }}
               className="font-bold mb-4"
             >
-              Clínica Escola IPESSP
+              Clínica Estética IPESSP
             </h1>
             <p style={{ color: 'rgba(255,255,255,0.7)', maxWidth: '620px' }}>
               Espaço que integra práticas acadêmicas com atendimento à comunidade, com supervisão de
@@ -115,7 +115,7 @@ export default function ClinicaEscolaPage() {
                   Excelência acadêmica aplicada à prática real
                 </h2>
                 <p style={{ color: 'var(--ink-700)', lineHeight: '1.7' }} className="mb-4">
-                  A Clínica Escola da Faculdade IPESSP é um espaço único onde o conhecimento teórico se transforma em
+                  A Clínica Estética da Faculdade IPESSP é um espaço único onde o conhecimento teórico se transforma em
                   atendimento de qualidade para a comunidade. Localizada na sede da faculdade, na Consolação, a clínica
                   oferece tratamentos estéticos, acupuntura e procedimentos integrativos a preços acessíveis.
                 </p>
@@ -273,7 +273,7 @@ export default function ClinicaEscolaPage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a
-                href="https://wa.me/5511976922127"
+                href="https://wa.me/5511998917111"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn btn-white"
@@ -307,11 +307,11 @@ export default function ClinicaEscolaPage() {
                 </div>
                 <h3 style={{ color: 'var(--ink-900)', fontWeight: 700 }} className="mb-2">Telefone</h3>
                 <a
-                  href="tel:+5511976922127"
+                  href="tel:+5511998917111"
                   style={{ color: 'var(--ink-500)', fontSize: '0.9375rem' }}
                   className="hover:text-brand-600 transition-colors"
                 >
-                  (11) 97692-2127
+                  (11) 99891-7111
                 </a>
               </div>
               <div

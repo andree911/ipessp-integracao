@@ -141,7 +141,7 @@ export default function Parceiros() {
               Se você representa um hospital, laboratório, clínica ou entidade da área da saúde e deseja estabelecer uma parceria com o IPESSP, entre em contato com nossa equipe.
             </p>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', justifyContent: 'center' }}>
-              <a href="https://wa.me/5511976922127" target="_blank" rel="noopener noreferrer" className="btn btn-primary">
+              <a href="https://wa.me/5511998917111" target="_blank" rel="noopener noreferrer" className="btn btn-primary">
                 Falar pelo WhatsApp
               </a>
               <a href="mailto:marketing@ipessp.edu.br" className="btn btn-white">

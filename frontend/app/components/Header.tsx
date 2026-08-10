@@ -169,12 +169,12 @@ export default function Header() {
       <div className="hidden md:block text-white text-sm" style={{ background: 'var(--brand-700)' }}>
         <div className="container-site flex items-center justify-between py-2">
           <div className="flex items-center gap-4">
-            <a href="tel:+5511976922127"
+            <a href="tel:+5511998917111"
               className="flex items-center gap-1.5 opacity-90 hover:opacity-100 transition-opacity">
               <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 014.13 11 19.79 19.79 0 011.07 2.36 2 2 0 013.06 0h3a2 2 0 012 1.72c.12.96.36 1.9.7 2.81a2 2 0 01-.45 2.11L7.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.91.34 1.85.58 2.81.7A2 2 0 0122 16.92z"/>
               </svg>
-              (11) 97692-2127
+              (11) 99891-7111
             </a>
             <div className="flex items-center gap-2">
               {socials.map(s => (
@@ -466,9 +466,9 @@ export default function Header() {
                   {s.icon}
                 </a>
               ))}
-              <a href="tel:+5511976922127"
+              <a href="tel:+5511998917111"
                 className="ml-auto text-sm" style={{ color: 'var(--ink-500)' }}>
-                (11) 97692-2127
+                (11) 99891-7111
               </a>
             </div>
           </div>

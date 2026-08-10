@@ -96,9 +96,9 @@ export default function PoloSaoJoseDosComp() {
                         Endereço
                       </h3>
                       <address style={{ color: 'var(--ink-700)', fontSize: 'var(--fs-sm)', lineHeight: 'var(--lh-body)', fontStyle: 'normal' }}>
-                        Av. Dr. João Guilhermino, 429 — Centro<br />
-                        São José dos Campos/SP<br />
-                        CEP: 12210-131
+                        Laboratório Oswaldo Cruz<br />
+                        Praça Cândida Maria Cesar Sawaya Giana, 128<br />
+                        Jardim Nova América — São José dos Campos/SP
                       </address>
                     </div>
                   </div>
@@ -114,14 +114,14 @@ export default function PoloSaoJoseDosComp() {
                         Contato do Polo
                       </h3>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <a href="tel:+551232270000" style={{ color: 'var(--brand-600)', fontSize: 'var(--fs-sm)', fontWeight: 600, textDecoration: 'none' }}>
-                          (12) 3227-0000
+                        <a href="tel:+5511998917111" style={{ color: 'var(--brand-600)', fontSize: 'var(--fs-sm)', fontWeight: 600, textDecoration: 'none' }}>
+                          (11) 99891-7111
                         </a>
-                        <a href="https://wa.me/5512991230000" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--brand-600)', fontSize: 'var(--fs-sm)', fontWeight: 600, textDecoration: 'none' }}>
-                          WhatsApp: (12) 99123-0000
+                        <a href="https://wa.me/5511998917111" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--brand-600)', fontSize: 'var(--fs-sm)', fontWeight: 600, textDecoration: 'none' }}>
+                          WhatsApp: (11) 99891-7111
                         </a>
-                        <a href="mailto:sjc@ipessp.edu.br" style={{ color: 'var(--brand-600)', fontSize: 'var(--fs-sm)', fontWeight: 600, textDecoration: 'none' }}>
-                          sjc@ipessp.edu.br
+                        <a href="mailto:marketing@ipessp.edu.br" style={{ color: 'var(--brand-600)', fontSize: 'var(--fs-sm)', fontWeight: 600, textDecoration: 'none' }}>
+                          marketing@ipessp.edu.br
                         </a>
                       </div>
                     </div>
@@ -163,9 +163,8 @@ export default function PoloSaoJoseDosComp() {
                 </h2>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   {[
-                    { transporte: 'De Carro', instrucoes: 'Localizado no Centro de São José dos Campos, a 5 min do Terminal Central. Estacionamentos conveniados disponíveis nas proximidades. Acesso pela Av. Dr. João Guilhermino.' },
-                    { transporte: 'De Ônibus', instrucoes: 'Linhas 200, 201 e 315 têm parada a 200m do polo. Desça no ponto "Centro – Prefeitura" e siga pela Av. Dr. João Guilhermino.' },
-                    { transporte: 'De São Paulo', instrucoes: 'Acesso via Rodovia Presidente Dutra (BR-116). Tempo médio de 1h30. Ônibus intermunicipais do Terminal Tietê com chegada no Terminal Central de SJC.' },
+                    { transporte: 'De Carro', instrucoes: 'Polo localizado no Jardim Nova América, em São José dos Campos, nas instalações do Laboratório Oswaldo Cruz. Consulte o mapa para a melhor rota a partir da sua localização.' },
+                    { transporte: 'De São Paulo', instrucoes: 'Acesso via Rodovia Presidente Dutra (BR-116). Tempo médio de 1h30 a partir da capital.' },
                   ].map(item => (
                     <div
                       key={item.transporte}
@@ -224,7 +223,7 @@ export default function PoloSaoJoseDosComp() {
                     {curso.nome}
                   </h3>
                   <a
-                    href="https://wa.me/5512991230000"
+                    href="https://wa.me/5511998917111"
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{ color: 'var(--brand-600)', fontSize: 'var(--fs-sm)', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px', marginTop: 'auto' }}
@@ -285,7 +284,7 @@ export default function PoloSaoJoseDosComp() {
               Fale com nossa equipe no polo de SJC e garanta sua vaga nos cursos disponíveis na região.
             </p>
             <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
-              <a href="https://wa.me/5512991230000" target="_blank" rel="noopener noreferrer" className="btn btn-primary">
+              <a href="https://wa.me/5511998917111" target="_blank" rel="noopener noreferrer" className="btn btn-primary">
                 Falar com o Polo SJC
               </a>
               <a href="/fale-conosco" className="btn btn-white">

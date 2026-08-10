@@ -86,27 +86,6 @@ const vagas = [
       'Edital de Monitoria aberto para alunos e ex-alunos interessados em auxiliar na condução de disciplinas práticas e teóricas. Enviar currículo em formato .doc ou .pdf (máx. 2MB) para o e-mail abaixo.',
     destaque: true,
   },
-  {
-    titulo: 'Professor Convidado / Especialista',
-    tipo: 'Banco de Talentos',
-    descricao:
-      'Recebemos currículos de especialistas com titulação de mestrado ou doutorado interessados em lecionar disciplinas nos cursos de pós-graduação.',
-    destaque: false,
-  },
-  {
-    titulo: 'Técnico de Laboratório',
-    tipo: 'Banco de Talentos',
-    descricao:
-      'Buscamos profissionais com experiência em laboratórios de análises clínicas, biomedicina, estética ou farmácia para suporte às atividades práticas.',
-    destaque: false,
-  },
-  {
-    titulo: 'Administrativo / Secretaria',
-    tipo: 'Banco de Talentos',
-    descricao:
-      'Oportunidades para profissionais de secretaria, atendimento, financeiro e gestão acadêmica interessados em integrar o time IPESSP.',
-    destaque: false,
-  },
 ];
 
 export default function TrabalheConoscoPage() {

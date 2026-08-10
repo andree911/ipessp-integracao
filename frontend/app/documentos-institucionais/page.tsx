@@ -5,65 +5,73 @@ import { FONE_DISPLAY, FONE_TEL, WHATSAPP_URL, EMAIL_CONTATO, EMAIL_HREF } from 
 
 const categorias = [
   {
-    titulo: 'Regimento Interno',
-    descricao: 'Normas que regem o funcionamento acadêmico e administrativo da Faculdade IPESSP.',
+    titulo: 'Editais e Processos Seletivos',
+    descricao: 'Editais de processo seletivo, monitoria e publicações no Diário Oficial.',
     documentos: [
-      { nome: 'Regimento Interno Geral – 2024', tamanho: '2,4 MB' },
-      { nome: 'Regulamento Acadêmico dos Alunos', tamanho: '1,8 MB' },
-      { nome: 'Normas para Estágio Curricular', tamanho: '980 KB' },
+      { nome: 'Edital de Processo Seletivo IPESSP 2026-2', href: 'https://www.ipessp.edu.br/site/wp-content/uploads/2026/08/Atualizacao-2026_2-Edital-Processo-Seletivo-IPESSPJuldocx-002.pdf' },
+      { nome: 'Publicação Diário Oficial – 30 de junho de 2026', href: 'https://www.ipessp.edu.br/site/wp-content/uploads/2026/07/e-DiarioOficial-Re-Publicacao-no-Diario.pdf' },
+      { nome: 'Edital de Processo Seletivo IPESSP 2025-2', href: 'https://www.ipessp.edu.br/site/wp-content/uploads/2025/05/Edital-de-Processo-Seletivo-Ipessp-2025_2-002.pdf' },
+      { nome: 'Edital de Processo Seletivo – IPESSP 2023-1', href: 'https://www.ipessp.edu.br/site/wp-content/uploads/2022/10/Edital-de-Processo-Seletivo-Ipessp-2023_1.pdf' },
+      { nome: 'Edital de Processo Seletivo – FIPESSP 2022-2', href: 'https://www.ipessp.edu.br/site/wp-content/uploads/2022/07/Edital-de-Processo-Seletivo_IPESSP_2022.2.pdf' },
+      { nome: 'Edital de Monitoria 2022 Graduação', href: 'https://www.ipessp.edu.br/site/wp-content/uploads/2023/04/Edital-de-Monitoria-2022-Graduacao-IPESSP.pdf' },
     ],
   },
   {
-    titulo: 'PDI – Plano de Desenvolvimento Institucional',
-    descricao: 'Documento que apresenta a missão, visão, metas e estratégias institucionais para o período vigente.',
+    titulo: 'Calendários Acadêmicos',
+    descricao: 'Calendários letivos por semestre.',
     documentos: [
-      { nome: 'PDI 2023–2027', tamanho: '4,2 MB' },
-      { nome: 'PDI 2018–2022 (Referência)', tamanho: '3,7 MB' },
+      { nome: 'Calendário Acadêmico 2023 – 1º Semestre', href: 'https://www.ipessp.edu.br/site/wp-content/uploads/2023/02/CalendarioAcademico2023.pdf' },
+      { nome: 'Calendário Acadêmico 2022 – 1º Semestre', href: 'https://www.ipessp.edu.br/site/wp-content/uploads/2021/10/Calendario-2022.1-004.pdf' },
+      { nome: 'Calendário Acadêmico 2021 – 1º Semestre', href: 'https://www.ipessp.edu.br/site/wp-content/uploads/2021/07/Fipessp-Calendario-Academico-2021-1.pdf' },
+      { nome: 'Calendário Acadêmico 2021 – 2º Semestre', href: 'https://www.ipessp.edu.br/site/wp-content/uploads/2021/07/Fipessp-Calendario-Academico-2021-2.pdf' },
+      { nome: 'Calendário Acadêmico 2020 – 1º Semestre', href: 'https://www.ipessp.edu.br/site/wp-content/uploads/2021/07/Fipessp-Calendario-Academico-2020-1.pdf' },
+      { nome: 'Calendário Acadêmico 2020 – 2º Semestre', href: 'https://www.ipessp.edu.br/site/wp-content/uploads/2021/07/Fipessp-calendario-acadêmico-2020-2.pdf' },
     ],
   },
   {
-    titulo: 'PPI – Projeto Pedagógico Institucional',
-    descricao: 'Diretrizes pedagógicas que norteiam todos os cursos e projetos de ensino da instituição.',
+    titulo: 'Regimento e Estatuto',
+    descricao: 'Documentos normativos gerais da instituição.',
     documentos: [
-      { nome: 'PPI – Versão Atualizada 2024', tamanho: '2,1 MB' },
+      { nome: 'Estatuto da Faculdade IPESSP', href: 'https://www.ipessp.edu.br/site/wp-content/uploads/2025/08/Estatuto-FACULDADE_IPESSP_08112025-1.pdf' },
+      { nome: 'Regimento da Faculdade IPESSP', href: 'https://www.ipessp.edu.br/site/wp-content/uploads/2023/04/Regimento-Faculdade-IPESSP.pdf' },
+      { nome: 'PDI – Plano de Desenvolvimento Institucional 2022', href: 'https://www.ipessp.edu.br/site/wp-content/uploads/2023/04/PDI-IPESSP-2022.pdf' },
+      { nome: 'Programa de Acessibilidade', href: 'https://www.ipessp.edu.br/site/wp-content/uploads/2025/08/PROGRAMA-DE-ACESSIBILIDADE-Finalizado_1.pdf' },
     ],
   },
   {
-    titulo: 'Atas de Reunião',
-    descricao: 'Registros das deliberações dos órgãos colegiados: Colegiado de Curso, NDE e Conselho Superior.',
+    titulo: 'CPA – Comissão Própria de Avaliação',
+    descricao: 'Regulamento, plano de ação e relatórios da autoavaliação institucional.',
     documentos: [
-      { nome: 'Atas do Colegiado de Curso – 2024', tamanho: '1,2 MB' },
-      { nome: 'Atas do NDE – 2024', tamanho: '890 KB' },
-      { nome: 'Atas do Conselho Superior – 2024', tamanho: '1,4 MB' },
+      { nome: 'CPA – Site IPESSP', href: 'https://www.ipessp.edu.br/site/wp-content/uploads/2025/08/CPA-SITE-IPESSP-1-1-4.pdf' },
+      { nome: 'Regulamento CPA IPESSP', href: 'https://www.ipessp.edu.br/site/wp-content/uploads/2025/08/Regulamento-CPA-IPESSP.pdf' },
+      { nome: 'Plano de Ação Coordenação 2023-2', href: 'https://www.ipessp.edu.br/site/wp-content/uploads/2023/04/PLANO-DE-AÇÃO-COORD-2023-1.pdf' },
+      { nome: 'Relatório CPA IPESSP – 03/2023', href: 'https://www.ipessp.edu.br/site/wp-content/uploads/2023/04/Relatorio-CPA-IPESSP-03-2023.pdf' },
     ],
   },
   {
-    titulo: 'Portarias MEC',
-    descricao: 'Atos normativos do Ministério da Educação relativos ao credenciamento e autorização dos cursos.',
+    titulo: 'Regulamentos Acadêmicos',
+    descricao: 'Normas de estágio, monitoria, ouvidoria, avaliação e demais atividades acadêmicas.',
     documentos: [
-      { nome: 'Despacho MEC nº 1272 – Credenciamento (4 jul. 2019)', tamanho: '320 KB' },
-      { nome: 'Portaria de Autorização – Estética e Cosmética', tamanho: '280 KB' },
-      { nome: 'Portaria de Autorização – Biomedicina', tamanho: '275 KB' },
-      { nome: 'Portaria de Autorização – Gestão Hospitalar', tamanho: '290 KB' },
+      { nome: 'Regulamento de Estágio 2025', href: 'https://www.ipessp.edu.br/site/wp-content/uploads/2025/08/REGULAMENTO-ESTAGIO-2025_.docx' },
+      { nome: 'Regulamento da Monitoria', href: 'https://www.ipessp.edu.br/site/wp-content/uploads/2023/04/Regulamento-da-Monitoria-IPESSP.pdf' },
+      { nome: 'Regulamento da Ouvidoria', href: 'https://www.ipessp.edu.br/site/wp-content/uploads/2025/08/Regulamento-da-Ouvidoria-IPESSP.pdf' },
+      { nome: 'Regulamento de Avaliação de Aprendizagem', href: 'https://www.ipessp.edu.br/site/wp-content/uploads/2023/04/Regulamento-Avaliacao-de-Aprendizarem-IPESSP.pdf' },
+      { nome: 'Regulamento de Atividades Complementares', href: 'https://www.ipessp.edu.br/site/wp-content/uploads/2023/04/Regulamento-Atividades-Complementares-IPESSP.pdf' },
+      { nome: 'Regulamento de Iniciação Científica', href: 'https://www.ipessp.edu.br/site/wp-content/uploads/2025/08/Regulamento-de-Iniciacao-Cientifica-IPESSP.pdf' },
+      { nome: 'Regulamento de NEE – Apoio ao Estudante', href: 'https://www.ipessp.edu.br/site/wp-content/uploads/2023/04/Regulamento-de-NEE-Apoio-ao-Estudante-IPESSP.pdf' },
+      { nome: 'Regulamento de Concessão de Bolsas e Benefícios', href: 'https://www.ipessp.edu.br/site/wp-content/uploads/2023/04/Regulamento-de-Concessao-de-Bolsas-e-Beneficios-IPESSP.pdf' },
+      { nome: 'Regulamento do Programa de Nivelamento 2022', href: 'https://www.ipessp.edu.br/site/wp-content/uploads/2023/04/Regulamento-do-Programa-de-Nivelamento-IPESSP-2022.pdf' },
+      { nome: 'Regulamento do Projeto de Extensão e Trabalho Interdisciplinar Integrador', href: 'https://www.ipessp.edu.br/site/wp-content/uploads/2023/04/Regulamento-do-Projeto-de-Extensao-e-Trabalho-Interdisciplinar-Integrador-IPESSP.pdf' },
     ],
   },
   {
-    titulo: 'Relatórios CPA',
-    descricao: 'Relatórios anuais de autoavaliação institucional elaborados pela Comissão Própria de Avaliação.',
+    titulo: 'Manuais e Metodologia',
+    descricao: 'Manual do aluno, metodologia EAD e portfólio do ambiente virtual de aprendizagem.',
     documentos: [
-      { nome: 'Relatório CPA 2024', tamanho: '3,1 MB' },
-      { nome: 'Relatório CPA 2023', tamanho: '2,9 MB' },
-      { nome: 'Relatório CPA 2022', tamanho: '2,7 MB' },
-    ],
-  },
-  {
-    titulo: 'Planos de Curso',
-    descricao: 'Projetos pedagógicos de cada curso oferecido, com objetivos, competências e ementas disciplinares.',
-    documentos: [
-      { nome: 'PPC – Estética e Cosmética', tamanho: '5,2 MB' },
-      { nome: 'PPC – Biomedicina', tamanho: '4,8 MB' },
-      { nome: 'PPC – Gestão Hospitalar', tamanho: '4,3 MB' },
-      { nome: 'PPC – Fisioterapia', tamanho: '5,5 MB' },
+      { nome: 'Manual do Aluno 2022-2 – Graduação', href: 'https://www.ipessp.edu.br/site/wp-content/uploads/2025/08/MANUAL-DO-ALUNO-2022_2-Graduacao.pdf' },
+      { nome: 'Metodologia EAD', href: 'https://www.ipessp.edu.br/site/wp-content/uploads/2023/04/Metodologia-EAD-IPESSP.pdf' },
+      { nome: 'Portfólio do Moodle', href: 'https://www.ipessp.edu.br/site/wp-content/uploads/2023/04/Portifolio-do-Moodle-IPESSP.pdf' },
+      { nome: 'Acompanhamento dos Egressos', href: 'https://www.ipessp.edu.br/site/wp-content/uploads/2023/04/Acompanhamento-dos-egressos-IPESSP.pdf' },
     ],
   },
 ];
@@ -161,13 +169,17 @@ export default function DocumentosInstitucionaisPage() {
                   </div>
                   <div style={{ background: 'var(--surface)' }}>
                     {cat.documentos.map((doc, i) => (
-                      <div
+                      <a
                         key={doc.nome}
+                        href={doc.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="documento-row px-7 py-4 flex items-center gap-3 transition-colors"
                         style={{
                           borderTop: i === 0 ? 'none' : '1px solid var(--line)',
                           cursor: 'pointer',
                           background: 'var(--surface)',
+                          textDecoration: 'none',
                         }}
                       >
                         <PdfIcon />
@@ -180,15 +192,14 @@ export default function DocumentosInstitucionaisPage() {
                           </p>
                         </div>
                         <div className="flex items-center gap-3 flex-shrink-0">
-                          <span style={{ color: 'var(--ink-400)', fontSize: '0.75rem' }}>{doc.tamanho}</span>
                           <span
                             className="text-xs font-semibold px-2.5 py-1 rounded-full"
                             style={{ background: 'var(--brand-50)', color: 'var(--brand-700)' }}
                           >
-                            PDF
+                            {doc.href.endsWith('.docx') ? 'DOCX' : 'PDF'}
                           </span>
                         </div>
-                      </div>
+                      </a>
                     ))}
                   </div>
                 </div>

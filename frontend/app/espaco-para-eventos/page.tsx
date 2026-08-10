@@ -18,10 +18,10 @@ const espacos = [
         <polyline points="9 22 9 12 15 12 15 22"/>
       </svg>
     ),
-    nome: 'Anfiteatro Principal',
-    capacidade: '180 pessoas',
-    descricao: 'Espaço amplo e moderno ideal para congressos, simpósios, palestras e grandes eventos acadêmicos. Equipado com sistema audiovisual de última geração, telão de projeção duplo, sonorização profissional e iluminação cênica.',
-    recursos: ['Sistema de som profissional', 'Dois telões de projeção', 'Transmissão ao vivo', 'Filmagem inclusa', 'Ar-condicionado central', 'Acessibilidade total'],
+    nome: 'Salas Grandes',
+    capacidade: '100 pessoas',
+    descricao: '2 salas amplas ideais para congressos, feiras de negócios, exposições e premiações. Equipadas com projetor, wi-fi de alta velocidade e ar-condicionado.',
+    recursos: ['2 salas disponíveis', 'Projetor', 'Wi-fi de alta velocidade', 'Ar-condicionado', 'Sala VIP', 'Acessibilidade'],
   },
   {
     icone: (
@@ -31,10 +31,10 @@ const espacos = [
         <line x1="9" y1="21" x2="9" y2="9"/>
       </svg>
     ),
-    nome: 'Anfiteatro Secundário',
-    capacidade: '80 pessoas',
-    descricao: 'Perfeito para workshops, treinamentos corporativos, defesas de tese e eventos de médio porte. Conta com projetor fixo, quadro branco interativo e mobiliário configurável para diferentes formatos.',
-    recursos: ['Projetor de alta resolução', 'Quadro interativo', 'Mobiliário flexível', 'Microfone sem fio', 'Ar-condicionado', 'Acesso independente'],
+    nome: 'Salas Médias',
+    capacidade: '50 pessoas',
+    descricao: '6 salas para workshops, treinamentos corporativos, palestras e eventos de médio porte. Conta com projetor e mobiliário configurável.',
+    recursos: ['6 salas disponíveis', 'Projetor', 'Mobiliário flexível', 'Wi-fi de alta velocidade', 'Ar-condicionado', 'Acesso independente'],
   },
   {
     icone: (
@@ -44,21 +44,10 @@ const espacos = [
         <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
       </svg>
     ),
-    nome: 'Salas de Reunião e Workshop',
-    capacidade: 'Até 40 pessoas cada',
-    descricao: '10 salas de aula modernas disponíveis para cursos de extensão, workshops, treinamentos e reuniões corporativas. Cada sala é equipada com ar-condicionado, projetor e internet de alta velocidade.',
-    recursos: ['10 salas disponíveis', 'Projetor individual', 'Internet fibra óptica', 'Ar-condicionado', 'Lousa e pincel', 'Configuração personalizável'],
-  },
-  {
-    icone: (
-      <svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="1.6" viewBox="0 0 24 24">
-        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-      </svg>
-    ),
-    nome: 'Laboratórios para Demonstrações',
-    capacidade: 'Até 30 pessoas',
-    descricao: '5 laboratórios especializados que podem ser utilizados para demonstrações práticas, cursos técnicos e treinamentos com equipamentos reais. Ideal para eventos científicos na área da saúde.',
-    recursos: ['Equipamentos biomédicos reais', '5 laboratórios temáticos', 'Proteção e EPI disponíveis', 'Supervisão técnica', 'Bancadas equipadas', 'Climatização controlada'],
+    nome: 'Salas Padrão',
+    capacidade: '30 pessoas',
+    descricao: '4 salas compactas para reuniões, cursos de extensão e treinamentos corporativos, com estrutura completa de coworking.',
+    recursos: ['4 salas disponíveis', 'Projetor', 'Wi-fi de alta velocidade', 'Ar-condicionado', 'Café/restaurante', 'Estacionamento'],
   },
 ];
 
@@ -148,10 +137,10 @@ export default function EspacoParaEventos() {
               Institucional
             </p>
             <h1 style={{ color: 'white', fontFamily: 'var(--font-display)', fontSize: 'var(--fs-display)', fontWeight: 700, lineHeight: 'var(--lh-tight)', maxWidth: '680px', marginBottom: '20px' }}>
-              Espaço para Eventos
+              Centro de Eventos
             </h1>
             <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 'var(--fs-body)', maxWidth: '600px', lineHeight: 'var(--lh-body)' }}>
-              4.000 m² de infraestrutura moderna no coração de São Paulo para congressos, simpósios, workshops e eventos corporativos na área da saúde.
+              Um espaço de coworking e eventos com localização privilegiada na região da Av. Paulista, para feiras de negócios, eventos corporativos, desfiles, exposições, palestras e premiações.
             </p>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginTop: '28px' }}>
               <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="btn btn-primary">
@@ -174,7 +163,7 @@ export default function EspacoParaEventos() {
                 Ambientes para cada tipo de evento
               </h2>
               <p style={{ color: 'var(--ink-700)', fontSize: 'var(--fs-body)', lineHeight: 'var(--lh-body)', maxWidth: '580px', margin: '0 auto' }}>
-                Desde pequenos workshops até grandes congressos, o IPESSP tem o espaço ideal para o seu evento na área da saúde.
+                Desde pequenas reuniões até grandes feiras de negócios, o IPESSP tem o espaço ideal para o seu evento.
               </p>
             </div>
 
