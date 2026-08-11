@@ -302,4 +302,33 @@ export class IaService {
       email: registro.email ?? null,
     };
   }
+
+  /**
+   * Encaminha o atendimento do chatbot pra um humano do setor, via WhatsApp
+   * — usado pelas tools "Encaminhar para Humano (Financeiro/Secretaria)" do
+   * bot quando o usuário pede um atendente ou o agente de IA não consegue
+   * resolver. `erro` (sem lançar exceção) é lido pela IA pra avisar o
+   * usuário adequadamente, mesmo quando o setor ainda não tem número
+   * configurado.
+   */
+  async encaminharHumano(
+    setor: 'financeiro' | 'secretaria',
+    telefone: string,
+    resumo: string,
+  ): Promise<{ ok: boolean; erro?: string }> {
+    const destino = this.config.get<string>(
+      setor === 'financeiro' ? 'zapi.telefoneFinanceiro' : 'zapi.telefoneSecretaria',
+    );
+    if (!destino) {
+      this.logger.warn(`Encaminhamento pra humano (${setor}) sem número configurado — mensagem não enviada`);
+      return {
+        ok: false,
+        erro: `Ainda não há um atendente humano configurado para ${setor} por aqui — avise o usuário que ele pode ligar ou mandar e-mail pros canais oficiais.`,
+      };
+    }
+
+    const mensagem = `🔔 *Atendimento humano solicitado — ${setor === 'financeiro' ? 'Financeiro' : 'Secretaria'}*\n\nContato do aluno: ${telefone}\n\n${resumo}`;
+    await this.whatsapp.enviarTexto(destino, mensagem);
+    return { ok: true };
+  }
 }

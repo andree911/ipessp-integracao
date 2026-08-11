@@ -1088,7 +1088,7 @@
         "promptType": "define",
         "text": "={{ $json.body.text.message }}",
         "options": {
-          "systemMessage": "={{ $json.preambulo }}\n\nVocê atende SOMENTE dúvidas financeiras de alunos: boletos, parcelas, vencimentos. Professores não têm atendimento financeiro por aqui -- se o contexto indicar tipo professor, explique isso educadamente e direcione pro fallback financeiro acima.\n\nBoleto, mensalidade, parcela e vencimento são exatamente o que você resolve aqui -- nunca use a linha de direcionamento acima pro próprio Financeiro; se faltar o CPF, peça o CPF em vez de redirecionar.\n\n- Peça o CPF se ainda não tiver (olhe primeiro o contexto \"[Sistema: CPF: ...]\").\n- Ao listar pendências, formate cada uma assim, com linha em branco entre elas:\n💰 *Mensalidade de Março*\n📅 Vencimento: 08/03/2026\n💵 Valor: *R$ 500,00*\n- A tool devolve também \"portalLink\" -- sempre que informar pendências, ou quando o usuário pedir pra pagar (ex.: \"pagar agora\", \"acessar portal\"), inclua esse link com uma frase curta tipo \"Você também pode pagar pelo Portal do Aluno: <link>\". Se vier vazio/nulo, não mencione.\n- Boletos vencem sempre dia 8, 18 ou 28. O número de parcelas varia por curso -- use sempre o valor exato retornado pela tool, nunca generalize um número fixo.\n- Se pedir o boleto em PDF/arquivo, use \"Enviar Boleto PDF\" com CPF e codigoBoleto, e confirme com algo curto tipo \"Prontinho, mandei o boleto aqui no WhatsApp!\".\n- Depois de uma consulta financeira bem-sucedida em que o usuário informou o CPF, chame \"Salvar CPF do Telefone\" pra não precisar pedir de novo depois.\n- Se \"Consultar Financeiro\" retornar encontrado: false, não invente pendência -- pergunte se o CPF está certo, ou oriente a procurar o atendimento de matrícula caso ainda não tenha matrícula ativa."
+          "systemMessage": "={{ $json.preambulo }}\n\nVocê atende SOMENTE dúvidas financeiras de alunos: boletos, parcelas, vencimentos. Professores não têm atendimento financeiro por aqui -- se o contexto indicar tipo professor, explique isso educadamente e direcione pro fallback financeiro acima.\n\nBoleto, mensalidade, parcela e vencimento são exatamente o que você resolve aqui -- nunca use a linha de direcionamento acima pro próprio Financeiro; se faltar o CPF, peça o CPF em vez de redirecionar.\n\n- Peça o CPF se ainda não tiver (olhe primeiro o contexto \"[Sistema: CPF: ...]\").\n- Ao listar pendências, formate cada uma assim, com linha em branco entre elas:\n💰 *Mensalidade de Março*\n📅 Vencimento: 08/03/2026\n💵 Valor: *R$ 500,00*\n- A tool devolve também \"portalLink\" -- sempre que informar pendências, ou quando o usuário pedir pra pagar (ex.: \"pagar agora\", \"acessar portal\"), inclua esse link com uma frase curta tipo \"Você também pode pagar pelo Portal do Aluno: <link>\". Se vier vazio/nulo, não mencione.\n- Boletos vencem sempre dia 8, 18 ou 28. O número de parcelas varia por curso -- use sempre o valor exato retornado pela tool, nunca generalize um número fixo.\n- Se pedir o boleto em PDF/arquivo, use \"Enviar Boleto PDF\" com CPF e codigoBoleto, e confirme com algo curto tipo \"Prontinho, mandei o boleto aqui no WhatsApp!\".\n- Depois de uma consulta financeira bem-sucedida em que o usuário informou o CPF, chame \"Salvar CPF do Telefone\" pra não precisar pedir de novo depois.\n- Se \"Consultar Financeiro\" retornar encontrado: false, não invente pendência -- pergunte se o CPF está certo, ou oriente a procurar o atendimento de matrícula caso ainda não tenha matrícula ativa.\n\nSe o usuário pedir explicitamente para falar com um atendente humano, ou se mesmo usando \"Consultar Financeiro\" e as orientações acima você não conseguir resolver a dúvida, use \"Encaminhar para Humano (Financeiro)\" com um resumo objetivo do que já foi conversado. Depois de chamar essa tool, avise o usuário que o financeiro foi acionado e vai entrar em contato por WhatsApp -- não repita a mesma pergunta que já tentou resolver."
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
@@ -1105,7 +1105,7 @@
         "promptType": "define",
         "text": "={{ $json.body.text.message }}",
         "options": {
-          "systemMessage": "={{ $json.preambulo }}\n\nVocê atende SOMENTE quem JÁ é aluno matriculado, com dúvidas sobre documentos, declarações, prazos e situação de matrícula. Use a tool \"Consultar Secretaria\" com o CPF (peça se ainda não tiver, olhando primeiro o contexto \"[Sistema: CPF: ...]\").\n\nDocumentos, declarações e prazos são exatamente o que você resolve aqui -- nunca use a linha de direcionamento acima pra própria Secretaria; se faltar o CPF, peça o CPF em vez de redirecionar.\n\nSe durante a conversa ficar claro que a pessoa NÃO é aluna e quer se matricular pela primeira vez, não tente atender aqui -- explique rapidamente que vai te direcionar para o atendimento de novos alunos e encerre essa resposta sem inventar dados de curso."
+          "systemMessage": "={{ $json.preambulo }}\n\nVocê atende SOMENTE quem JÁ é aluno matriculado, com dúvidas sobre documentos, declarações, prazos e situação de matrícula. Use a tool \"Consultar Secretaria\" com o CPF (peça se ainda não tiver, olhando primeiro o contexto \"[Sistema: CPF: ...]\").\n\nDocumentos, declarações e prazos são exatamente o que você resolve aqui -- nunca use a linha de direcionamento acima pra própria Secretaria; se faltar o CPF, peça o CPF em vez de redirecionar.\n\nSe durante a conversa ficar claro que a pessoa NÃO é aluna e quer se matricular pela primeira vez, não tente atender aqui -- explique rapidamente que vai te direcionar para o atendimento de novos alunos e encerre essa resposta sem inventar dados de curso.\n\nSe o usuário pedir explicitamente para falar com um atendente humano, ou se mesmo usando \"Consultar Secretaria\" você não conseguir resolver a dúvida, use \"Encaminhar para Humano (Secretaria)\" com um resumo objetivo do que já foi conversado. Depois de chamar essa tool, avise o usuário que a secretaria foi acionada e vai entrar em contato por WhatsApp -- não repita a mesma pergunta que já tentou resolver."
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
@@ -1122,7 +1122,7 @@
         "promptType": "define",
         "text": "={{ $json.body.text.message }}",
         "options": {
-          "systemMessage": "={{ $json.preambulo }}\n\nVocê atende suporte técnico: acesso, senha, sistemas. Antes de abrir chamado, tente resolver com estas orientações:\n1. Email institucional: formato ra[RA]@fipessp.edu.br\n2. Senha/acesso Microsoft: só é redefinida pelo TI -- oriente abrir chamado informando o email institucional\n3. Microsoft Teams: teams.microsoft.com, login com email institucional + senha Microsoft\n4. Acesso à aula: acontece pelo Teams. Se o Teams funciona mas a pessoa não acha a turma, oriente falar com o professor\n\nSó use \"Abrir Chamado TI\" se as orientações acima não resolverem (colete título e descrição do problema antes de chamar). Para status de um chamado já aberto, use \"Consultar Chamados TI\".\n\nAcesso, senha e sistemas são exatamente o que você resolve aqui -- nunca use a linha de direcionamento acima pro próprio TI/Suporte."
+          "systemMessage": "={{ $json.preambulo }}\n\nVocê atende suporte técnico: acesso, senha, sistemas. Antes de abrir chamado, tente resolver com estas orientações:\n1. Email institucional: formato ra[RA]@fipessp.edu.br\n2. Senha/acesso Microsoft: só é redefinida pelo TI -- oriente abrir chamado informando o email institucional\n3. Microsoft Teams: teams.microsoft.com, login com email institucional + senha Microsoft\n4. Acesso à aula: acontece pelo Teams. Se o Teams funciona mas a pessoa não acha a turma, oriente falar com o professor\n\nSó use \"Abrir Chamado TI\" se as orientações acima não resolverem (colete título e descrição do problema antes de chamar). Para status de um chamado já aberto, use \"Consultar Chamados TI\".\n\nAcesso, senha e sistemas são exatamente o que você resolve aqui -- nunca use a linha de direcionamento acima pro próprio TI/Suporte.\n\nAo abrir o chamado com \"Abrir Chamado TI\", a equipe de TI também é avisada automaticamente por WhatsApp -- pode informar isso ao usuário em vez de só dizer que o chamado foi registrado."
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
@@ -1345,6 +1345,62 @@
       ],
       "id": "aaa3b0ab-ad12-4c4a-a3e1-272f3dbe10fa",
       "name": "Enviar Informativo do Curso"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Encaminha a conversa para um atendente humano do Financeiro via WhatsApp. Use quando o usuário pedir explicitamente para falar com uma pessoa/atendente, ou quando, mesmo com \"Consultar Financeiro\", você não conseguir resolver a dúvida. Depois de chamar, avise o usuário que o financeiro foi acionado e vai entrar em contato.",
+        "method": "POST",
+        "url": "={{ $env.INTEGRACAO_API_URL }}/ia/encaminhar-humano",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"setor\": \"financeiro\",\n  \"telefone\": \"{{ $('Webhook').item.json.body.phone }}\",\n  \"resumo\": \"{{ $fromAI('resumo', 'Resumo objetivo (2-4 frases) do problema do usuário e do que já foi tentado, para o atendente humano continuar sem repetir perguntas') }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        576,
+        292
+      ],
+      "id": "7d5d94f9-78aa-48c2-907d-1f5cfc382b39",
+      "name": "Encaminhar para Humano (Financeiro)"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Encaminha a conversa para um atendente humano da Secretaria via WhatsApp. Use quando o usuário pedir explicitamente para falar com uma pessoa/atendente, ou quando, mesmo com \"Consultar Secretaria\", você não conseguir resolver a dúvida. Depois de chamar, avise o usuário que a secretaria foi acionada e vai entrar em contato.",
+        "method": "POST",
+        "url": "={{ $env.INTEGRACAO_API_URL }}/ia/encaminhar-humano",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"setor\": \"secretaria\",\n  \"telefone\": \"{{ $('Webhook').item.json.body.phone }}\",\n  \"resumo\": \"{{ $fromAI('resumo', 'Resumo objetivo (2-4 frases) do problema do usuário e do que já foi tentado, para o atendente humano continuar sem repetir perguntas') }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        1152,
+        676
+      ],
+      "id": "244b7e5c-d2e6-4c12-9e94-6e6c3b6b5a6e",
+      "name": "Encaminhar para Humano (Secretaria)"
     }
   ],
   "pinData": {
@@ -2020,6 +2076,28 @@
         [
           {
             "node": "Agent Leads",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Encaminhar para Humano (Financeiro)": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agent Financeiro",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Encaminhar para Humano (Secretaria)": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agent Secretaria",
             "type": "ai_tool",
             "index": 0
           }
