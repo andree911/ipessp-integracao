@@ -79,23 +79,12 @@ export default () => ({
     emailNotificacoes: process.env.ESCOLA_EMAIL_NOTIFICACOES ?? '',
     linkPortalAluno: process.env.EMAIL_PORTAL_ALUNO_URL ?? '',
   },
-  n8n: {
-    leadsWebhookUrl: process.env.N8N_LEADS_WEBHOOK_URL ?? '',
-  },
   zapi: {
     instanceId: process.env.ZAPI_INSTANCE_ID ?? '',
     token: process.env.ZAPI_TOKEN ?? '',
     clientToken: process.env.ZAPI_CLIENT_TOKEN ?? '',
     telefoneFinanceiro: process.env.ZAPI_TELEFONE_FINANCEIRO ?? '',
-    // Consultoras de marketing avisadas por WhatsApp assim que a IA registra um lead novo
-    telefonesConsultorasMarketing: (process.env.ZAPI_TELEFONES_CONSULTORAS_MARKETING ?? '')
-      .split(',')
-      .map((t) => t.trim())
-      .filter(Boolean),
     cronHabilitado: process.env.WPP_CRON_HABILITADO ?? 'false',
-    // Toggle separado do de cobrança acima — nutrição de lead e lembrete
-    // financeiro são jobs distintos, cada um liga/desliga sozinho
-    leadNurturingCronHabilitado: process.env.LEAD_WPP_CRON_HABILITADO ?? 'false',
     diasAntes: (process.env.WPP_DIAS_ANTES ?? '7,5,3,1')
       .split(',')
       .map((d) => parseInt(d.trim(), 10)),
@@ -111,13 +100,4 @@ export default () => ({
     apiKey: process.env.ADMIN_API_KEY ?? '',
   },
   backendUrl: process.env.BACKEND_URL ?? '',
-  mercadopago: {
-    accessToken: process.env.MP_ACCESS_TOKEN ?? '',
-    sandbox: process.env.MP_SANDBOX !== 'false',
-    successUrl: process.env.MP_SUCCESS_URL ?? '',
-    failureUrl: process.env.MP_FAILURE_URL ?? '',
-    pendingUrl: process.env.MP_PENDING_URL ?? '',
-    notificationUrl: process.env.MP_NOTIFICATION_URL ?? '',
-    webhookSecret: process.env.MP_WEBHOOK_SECRET ?? '',
-  },
 });

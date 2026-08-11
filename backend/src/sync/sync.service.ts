@@ -5,7 +5,6 @@ import { Repository } from 'typeorm';
 import { SophiaService } from '../sophia/sophia.service';
 import { ImportacaoService } from '../financeiro/importacao.service';
 import { ResponsavelCache } from '../ia/entities/responsavel-cache.entity';
-import { Lead } from '../leads/entities/lead.entity';
 import { AlunoApiModel } from '../sophia/types/sophia.types';
 import { errMsg, errStack } from '../common/err.util';
 
@@ -21,8 +20,6 @@ export class SyncService {
     private readonly importacao: ImportacaoService,
     @InjectRepository(ResponsavelCache)
     private readonly cacheRepo: Repository<ResponsavelCache>,
-    @InjectRepository(Lead)
-    private readonly leadRepo: Repository<Lead>,
   ) {}
 
   async triggerSync(): Promise<{ message: string }> {
@@ -63,8 +60,6 @@ export class SyncService {
           }
         }
       }
-
-      await this.reconciliarLeadsPagina(alunos);
 
       this.logger.log(
         `=== Sincronização concluída: ${totalAlunos} alunos, ${totalClientes} clientes, ${totalLancamentos} lançamentos ===`,
@@ -133,32 +128,5 @@ export class SyncService {
     }
 
     return { processado: true, clientes, lancamentos };
-  }
-
-  private async reconciliarLeadsPagina(
-    alunos: { codigo: number; nome: string; email?: string }[],
-  ): Promise<void> {
-    const emailMap = new Map<string, number>();
-    for (const aluno of alunos) {
-      if (aluno.email) emailMap.set(aluno.email.toLowerCase(), aluno.codigo);
-    }
-    if (emailMap.size === 0) return;
-
-    const emails = [...emailMap.keys()];
-    const leads = await this.leadRepo
-      .createQueryBuilder('l')
-      .where('l.sophiaAlunoId IS NULL')
-      .andWhere('LOWER(l.email) IN (:...emails)', { emails })
-      .getMany();
-
-    for (const lead of leads) {
-      const codigoAluno = emailMap.get(lead.email.toLowerCase());
-      if (!codigoAluno) continue;
-      await this.leadRepo.update(lead.id, { sophiaAlunoId: codigoAluno, status: 'matriculado' });
-    }
-
-    if (leads.length > 0) {
-      this.logger.log(`Leads reconciliados: ${leads.length} marcados como matriculados`);
-    }
   }
 }

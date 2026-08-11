@@ -5,11 +5,10 @@ import { SyncController } from './sync.controller';
 import { SophiaModule } from '../sophia/sophia.module';
 import { FinanceiroModule } from '../financeiro/financeiro.module';
 import { ResponsavelCache } from '../ia/entities/responsavel-cache.entity';
-import { Lead } from '../leads/entities/lead.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ResponsavelCache, Lead]),
+    TypeOrmModule.forFeature([ResponsavelCache]),
     SophiaModule,
     FinanceiroModule,
   ],

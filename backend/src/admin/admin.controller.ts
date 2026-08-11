@@ -14,82 +14,22 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { AdminApiKeyGuard } from './guards/admin-api-key.guard';
-import { Lead } from '../leads/entities/lead.entity';
-import { LeadsService } from '../leads/leads.service';
-import { MoverEstagioDto } from '../leads/dto/mover-estagio.dto';
-import { ReatribuirLeadDto } from '../leads/dto/reatribuir-lead.dto';
 import { FinanceiroService } from '../financeiro/financeiro.service';
 import { EmailJobService } from '../email/email-job.service';
 import { WhatsAppService } from '../email/whatsapp.service';
 import { SophiaService } from '../sophia/sophia.service';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 
 @Controller('v1/admin')
 @UseGuards(ThrottlerGuard, AdminApiKeyGuard)
 @Throttle({ default: { limit: 30, ttl: 60000 } })
 export class AdminController {
   constructor(
-    @InjectRepository(Lead) private readonly leadRepo: Repository<Lead>,
-    private readonly leadsService: LeadsService,
     private readonly financeiroService: FinanceiroService,
     private readonly emailJobService: EmailJobService,
     private readonly whatsapp: WhatsAppService,
     private readonly sophia: SophiaService,
     private readonly config: ConfigService,
   ) {}
-
-  // ─── Leads / CRM ─────────────────────────────────────────────────────────────
-
-  @Get('leads')
-  listarLeads(
-    @Query('status') status?: string,
-    @Query('origem') origem?: string,
-    @Query('de') de?: string,
-    @Query('ate') ate?: string,
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-  ) {
-    return this.leadsService.listar({
-      status,
-      origem,
-      de,
-      ate,
-      page: page ? Number(page) : undefined,
-      limit: limit ? Number(limit) : undefined,
-    });
-  }
-
-  @Get('leads/funil')
-  funil() {
-    return this.leadsService.relatorio();
-  }
-
-  @Get('leads/:id')
-  buscarLead(@Param('id', ParseIntPipe) id: number) {
-    return this.leadsService.buscarPorId(id);
-  }
-
-  @Get('leads/:id/historico')
-  historicoLead(@Param('id', ParseIntPipe) id: number) {
-    return this.leadsService.getHistorico(id);
-  }
-
-  @Patch('leads/:id/estagio')
-  moverEstagioLead(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: MoverEstagioDto,
-  ) {
-    return this.leadsService.moverEstagio(id, dto);
-  }
-
-  @Patch('leads/:id/reatribuir')
-  reatribuirLead(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: ReatribuirLeadDto,
-  ) {
-    return this.leadsService.reatribuir(id, dto.observacao);
-  }
 
   // ─── Financeiro ──────────────────────────────────────────────────────────────
 

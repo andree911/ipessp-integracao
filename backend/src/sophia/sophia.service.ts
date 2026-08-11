@@ -147,57 +147,6 @@ export class SophiaService implements OnModuleInit {
     );
   }
 
-  async criarCliente(dados: {
-    nome: string;
-    cpf?: string;
-    email?: string;
-    telefone?: string;
-    sexo?: 'M' | 'F';
-    dataNascimento?: string;   // YYYY-MM-DD
-    observacao?: string;
-    // Preenchidos = vira "interesse" no Sophia (curso pretendido pelo prospecto).
-    // Formato exato ({ descricao }) ainda não validado em produção — ver documentacao/BACKEND.md.
-    unidade?: string;
-    curso?: string;
-    turno?: string;
-    periodoLetivo?: string;
-  }): Promise<unknown> {
-    const nascimento = dados.dataNascimento ?? '1990-01-01';
-    const body: Record<string, unknown> = {
-      nome:            dados.nome,
-      sexo:            dados.sexo ?? 'M',
-      dataNascimento:  `${nascimento}T00:00:00`,
-    };
-    if (dados.cpf) body.cpf = dados.cpf;
-    if (dados.observacao) body.observacao = dados.observacao;
-    if (dados.email || dados.telefone) {
-      const contatos: Array<{ tipo: string; valor: string }> = [];
-      if (dados.email) contatos.push({ tipo: 'email', valor: dados.email });
-      if (dados.telefone) contatos.push({ tipo: 'celular', valor: dados.telefone });
-      body.contatos = contatos;
-    }
-    if (dados.unidade || dados.curso || dados.turno || dados.periodoLetivo) {
-      body.interesse = {
-        ...(dados.unidade ? { unidade: { descricao: dados.unidade } } : {}),
-        ...(dados.curso ? { curso: { descricao: dados.curso } } : {}),
-        ...(dados.turno ? { turno: { descricao: dados.turno } } : {}),
-        ...(dados.periodoLetivo ? { periodo: { descricao: dados.periodoLetivo } } : {}),
-      };
-    }
-    this.logger.log(`SophiA criarCliente → body: ${JSON.stringify(body)}`);
-    try {
-      // enviarEmail=false: quem envia a comunicação pro aluno é o próprio backend
-      // (WhatsApp/e-mail já disparados no fluxo de matrícula), não o Sophia.
-      const resultado = await this.post<unknown>(`${this.apiBase}/clientes?enviarEmail=false`, body);
-      this.logger.log(`SophiA criarCliente ← resposta: ${JSON.stringify(resultado)}`);
-      return resultado;
-    } catch (err: unknown) {
-      const detail = axiosDetail(err);
-      this.logger.error(`SophiA criarCliente erro: ${JSON.stringify(detail)}`);
-      throw err;
-    }
-  }
-
   async getAlunoById(id: number): Promise<AlunoDetalhadoApiModel> {
     return this.get<AlunoDetalhadoApiModel>(`${this.apiBase}/Alunos/${id}`);
   }
