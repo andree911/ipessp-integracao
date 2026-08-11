@@ -497,13 +497,7 @@ function redesSociais(data: RedesSociaisData): string {
       ${redes.map(({ icone, nome, url }) => `
       <td style="padding:0 10px;text-align:center;">
         <a href="${url}" target="_blank" style="text-decoration:none;">
-          <table cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;">
-            <tr>
-              <td width="36" height="36" bgcolor="#ffffff" align="center" valign="middle" style="width:36px;height:36px;background-color:#ffffff;border-radius:50%;">
-                <img src="${iconUrl(data, icone)}" width="20" height="20" alt="${nome}" style="width:20px;height:20px;display:block;border:0;">
-              </td>
-            </tr>
-          </table>
+          <img src="${iconUrl(data, icone)}" width="40" height="40" alt="${nome}" style="width:40px;height:40px;display:block;border:0;border-radius:50%;">
         </a>
         <p style="margin:6px 0 0;font-size:9px;color:rgba(255,255,255,0.7);font-family:Arial,sans-serif;">${nome}</p>
       </td>`).join('')}
