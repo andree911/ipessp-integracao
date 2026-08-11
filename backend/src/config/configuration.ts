@@ -90,6 +90,9 @@ export default () => ({
     token: process.env.ZAPI_TOKEN ?? '',
     clientToken: process.env.ZAPI_CLIENT_TOKEN ?? '',
     telefoneFinanceiro: process.env.ZAPI_TELEFONE_FINANCEIRO ?? '',
+    // Avisado por WhatsApp quando o chatbot encaminha um atendimento de secretaria
+    // pra humano (ver IaService.encaminharHumano) — mesmo padrão de telefoneFinanceiro acima.
+    telefoneSecretaria: process.env.ZAPI_TELEFONE_SECRETARIA ?? '',
     // Consultoras de marketing avisadas por WhatsApp assim que a IA registra um lead novo
     telefonesConsultorasMarketing: (process.env.ZAPI_TELEFONES_CONSULTORAS_MARKETING ?? '')
       .split(',')
