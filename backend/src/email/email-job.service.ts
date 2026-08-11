@@ -374,10 +374,17 @@ export class EmailJobService {
             enviado: false,
           });
 
+          // Só os e-mails de cobrança (pós-vencimento) copiam o comercial —
+          // lembrete, vencimento_hoje, aviso e renegociação ficam de fora.
+          const ccComercial = tipo.startsWith('cobranca')
+            ? this.config.get<string>('email.ccComercial') || undefined
+            : undefined;
+
           try {
             await this.emailService.enviar(
               email, template.subject, template.html,
               qrBuffer ? [{ cid: QR_CID, buffer: qrBuffer, nome: 'qrpix.png' }] : undefined,
+              ccComercial ? { cc: ccComercial } : undefined,
             );
             log.enviado = true;
             totalEnviados++;

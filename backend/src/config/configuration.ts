@@ -46,6 +46,9 @@ export default () => ({
     cancelamentoCcPedagogico: process.env.EMAIL_CANCELAMENTO_CC_PEDAGOGICO ?? '',
     cancelamentoCcTrancamento: process.env.EMAIL_CANCELAMENTO_CC_TRANCAMENTO ?? '',
     cancelamentoCcFinanceiro: process.env.EMAIL_CANCELAMENTO_CC_FINANCEIRO ?? '',
+    // CC do comercial nos e-mails de cobrança (tipo 'cobranca_*', pós-vencimento) —
+    // não se aplica a lembrete/vencimento_hoje/aviso/renegociação.
+    ccComercial: process.env.EMAIL_CC_COMERCIAL ?? '',
     nomeEscola: process.env.ESCOLA_NOME ?? 'Escola',
     telefoneEscola: process.env.ESCOLA_TELEFONE ?? '',
     diasAntes: (process.env.EMAIL_DIAS_ANTES ?? '7,5,3,1')

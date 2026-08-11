@@ -85,7 +85,7 @@ export class AppController {
             </a>
 
             <p style="margin-top:16px;font-family:Arial,sans-serif;font-size:12px;color:#999;text-align:center;line-height:1.6;">
-              Problemas com acesso? Entre em contato com a secretaria pelo WhatsApp.
+              Problemas com acesso? Entre em contato com o financeiro pelo WhatsApp.
             </p>
           </td>
         </tr>
