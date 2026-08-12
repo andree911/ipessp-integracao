@@ -256,6 +256,24 @@ export class FinanceiroService {
       .filter((r): r is { cliente: ClienteCache; lancamento: LancamentoCache } => r.cliente !== undefined);
   }
 
+  /**
+   * Roster de alunos com e-mail cadastrado, pra uso do EmailJobService ao
+   * consultar a Sophia ao vivo em vez de ler status de pagamento do cache.
+   * Só usa o cache pra dado de CONTATO (nome/e-mail/codigoSophia) -- essa
+   * parte não tem o risco de ficar "presa"/desatualizada que o status de
+   * pagamento tinha (ver incidente de 2026-08-12): não muda com frequência
+   * e, mesmo se mudar, o pior caso é não notificar alguém, não cobrar quem
+   * já pagou.
+   */
+  async getClientesComEmail(): Promise<ClienteCache[]> {
+    return this.clienteRepo
+      .createQueryBuilder('c')
+      .where('c.emailResponsavel IS NOT NULL')
+      .andWhere("c.emailResponsavel != ''")
+      .andWhere('c.codigoSophia IS NOT NULL')
+      .getMany();
+  }
+
   async upsertCliente(dados: Partial<ClienteCache>): Promise<ClienteCache> {
     const existing = dados.codigoSophia
       ? await this.clienteRepo.findOne({ where: { codigoSophia: dados.codigoSophia } })
@@ -282,6 +300,11 @@ export class FinanceiroService {
       { codigoSophia, codigoCliente },
       { recebido: true },
     );
+  }
+
+  /** Usado pela reconciliação de órfãos no ImportacaoService -- lançamentos em aberto de um único cliente. */
+  async getLancamentosAbertosDoCliente(codigoCliente: number): Promise<LancamentoCache[]> {
+    return this.lancamentoRepo.find({ where: { codigoCliente, recebido: false } });
   }
 
   async stats(): Promise<{ clientes: number; lancamentosPendentes: number; lancamentosTotal: number }> {

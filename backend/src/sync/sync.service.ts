@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import { SophiaService } from '../sophia/sophia.service';
 import { ImportacaoService } from '../financeiro/importacao.service';
 import { ResponsavelCache } from '../ia/entities/responsavel-cache.entity';
+import { Lead } from '../leads/entities/lead.entity';
 import { AlunoApiModel } from '../sophia/types/sophia.types';
 import { errMsg, errStack } from '../common/err.util';
 
@@ -20,6 +21,8 @@ export class SyncService {
     private readonly importacao: ImportacaoService,
     @InjectRepository(ResponsavelCache)
     private readonly cacheRepo: Repository<ResponsavelCache>,
+    @InjectRepository(Lead)
+    private readonly leadRepo: Repository<Lead>,
   ) {}
 
   async triggerSync(): Promise<{ message: string }> {
@@ -41,6 +44,9 @@ export class SyncService {
     let totalAlunos = 0;
     let totalClientes = 0;
     let totalLancamentos = 0;
+    let totalOrfaosResolvidos = 0;
+    let totalOrfaosAmbiguos = 0;
+    let totalOrfaosSemMatch = 0;
 
     try {
       const alunos = await this.sophia.getAllAlunos();
@@ -55,15 +61,26 @@ export class SyncService {
             if (r.value.processado) totalAlunos++;
             totalClientes += r.value.clientes;
             totalLancamentos += r.value.lancamentos;
+            totalOrfaosResolvidos += r.value.orfaosResolvidos;
+            totalOrfaosAmbiguos += r.value.orfaosAmbiguos;
+            totalOrfaosSemMatch += r.value.orfaosSemMatch;
           } else {
             this.logger.error(`Erro ao processar aluno ${batch[j].codigo}: ${r.reason?.message}`);
           }
         }
       }
 
+      await this.reconciliarLeadsPagina(alunos);
+
       this.logger.log(
-        `=== Sincronização concluída: ${totalAlunos} alunos, ${totalClientes} clientes, ${totalLancamentos} lançamentos ===`,
+        `=== Sincronização concluída: ${totalAlunos} alunos, ${totalClientes} clientes, ${totalLancamentos} lançamentos, ` +
+        `${totalOrfaosResolvidos} órfãos resolvidos, ${totalOrfaosAmbiguos} ambíguos, ${totalOrfaosSemMatch} sem match ===`,
       );
+      if (totalOrfaosAmbiguos + totalOrfaosSemMatch > 0) {
+        this.logger.warn(
+          `${totalOrfaosAmbiguos + totalOrfaosSemMatch} lançamentos órfãos não resolvidos automaticamente nesta rodada -- revisar manualmente (GET /financeiro/... ou consulta direta em lancamentos_cache).`,
+        );
+      }
     } catch (err: unknown) {
       this.logger.error(`Erro no ciclo de sync: ${errMsg(err)}`, errStack(err));
     } finally {
@@ -73,10 +90,10 @@ export class SyncService {
 
   private async processarAluno(
     aluno: AlunoApiModel,
-  ): Promise<{ processado: boolean; clientes: number; lancamentos: number }> {
+  ): Promise<{ processado: boolean; clientes: number; lancamentos: number; orfaosResolvidos: number; orfaosAmbiguos: number; orfaosSemMatch: number }> {
     const responsaveis = await this.sophia.getResponsaveisAluno(aluno.codigo);
     const resp = responsaveis.find((r) => r.responsavelFinanceiro) ?? responsaveis[0];
-    if (!resp?.cpf) return { processado: false, clientes: 0, lancamentos: 0 };
+    if (!resp?.cpf) return { processado: false, clientes: 0, lancamentos: 0, orfaosResolvidos: 0, orfaosAmbiguos: 0, orfaosSemMatch: 0 };
 
     const cpf = resp.cpf.replace(/\D/g, '');
 
@@ -97,6 +114,9 @@ export class SyncService {
 
     let clientes = 0;
     let lancamentos = 0;
+    let orfaosResolvidos = 0;
+    let orfaosAmbiguos = 0;
+    let orfaosSemMatch = 0;
     if (resp.email) {
       const lancamentosAluno = await this.sophia.getLancamentosAluno(aluno.codigo);
       const resultado = await this.importacao.importarClientes([{
@@ -122,11 +142,41 @@ export class SyncService {
       }]);
       clientes = resultado.clientesImportados;
       lancamentos = resultado.lancamentosImportados;
+      orfaosResolvidos = resultado.orfaosResolvidos;
+      orfaosAmbiguos = resultado.orfaosAmbiguos;
+      orfaosSemMatch = resultado.orfaosSemMatch;
       if (resultado.erros.length > 0) {
         this.logger.warn(`Aluno ${aluno.codigo}: ${resultado.erros[0]}`);
       }
     }
 
-    return { processado: true, clientes, lancamentos };
+    return { processado: true, clientes, lancamentos, orfaosResolvidos, orfaosAmbiguos, orfaosSemMatch };
+  }
+
+  private async reconciliarLeadsPagina(
+    alunos: { codigo: number; nome: string; email?: string }[],
+  ): Promise<void> {
+    const emailMap = new Map<string, number>();
+    for (const aluno of alunos) {
+      if (aluno.email) emailMap.set(aluno.email.toLowerCase(), aluno.codigo);
+    }
+    if (emailMap.size === 0) return;
+
+    const emails = [...emailMap.keys()];
+    const leads = await this.leadRepo
+      .createQueryBuilder('l')
+      .where('l.sophiaAlunoId IS NULL')
+      .andWhere('LOWER(l.email) IN (:...emails)', { emails })
+      .getMany();
+
+    for (const lead of leads) {
+      const codigoAluno = emailMap.get(lead.email.toLowerCase());
+      if (!codigoAluno) continue;
+      await this.leadRepo.update(lead.id, { sophiaAlunoId: codigoAluno, status: 'matriculado' });
+    }
+
+    if (leads.length > 0) {
+      this.logger.log(`Leads reconciliados: ${leads.length} marcados como matriculados`);
+    }
   }
 }
