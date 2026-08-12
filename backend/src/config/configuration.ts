@@ -46,6 +46,9 @@ export default () => ({
     cancelamentoCcPedagogico: process.env.EMAIL_CANCELAMENTO_CC_PEDAGOGICO ?? '',
     cancelamentoCcTrancamento: process.env.EMAIL_CANCELAMENTO_CC_TRANCAMENTO ?? '',
     cancelamentoCcFinanceiro: process.env.EMAIL_CANCELAMENTO_CC_FINANCEIRO ?? '',
+    // CC do comercial nos e-mails de cobrança (tipo 'cobranca_*', pós-vencimento) —
+    // não se aplica a lembrete/vencimento_hoje/aviso/renegociação.
+    ccComercial: process.env.EMAIL_CC_COMERCIAL ?? '',
     nomeEscola: process.env.ESCOLA_NOME ?? 'Escola',
     telefoneEscola: process.env.ESCOLA_TELEFONE ?? '',
     diasAntes: (process.env.EMAIL_DIAS_ANTES ?? '7,5,3,1')
@@ -84,6 +87,14 @@ export default () => ({
     token: process.env.ZAPI_TOKEN ?? '',
     clientToken: process.env.ZAPI_CLIENT_TOKEN ?? '',
     telefoneFinanceiro: process.env.ZAPI_TELEFONE_FINANCEIRO ?? '',
+    // Avisado por WhatsApp quando o chatbot encaminha um atendimento de secretaria
+    // pra humano (ver IaService.encaminharHumano) — mesmo padrão de telefoneFinanceiro acima.
+    telefoneSecretaria: process.env.ZAPI_TELEFONE_SECRETARIA ?? '',
+    // Consultoras de marketing avisadas por WhatsApp assim que a IA registra um lead novo
+    telefonesConsultorasMarketing: (process.env.ZAPI_TELEFONES_CONSULTORAS_MARKETING ?? '')
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean),
     cronHabilitado: process.env.WPP_CRON_HABILITADO ?? 'false',
     diasAntes: (process.env.WPP_DIAS_ANTES ?? '7,5,3,1')
       .split(',')

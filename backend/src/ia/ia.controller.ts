@@ -5,6 +5,7 @@ import { IaService } from './ia.service';
 import { AssociarTelefoneDto } from './dto/associar-telefone.dto';
 import { EnviarBoletoDto } from './dto/enviar-boleto.dto';
 import { EnviarPdfCursoDto } from './dto/enviar-pdf-curso.dto';
+import { EncaminharHumanoDto } from './dto/encaminhar-humano.dto';
 
 @Controller('ia')
 @UseGuards(ThrottlerGuard, IaBearerGuard)
@@ -82,5 +83,14 @@ export class IaController {
   getTurmaDetalhada(@Query('codigo') codigo: string) {
     if (!codigo) throw new BadRequestException('Parâmetro codigo é obrigatório');
     return this.iaService.getTurmaDetalhada(Number(codigo));
+  }
+
+  @Post('encaminhar-humano')
+  encaminharHumano(@Body() dto: EncaminharHumanoDto) {
+    return this.iaService.encaminharHumano(
+      dto.setor,
+      dto.telefone,
+      dto.resumo,
+    );
   }
 }

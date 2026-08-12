@@ -421,9 +421,9 @@ function avisoSeguranca(data: EmailData): string {
 
 // ─── 9. Botão CTA principal ───────────────────────────────────────────────────
 
-function botaoPrincipal(url: string, texto: string = 'VEJA COMO ACESSAR SUA FATURA'): string {
+function botaoPrincipal(url: string, texto: string = 'VEJA COMO ACESSAR SUA FATURA', margemInferior: string = '8px'): string {
   return `
-  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 8px;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 ${margemInferior};">
     <tr>
       <td>
         <!--[if mso]>
@@ -495,11 +495,11 @@ function redesSociais(data: RedesSociaisData): string {
   <table cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 8px;">
     <tr>
       ${redes.map(({ icone, nome, url }) => `
-      <td style="padding:0 8px;text-align:center;">
+      <td style="padding:0 10px;text-align:center;">
         <a href="${url}" target="_blank" style="text-decoration:none;">
           <img src="${iconUrl(data, icone)}" width="40" height="40" alt="${nome}" style="width:40px;height:40px;display:block;border:0;border-radius:50%;">
         </a>
-        <p style="margin:4px 0 0;font-size:9px;color:rgba(255,255,255,0.6);font-family:Arial,sans-serif;">${nome}</p>
+        <p style="margin:6px 0 0;font-size:9px;color:rgba(255,255,255,0.7);font-family:Arial,sans-serif;">${nome}</p>
       </td>`).join('')}
     </tr>
   </table>`;
@@ -660,7 +660,7 @@ ${preheader ? `<div style="display:none;font-size:1px;color:#f0f2f5;line-height:
           ${opcoes?.botaoAntesSeguranca ? `
           ${divisoria}
           <!-- 9. Botão CTA principal -->
-          ${botaoPrincipal(comoAcessarUrl, opcoes?.textoBotaoPrincipal)}
+          ${botaoPrincipal(comoAcessarUrl, opcoes?.textoBotaoPrincipal, '22px')}
           ${divisoria}
           <!-- 8. Aviso de segurança -->
           ${avisoSeguranca(data)}
@@ -860,7 +860,7 @@ export function templateAviso(data: EmailData): { subject: string; html: string 
         <p style="margin:0;font-size:12px;color:#7a5200;line-height:1.7;font-family:Arial,sans-serif;">
           <strong>Importante:</strong> se o pagamento j&#225; foi efetuado, desconsidere este aviso.
           Caso esteja com dificuldades para regularizar, entre em contato com o setor financeiro
-          antes do vencimento dos pr&#243;ximos prazos &#8212; estamos &#224; disposi&#231;&#227;o para buscar uma solu&#231;&#227;o.
+          antes do vencimento dos pr&#243;ximos prazos. Estamos &#224; disposi&#231;&#227;o para buscar uma solu&#231;&#227;o.
         </p>
       </td>
     </tr>
@@ -952,9 +952,11 @@ export function templateRenegociacaoLembrete(data: EmailData): { subject: string
     Para ajudar o(a) aluno(a) <strong>${data.nomeAluno}</strong> a se reorganizar,
     preparamos condi&#231;&#245;es facilitadas de pagamento.`;
 
+  const telWhatsapp = (data.telefoneEscola ?? '').replace(/\D/g, '');
+  const emailDisplay = data.emailEscola ? data.emailEscola.replace(/^.*<(.+)>.*$/, '$1') : '';
   const nota = `<p style="margin:12px 0 0;font-size:12px;color:#999;line-height:1.7;font-family:Arial,sans-serif;">
     Se voc&#234; j&#225; regularizou sua situa&#231;&#227;o, desconsidere esta mensagem.
-    Precisa de ajuda? Fale com o setor financeiro${data.telefoneEscola ? ` pelo telefone ${data.telefoneEscola}` : ''}${data.emailEscola ? ` ou pelo e-mail ${data.emailEscola}` : ''}.
+    Precisa de ajuda? Fale com o setor financeiro${telWhatsapp ? ` pelo <a href="https://wa.me/55${telWhatsapp}" target="_blank" style="color:${COR};font-weight:bold;text-decoration:none;">WhatsApp</a>` : ''}${emailDisplay ? ` ou pelo e-mail <a href="mailto:${emailDisplay}" style="color:${COR};font-weight:bold;text-decoration:none;">${emailDisplay}</a>` : ''}.
   </p>`;
 
   return {
