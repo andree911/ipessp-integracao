@@ -354,9 +354,7 @@ function doisCtas(data: EmailData): string {
   const miniCard = (titulo: string, texto: string, url: string): string => `
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
     <tr>
-      <td class="dm-bdr-a" style="border:1.5px solid #e0e0e0;padding:0;border-radius:12px;
-                 mso-border-top-alt:solid #e0e0e0 1.5pt;mso-border-right-alt:solid #e0e0e0 1.5pt;
-                 mso-border-bottom-alt:solid #e0e0e0 1.5pt;mso-border-left-alt:solid #e0e0e0 1.5pt;">
+      <td style="padding:0;border-radius:12px;">
         <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-radius:10px;overflow:hidden;">
           <tr>
             <td bgcolor="${COR}" style="background-color:${COR};padding:11px 16px;">
@@ -499,7 +497,7 @@ function redesSociais(data: RedesSociaisData): string {
         <a href="${url}" target="_blank" style="text-decoration:none;">
           <table cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;">
             <tr>
-              <td width="36" height="36" bgcolor="#ffffff" align="center" valign="middle" style="width:36px;height:36px;background-color:#ffffff;border-radius:50%;">
+              <td width="36" height="36" align="center" valign="middle" style="width:36px;height:36px;">
                 <img src="${iconUrl(data, icone)}" width="36" height="36" alt="${nome}" style="width:36px;height:36px;display:block;border:0;">
               </td>
             </tr>
