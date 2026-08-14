@@ -88,7 +88,7 @@ passar batido. Se isso acontecer, o lugar de ensinar o tipo novo é o `switch` d
 
 ## Achados
 
-Dois bugs saíram de escrever esta suíte, os dois já corrigidos:
+Bugs que saíram de escrever e manter esta suíte, todos já corrigidos:
 
 - `Aplicar Guarda de Categoria` só tinha metade da regra de professor. O caminho
   de regex impedia professor de cair no financeiro; o caminho do classificador de
@@ -96,6 +96,15 @@ Dois bugs saíram de escrever esta suíte, os dois já corrigidos:
   Agent Financeiro, que consultaria boleto com o CPF dele.
 - O regex de curso pegava "saber **sobre** os cursos" mas não "saber **dos**
   cursos".
+- Ao consolidar os quatro caches paralelos de `staticData` num único
+  `sessoes[telefone]`, dividir o preâmbulo em "Carregar Sessão do Telefone"
+  (estado) + "Montar Preâmbulo" (texto puro) introduziu uma ordem
+  leitura-antes-de-escrever errada: o nó de sessão lia `sessao.categoria`
+  DEPOIS de "Aplicar Guarda de Categoria" já ter escrito a categoria deste
+  mesmo turno, então toda conversa parecia "transferida de outro setor" já
+  na primeira mensagem. A suíte pegou isso na hora (8 testes vermelhos) antes
+  de qualquer commit — corrigido levando um snapshot do valor anterior no
+  próprio item, tirado no instante exato antes da escrita.
 
 ## Teste da própria suíte
 

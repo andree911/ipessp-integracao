@@ -31,7 +31,7 @@ module.exports = function conversas({ wf }) {
     const c = criarConversa(wf, { classificarIA: classificadorFake(['secretaria']) });
 
     teste('1. usuário escolhe "Secretaria" no menu → Agent Secretaria, sem re-saudação', () => {
-      const t = c.menu('secretaria', '📋 Secretaria');
+      const t = c.menu('secretaria', 'Secretaria');
       igual(t.categoria, 'secretaria', 'não roteou pra Secretaria');
       igual(t.agente?.no, 'Agent Secretaria', 'agente errado');
       contem(t.agente.prompt, 'já cumprimentou', 'o agente não foi avisado de que o menu já saudou');
@@ -201,7 +201,7 @@ module.exports = function conversas({ wf }) {
 
     teste('lead chegando transferido: ponte curta em vez de recomeçar', () => {
       const c = criarConversa(wf, { classificarIA: classificadorFake(['secretaria']) });
-      c.menu('secretaria', '📋 Secretaria');
+      c.menu('secretaria', 'Secretaria');
       const t = c.texto('na verdade não sou aluno, queria saber do curso de estética');
       igual(t.agente?.no, 'Agent Leads', 'não transferiu');
       contem(t.agente.systemMessage, 'acabou de ser transferida', 'não instruiu a fazer a ponte');
@@ -222,14 +222,14 @@ module.exports = function conversas({ wf }) {
   suite('Conversa — o Agent Secretaria tem pra onde encaminhar um interessado', () => {
     teste('a tool "Encaminhar para Novos Alunos" chega às mãos do agente', () => {
       const c = criarConversa(wf, { classificarIA: classificadorFake(['secretaria']) });
-      const t = c.menu('secretaria', '📋 Secretaria');
+      const t = c.menu('secretaria', 'Secretaria');
       ok(t.agente.tools.includes('Encaminhar para Novos Alunos'),
         `a Secretaria está sem a tool de novos alunos (tem: ${t.agente.tools.join(', ')})`);
     });
 
     teste('o prompt manda usar a tool em vez de passar telefone', () => {
       const c = criarConversa(wf, { classificarIA: classificadorFake(['secretaria']) });
-      const t = c.menu('secretaria', '📋 Secretaria');
+      const t = c.menu('secretaria', 'Secretaria');
       contem(t.agente.systemMessage, 'NUNCA passe um telefone ou link wa.me',
         'o prompt ainda permite mandar o interessado embora');
       contem(t.agente.systemMessage, 'Encaminhar para Novos Alunos', 'o prompt não cita a tool');
@@ -269,7 +269,7 @@ module.exports = function conversas({ wf }) {
       const t = c.texto('bom dia');
       ok(t.enviouMenu, 'não enviou o menu');
       igual(t.agente, null, 'saudação não deveria acionar agente');
-      ok(c.staticData.envios?.['5519996991300']?.length, 'o envio do menu não foi registrado');
+      ok(c.staticData.sessoes?.['5519996991300']?.envios?.length, 'o envio do menu não foi registrado');
     });
 
     teste('o registro do menu evita a segunda saudação no turno seguinte', () => {

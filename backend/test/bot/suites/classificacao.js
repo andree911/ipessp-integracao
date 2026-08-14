@@ -2,30 +2,64 @@
 /**
  * Suíte 2 — Classificação (uma mensagem por vez, código real do nó).
  *
- * Roda o jsCode do "Classificar por Regra" direto do JSON do workflow. A tabela
- * mistura os casos que quebraram em produção com as regressões que precisam
- * continuar funcionando -- a correção do lead não pode ter roubado mensagem de
- * secretaria/financeiro/TI.
+ * Roda o jsCode do "Classificar por Regra" e, em seguida, "Aplicar Guarda de
+ * Categoria" -- as duas checagens de professor (financeiro vs professor sem
+ * tipo confirmado, professor vs financeiro) foram centralizadas só na guarda
+ * de propósito, pra não repetir a mesma regra em dois nós; testar apenas
+ * "Classificar por Regra" isolado não veria mais essa proteção, porque ela
+ * não mora mais lá. A tabela mistura os casos que quebraram em produção com
+ * as regressões que precisam continuar funcionando -- a correção do lead não
+ * pode ter roubado mensagem de secretaria/financeiro/TI.
  *
  * `null` aqui não é falha: significa "sem palavra-chave clara, manda pro
  * Classificador de Intenção (IA)", que é o desenho do fluxo.
  */
-const { suite, teste, igual, ok } = require('../assert');
+const { suite, teste, igual, ok, casa, naoCasa } = require('../assert');
 const { criarRelogio } = require('../runtime');
 
-/** Executa só o nó de classificação, isolado. */
+/** Emoji de verdade (pictográfico) -- não pega acento nem pontuação comum. */
+const EMOJI_RE = /\p{Extended_Pictographic}/u;
+
+/**
+ * Avalia de verdade o jsonBody de "Enviar Menu Inicial" (é um template
+ * `={{ JSON.stringify({...}) }}`) e devolve o objeto resultante. Precisa de
+ * `$` porque a expressão lê `$('Webhook').item.json.body.phone`; a saudação
+ * sorteada não importa aqui (as 3 variantes são checadas contra o texto bruto
+ * do nó, não contra este objeto), então trava Math.random em 0 só pra ter uma
+ * saída determinística.
+ */
+function extrairMenu(wf) {
+  const node = wf.nodes.find((n) => n.name === 'Enviar Menu Inicial');
+  const corpo = node.parameters.jsonBody.match(/^=\{\{([\s\S]*)\}\}$/)[1];
+  const $ = () => ({ item: { json: { body: { phone: '5511999999999' } } } });
+  const fn = new Function('$', `return (${corpo});`);
+  const original = Math.random;
+  Math.random = () => 0;
+  try {
+    return { node, menu: JSON.parse(fn($)) };
+  } finally {
+    Math.random = original;
+  }
+}
+
+/** Executa "Classificar por Regra" seguido de "Aplicar Guarda de Categoria" -- o mesmo par que roda em produção pra toda mensagem resolvida por regra. */
 function classificar(wf, mensagem, { tipo = null, categoriaMenu = null } = {}) {
-  const node = wf.nodes.find((n) => n.name === 'Classificar por Regra');
-  const item = {
-    categoria: categoriaMenu,
-    cpfInfo: tipo ? { tipo } : null,
-    body: { phone: '5519996991300' },
-  };
+  const regra = wf.nodes.find((n) => n.name === 'Classificar por Regra');
+  const guarda = wf.nodes.find((n) => n.name === 'Aplicar Guarda de Categoria');
+  const cpfInfo = tipo ? { tipo } : null;
+  const item = { categoria: categoriaMenu, cpfInfo, body: { phone: '5519996991300' } };
   const relogio = criarRelogio();
+  const staticData = {};
+  const $getWorkflowStaticData = () => staticData;
   const $ = () => ({ first: () => ({ json: { body: { text: { message: mensagem } } } }) });
-  const fn = new Function('$input', '$', '$getWorkflowStaticData', 'Date', node.parameters.jsCode);
-  const saida = fn({ first: () => ({ json: item }) }, $, () => ({}), relogio.Date);
-  return saida[0].json.categoria;
+
+  const fnRegra = new Function('$input', '$', '$getWorkflowStaticData', 'Date', regra.parameters.jsCode);
+  const saidaRegra = fnRegra({ first: () => ({ json: item }) }, $, $getWorkflowStaticData, relogio.Date)[0].json;
+
+  const fnGuarda = new Function('$input', '$getWorkflowStaticData', 'Date', guarda.parameters.jsCode);
+  const saidaGuarda = fnGuarda({ first: () => ({ json: saidaRegra }) }, $getWorkflowStaticData, relogio.Date)[0].json;
+
+  return saidaGuarda.categoria;
 }
 
 // [mensagem, tipo no cache de CPF, categoria vinda do menu, esperado, motivo]
@@ -124,6 +158,37 @@ module.exports = function classificacao({ wf }) {
       const sec = fn({ first: () => ({ json: { body: { phone: '55', listResponseMessage: { selectedRowId: 'secretaria' } } } }) });
       ok(/sem montar lista de opções/i.test(sec[0].json.body.text.message),
         'o contexto da Secretaria não proíbe a lista que o usuário leu como botão');
+    });
+  });
+
+  suite('Menu inicial — texto sem ambiguidade e sem emoji', () => {
+    const { node, menu } = extrairMenu(wf);
+
+    teste('nenhum título/descrição do menu usa emoji', () => {
+      for (const o of menu.optionList.options) {
+        naoCasa(o.title, EMOJI_RE, `título de "${o.id}" ainda tem emoji`);
+        naoCasa(o.description, EMOJI_RE, `descrição de "${o.id}" ainda tem emoji`);
+      }
+    });
+
+    teste('a saudação do menu não usa emoji (nenhuma das 3 variantes)', () => {
+      naoCasa(node.parameters.jsonBody, EMOJI_RE, 'o texto bruto do nó ainda tem emoji em algum lugar');
+    });
+
+    teste('só o item de novos alunos fala em "matrícula" solta -- Secretaria fala em "situação de matrícula"', () => {
+      // As duas descrições usavam a palavra "Matrícula" -- foi assim que um
+      // interessado (ainda não aluno) escolheu "Secretaria" achando que era
+      // ali que resolvia a matrícula dele, quando esse setor só atende quem
+      // já é aluno (ver suíte de conversas, cenário do incidente real).
+      // "situação de matrícula" é o jeito certo de falar disso pra quem já é
+      // aluno -- é uma consulta, não uma inscrição.
+      const secretaria = menu.optionList.options.find((o) => o.id === 'secretaria');
+      const matricula = menu.optionList.options.find((o) => o.id === 'matricula');
+      naoCasa(secretaria.description, /(?<!situação de )matr[íi]cula/i,
+        'a descrição da Secretaria voltou a usar "matrícula" solta, sem "situação de" na frente');
+      casa(matricula.description, /matr[íi]cula/i, 'o item de novos alunos parou de mencionar matrícula');
+      casa(matricula.description, /ainda não é aluno/i,
+        'o item de novos alunos não deixa claro que é pra quem ainda não é aluno');
     });
   });
 };

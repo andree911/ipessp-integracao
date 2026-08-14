@@ -63,21 +63,46 @@ const MUTACOES = {
   },
   'guarda de professor volta a ser só metade': (wf) => {
     const n = no(wf, 'Aplicar Guarda de Categoria');
-    n.parameters.jsCode = n.parameters.jsCode.replace(/if \(categoria === 'financeiro' && tipo === 'professor'\) \{[\s\S]*?\}/, '');
+    n.parameters.jsCode = n.parameters.jsCode.replace(
+      /if \(categoria === 'financeiro' && tipo === 'professor'\) categoria = null;\n/, '');
   },
   'preâmbulo para de injetar os envios automáticos': (wf) => {
-    const n = no(wf, 'Preparar Preâmbulo Compartilhado');
+    const n = no(wf, 'Montar Preâmbulo');
     n.parameters.jsCode = n.parameters.jsCode.replace('${blocoEnvios}', '');
   },
   'preâmbulo para de avisar transferência de setor': (wf) => {
-    const n = no(wf, 'Preparar Preâmbulo Compartilhado');
+    const n = no(wf, 'Montar Preâmbulo');
     n.parameters.jsCode = n.parameters.jsCode.replace('${blocoTransferencia}', '');
+  },
+  'volta a ter 2 escritores da categoria na sessão (regressão pré-limpeza)': (wf) => {
+    // reintroduz a escrita antiga em "Interpretar Categoria IA" -- é a
+    // inconsistência que o item 2 da revisão eliminou (categoria gravada
+    // ANTES da guarda validar)
+    const n = no(wf, 'Interpretar Categoria IA');
+    n.parameters.jsCode = n.parameters.jsCode.replace(
+      "const original = $('Classificar por Regra').first().json;\nreturn [{ json: { ...original, categoria } }];",
+      `const original = $('Classificar por Regra').first().json;
+const phone = original.body.phone;
+if (categoria !== 'outro') {
+  const staticData = $getWorkflowStaticData('global');
+  staticData.sessoes = staticData.sessoes || {};
+  staticData.sessoes[phone] = { categoria, categoriaTs: Date.now() };
+}
+return [{ json: { ...original, categoria } }];`);
   },
   'tool aponta pra rota que não existe': (wf) => {
     no(wf, 'Consultar Secretaria').parameters.url = '={{ $env.INTEGRACAO_API_URL }}/ia/secretaria-antiga';
   },
   'nó vira órfão': (wf) => {
     delete wf.connections['Avaliar Mídia Recebida'];
+  },
+  'menu volta a ter emoji e a ambiguidade de "matrícula"': (wf) => {
+    const n = no(wf, 'Enviar Menu Inicial');
+    n.parameters.jsonBody = n.parameters.jsonBody
+      .replace("title: 'Secretaria', description: 'Documentos, declarações e situação de matrícula'",
+        "title: '📋 Secretaria', description: 'Matrícula, documentos e declarações'")
+      .replace("title: 'Informações de cursos', description: 'Ainda não é aluno? Cursos, valores e matrícula'",
+        "title: '📚 Informações de cursos', description: 'Cursos, valores e matrícula'");
   },
 };
 
