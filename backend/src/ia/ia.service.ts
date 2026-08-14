@@ -305,21 +305,43 @@ export class IaService {
 
   /**
    * Encaminha o atendimento do chatbot pra um humano do setor, via WhatsApp
-   * — usado pelas tools "Encaminhar para Humano (Financeiro/Secretaria)" do
-   * bot quando o usuário pede um atendente ou o agente de IA não consegue
-   * resolver. `erro` (sem lançar exceção) é lido pela IA pra avisar o
-   * usuário adequadamente, mesmo quando o setor ainda não tem número
-   * configurado.
+   * — usado pelas tools "Encaminhar para Humano (Financeiro/Secretaria)" e
+   * "Encaminhar para Novos Alunos" do bot quando o usuário pede um atendente
+   * ou o agente de IA não consegue resolver. `erro` (sem lançar exceção) é
+   * lido pela IA pra avisar o usuário adequadamente, mesmo quando o setor
+   * ainda não tem número configurado.
+   *
+   * `comercial` é o destino de quem AINDA NÃO é aluno: antes, quando o Agent
+   * Secretaria descobria no meio da conversa que a pessoa não era matriculada,
+   * ele não tinha pra onde encaminhar e acabava mandando o interessado embora
+   * com o telefone da própria Secretaria travestido de "atendimento de novos
+   * alunos" — um lead real perdido. Agora avisa as consultoras de marketing,
+   * as mesmas já notificadas a cada lead registrado pelo CRM.
    */
   async encaminharHumano(
-    setor: 'financeiro' | 'secretaria',
+    setor: 'financeiro' | 'secretaria' | 'comercial',
     telefone: string,
     resumo: string,
   ): Promise<{ ok: boolean; erro?: string }> {
-    const destino = this.config.get<string>(
-      setor === 'financeiro' ? 'zapi.telefoneFinanceiro' : 'zapi.telefoneSecretaria',
-    );
-    if (!destino) {
+    const rotulos = {
+      financeiro: 'Financeiro',
+      secretaria: 'Secretaria',
+      comercial: 'Novos Alunos',
+    } as const;
+
+    // comercial fala com a equipe inteira (lista), os outros com um número só
+    const consultoras =
+      this.config.get<string[]>('zapi.telefonesConsultorasMarketing') ?? [];
+    const chaveSetor =
+      setor === 'financeiro'
+        ? 'zapi.telefoneFinanceiro'
+        : 'zapi.telefoneSecretaria';
+    const destinos =
+      setor === 'comercial'
+        ? consultoras
+        : [this.config.get<string>(chaveSetor) ?? ''].filter(Boolean);
+
+    if (destinos.length === 0) {
       this.logger.warn(`Encaminhamento pra humano (${setor}) sem número configurado — mensagem não enviada`);
       return {
         ok: false,
@@ -327,8 +349,12 @@ export class IaService {
       };
     }
 
-    const mensagem = `🔔 *Atendimento humano solicitado — ${setor === 'financeiro' ? 'Financeiro' : 'Secretaria'}*\n\nContato do aluno: ${telefone}\n\n${resumo}`;
-    await this.whatsapp.enviarTexto(destino, mensagem);
+    const contato =
+      setor === 'comercial' ? 'Contato do interessado' : 'Contato do aluno';
+    const mensagem = `🔔 *Atendimento humano solicitado — ${rotulos[setor]}*\n\n${contato}: ${telefone}\n\n${resumo}`;
+    for (const destino of destinos) {
+      await this.whatsapp.enviarTexto(destino, mensagem);
+    }
     return { ok: true };
   }
 }

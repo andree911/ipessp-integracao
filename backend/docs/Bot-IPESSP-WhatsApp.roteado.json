@@ -214,7 +214,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ phone: $('Webhook').item.json.body.phone, message: ['Olá! No momento só consigo responder mensagens de texto. Para outras dúvidas, ligue para (11) 99839-3640 ou envie um e-mail para matricula.financeiro@ipessp.edu.br.', 'Oi! Por aqui eu só entendo mensagens de texto por enquanto. Pode escrever o que precisa, ou ligar pra (11) 99839-3640 / matricula.financeiro@ipessp.edu.br.'][Math.floor(Math.random() * 2)], delayMessage: Math.floor(Math.random() * 4) + 2, delayTyping: Math.floor(Math.random() * 5) + 4 }) }}",
+        "jsonBody": "={{ JSON.stringify({ phone: $json.phone, message: $json.mensagem, delayMessage: Math.floor(Math.random() * 4) + 2, delayTyping: Math.floor(Math.random() * 5) + 4 }) }}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -384,7 +384,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const data = $input.first().json;\nconst sel = data.body.listResponseMessage;\n\nconst categorias = {\n  financeiro: 'financeiro',\n  secretaria: 'secretaria',\n  ti: 'ti',\n  avisos: 'avisos',\n  calendario: 'calendario',\n  matricula: 'lead_novo',\n};\n\nconst contextos = {\n  financeiro: 'O usuário selecionou situação financeira. Solicite o CPF para consultar boletos em aberto.',\n  secretaria: 'O usuário selecionou Secretaria (assunto de quem já é aluno matriculado). Pergunte o que precisa: documentos, declarações, prazos ou outro assunto administrativo.',\n  ti: 'O usuário selecionou Suporte TI. Pergunte qual problema está tendo: acesso ao portal, senha, email ou outro sistema.',\n  avisos: 'O usuário selecionou avisos da escola.',\n  calendario: 'O usuário selecionou calendário.',\n  matricula: 'O usuário demonstrou interesse em se matricular. Colete nome completo, email e curso de interesse para registrar o contato.',\n};\n\nconst categoria = categorias[sel?.selectedRowId] || null;\nconst mensagem = contextos[sel?.selectedRowId] || `O usuário selecionou: ${sel?.title}`;\n\nreturn [{ json: { ...data, categoria, body: { ...data.body, text: { message: mensagem } } } }];"
+        "jsCode": "const data = $input.first().json;\nconst sel = data.body.listResponseMessage;\n\nconst categorias = {\n  financeiro: 'financeiro',\n  secretaria: 'secretaria',\n  ti: 'ti',\n  avisos: 'avisos',\n  calendario: 'calendario',\n  matricula: 'lead_novo',\n};\n\n// Os contextos abaixo são lidos pelo agente como se fossem a mensagem do\n// usuário. Duas instruções são obrigatórias em todos eles, porque as duas\n// falharam com um usuário real logo depois de escolher \"Secretaria\" no menu:\n// (1) o menu JÁ cumprimentou e se apresentou -- o agente cumprimentava de\n// novo, com quase o mesmo texto, dois balões seguidos; (2) o agente\n// respondia com uma lista de itens soltos (\"- Emissão de declarações\",\n// \"- Outro assunto\"), que no WhatsApp parece opção clicável: o usuário\n// respondeu \"Outro assunto\" achando que tinha clicado e a conversa andou\n// um turno inteiro sem sair do lugar.\nconst contextos = {\n  financeiro: 'O usuário selecionou \"Situação financeira\" no menu. O menu já cumprimentou e se apresentou -- não cumprimente de novo. Peça direto o CPF para consultar os boletos em aberto.',\n  secretaria: 'O usuário selecionou \"Secretaria\" no menu (assunto de quem já é aluno matriculado). O menu já cumprimentou e se apresentou -- não cumprimente nem se apresente de novo. Pergunte em UMA frase corrida o que ele precisa (documento, declaração, prazo ou situação de matrícula), sem montar lista de opções.',\n  ti: 'O usuário selecionou \"Suporte TI\" no menu. O menu já cumprimentou e se apresentou -- não cumprimente de novo. Pergunte em UMA frase corrida qual problema ele está tendo (acesso ao portal, senha, e-mail ou outro sistema), sem montar lista de opções.',\n  avisos: 'O usuário selecionou avisos da escola.',\n  calendario: 'O usuário selecionou calendário.',\n  matricula: 'O usuário selecionou \"Informações de cursos\" no menu e demonstrou interesse em se matricular. O menu já cumprimentou e se apresentou. Colete nome completo, email e curso de interesse para registrar o contato.',\n};\n\nconst categoria = categorias[sel?.selectedRowId] || null;\nconst mensagem = contextos[sel?.selectedRowId] || `O usuário selecionou: ${sel?.title}`;\n\nreturn [{ json: { ...data, categoria, body: { ...data.body, text: { message: mensagem } } } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -737,7 +737,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const item = $input.first().json;\nconst msg = ($('Webhook').first().json.body?.text?.message || '').toLowerCase();\nconst tipo = item.cpfInfo?.tipo || null;\nconst phone = item.body.phone;\n\nlet categoria = item.categoria || null; // já vem definida se veio do menu\n\nif (!categoria) {\n  const regras = [\n    { categoria: 'secretaria', re: /declara[cç][ãa]o|hist[óo]rico escolar|documento|comprovante de matr[íi]cula|transfer[êe]ncia|trancamento|prazo/i },\n    { categoria: 'lead_novo', re: /matr[íi]cul|quero (fazer|estudar)|quais (s[ãa]o os )?cursos|todos os cursos|lista(r)? (os )?cursos|mostra(r)? (os )?cursos|ver (os )?cursos|informa[cç][ãa]o.*curso|interessad[oa] (em|no|na)|quero saber sobre o curso|come[çc]ar a estudar|pré[- ]?matr[íi]cula/i },\n    { categoria: 'financeiro', re: /boleto|mensalidade|pend[êe]ncia|d[ée]bito|pagar|pagamento|pix|fatura|parcela|vencimento/i },\n    { categoria: 'ti', re: /senha|acesso ao portal|login|n[ãa]o consigo entrar|teams|email institucional|sistema fora/i },\n    { categoria: 'avisos', re: /\\baviso|comunicado|novidade/i },\n    { categoria: 'calendario', re: /calend[áa]rio|feriado|pr[óo]xima(s)? (aula|evento|prova)|data d[ae]/i },\n    { categoria: 'professor', re: /disciplina|minhas turmas|meus alunos|minhas aulas/i },\n  ];\n  for (const r of regras) {\n    if (r.re.test(msg)) { categoria = r.categoria; break; }\n  }\n}\n\n// professores não usam financeiro; categoria \"professor\" só se o cache confirmar o tipo\nif (categoria === 'financeiro' && tipo === 'professor') categoria = null;\nif (categoria === 'professor' && tipo !== 'professor') categoria = null;\n\n// \"categoria anterior\": guarda a última categoria ativa da conversa (mesmo\n// telefone) só como CONTEXTO pro classificador de IA -- não reatribui mais a\n// categoria direto aqui. Antes, quando a mensagem atual não batia em nenhuma\n// regra, o código reaproveitava a categoria anterior cegamente por até 30 min,\n// o que fazia o If4 pular o classificador de IA (achando que já tinha\n// categoria resolvida) mesmo quando a mensagem ambígua era, na verdade, um\n// assunto novo e diferente do anterior -- prendendo a conversa na categoria\n// errada até o cache expirar. Agora toda mensagem sem palavra-chave clara\n// passa pelo classificador de IA a cada turno, que já sabe reaproveitar a\n// categoria anterior só quando a mensagem for uma continuação genérica (ver\n// systemMessage do nó \"Classificador de Intenção (IA)\"), decidindo isso de\n// novo a cada mensagem em vez de confiar cegamente num cache.\nconst staticData = $getWorkflowStaticData('global');\nstaticData.categorias = staticData.categorias || {};\nconst agora = Date.now();\nconst TTL_MS = 30 * 60 * 1000;\nconst sticky = staticData.categorias[phone];\nconst categoriaAnterior = (sticky && (agora - sticky.ts) < TTL_MS) ? sticky.categoria : null;\n\nif (categoria) {\n  staticData.categorias[phone] = { categoria, ts: agora };\n}\n\nreturn [{ json: { ...item, categoria, categoriaAnterior } }];"
+        "jsCode": "const item = $input.first().json;\nconst msg = ($('Webhook').first().json.body?.text?.message || '').toLowerCase();\nconst tipo = item.cpfInfo?.tipo || null;\nconst phone = item.body.phone;\n\nlet categoria = item.categoria || null; // já vem definida se veio do menu\n\n// Declaração explícita de não-vínculo (\"não sou aluno\", \"ainda não estudo aí\")\n// é o sinal mais forte de lead que existe, e precisa ser testada ANTES de\n// tudo -- inclusive antes da categoria vinda do menu. Sem isso a frase caía\n// como \"continuação genérica\" no classificador de IA, que devolvia a\n// categoria anterior e prendia um interessado num atendimento que só serve\n// pra quem já é matriculado: foi assim que um lead real ouviu que \"esse\n// atendimento é específico para quem já está matriculado\" e foi mandado\n// embora com um link wa.me, em vez de cair no Agent Leads.\nconst NAO_ALUNO_RE = new RegExp([\n  'n[ãa]o\\\\s+sou\\\\s+(aluno|aluna|estudante|matriculad)',\n  'n[ãa]o\\\\s+sou\\\\s+de\\\\s+voc[êe]s',\n  'ainda\\\\s+n[ãa]o\\\\s+(sou|estou|estudo)',\n  'n[ãa]o\\\\s+(estou\\\\s+)?matriculad',\n  'n[ãa]o\\\\s+tenho\\\\s+matr[íi]cula',\n  'n[ãa]o\\\\s+estudo\\\\s+(a[íi]|na|no|em)',\n  'quero\\\\s+(ser|virar)\\\\s+aluno',\n  'pretendo\\\\s+(estudar|me\\\\s+matricular)',\n].join('|'), 'i');\n\nif (NAO_ALUNO_RE.test(msg)) categoria = 'lead_novo';\n\nif (!categoria) {\n  const regras = [\n    { categoria: 'secretaria', re: /declara[cç][ãa]o|hist[óo]rico escolar|documento|comprovante de matr[íi]cula|transfer[êe]ncia|trancamento|prazo/i },\n    { categoria: 'lead_novo', re: /matr[íi]cul|quero (fazer|estudar)|quais (s[ãa]o os )?cursos|todos os cursos|lista(r)? (os )?cursos|mostra(r)? (os )?cursos|ver (os )?cursos|informa[cç][ãa]o.*curso|interessad[oa] (em|no|na)|quero saber sobre o curso|come[çc]ar a estudar|pré[- ]?matr[íi]cula/i },\n    { categoria: 'financeiro', re: /boleto|mensalidade|pend[êe]ncia|d[ée]bito|pagar|pagamento|pix|fatura|parcela|vencimento/i },\n    { categoria: 'ti', re: /senha|acesso ao portal|login|n[ãa]o consigo entrar|teams|email institucional|sistema fora/i },\n    { categoria: 'avisos', re: /\\baviso|comunicado|novidade/i },\n    { categoria: 'calendario', re: /calend[áa]rio|feriado|pr[óo]xima(s)? (aula|evento|prova)|data d[ae]/i },\n    { categoria: 'professor', re: /disciplina|minhas turmas|meus alunos|minhas aulas/i },\n  ];\n  for (const r of regras) {\n    if (r.re.test(msg)) { categoria = r.categoria; break; }\n  }\n}\n\n// Curso citado pelo nome ou pelo nível (\"pós-graduação em farmácia estética\",\n// \"dúvidas sobre a graduação\") não batia em regra NENHUMA: o regex de\n// lead_novo acima só cobre a palavra \"curso\" literal e verbos de intenção.\n// A frase caía no classificador de IA junto com a categoria anterior e ficava\n// presa nela. Fica num teste separado, depois das regras, por ser ambíguo --\n// aluno já matriculado também pergunta da própria pós. Por isso só vale\n// quando o telefone NÃO está identificado como aluno no cache de CPF; se\n// estiver, deixa null de propósito e o classificador de IA desempata olhando\n// o histórico.\nconst CURSO_RE = /p[óo]s[- ]?gradua[çc][ãa]o|gradua[çc][ãa]o|curso livre|\\bmba\\b|curso de\\s+\\w|d[úu]vidas?\\s+sobre\\s+(a|o|as|os)?\\s*(curso|p[óo]s|gradua)|saber\\s+(mais\\s+)?(sobre|d[oa]s?)\\s+(a|o|as|os)?\\s*(curso|p[óo]s|gradua)|voc[êe]s\\s+t[êe]m\\s+.{0,25}curso|tem\\s+(o\\s+)?curso\\s+de/i;\nif (!categoria && tipo !== 'aluno' && CURSO_RE.test(msg)) categoria = 'lead_novo';\n\n// professores não usam financeiro; categoria \"professor\" só se o cache confirmar o tipo\nif (categoria === 'financeiro' && tipo === 'professor') categoria = null;\nif (categoria === 'professor' && tipo !== 'professor') categoria = null;\n\n// \"categoria anterior\": guarda a última categoria ativa da conversa (mesmo\n// telefone) só como CONTEXTO pro classificador de IA -- não reatribui mais a\n// categoria direto aqui. Antes, quando a mensagem atual não batia em nenhuma\n// regra, o código reaproveitava a categoria anterior cegamente por até 30 min,\n// o que fazia o If4 pular o classificador de IA (achando que já tinha\n// categoria resolvida) mesmo quando a mensagem ambígua era, na verdade, um\n// assunto novo e diferente do anterior -- prendendo a conversa na categoria\n// errada até o cache expirar. Agora toda mensagem sem palavra-chave clara\n// passa pelo classificador de IA a cada turno, que já sabe reaproveitar a\n// categoria anterior só quando a mensagem for uma continuação genérica (ver\n// systemMessage do nó \"Classificador de Intenção (IA)\"), decidindo isso de\n// novo a cada mensagem em vez de confiar cegamente num cache.\nconst staticData = $getWorkflowStaticData('global');\nstaticData.categorias = staticData.categorias || {};\nconst agora = Date.now();\nconst TTL_MS = 30 * 60 * 1000;\nconst sticky = staticData.categorias[phone];\nconst categoriaAnterior = (sticky && (agora - sticky.ts) < TTL_MS) ? sticky.categoria : null;\n\nif (categoria) {\n  staticData.categorias[phone] = { categoria, ts: agora };\n}\n\nreturn [{ json: { ...item, categoria, categoriaAnterior } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -787,7 +787,7 @@
         "promptType": "define",
         "text": "=Categoria da conversa até agora (pode não existir, ou não ter mais relação com a mensagem atual): {{ $json.categoriaAnterior || 'nenhuma' }}\n\nMensagem atual do usuário: {{ $('Webhook').first().json.body.text.message }}",
         "options": {
-          "systemMessage": "Classifique a mensagem do usuário em UMA destas palavras, e responda SOMENTE com essa palavra, sem pontuação, sem explicação, sem repetir a pergunta:\n\nfinanceiro, secretaria, ti, avisos, calendario, lead_novo, professor, outro\n\n- financeiro = boleto/mensalidade/pagamento de quem já é aluno\n- secretaria = documento/declaração/prazo administrativo de quem já é aluno\n- ti = acesso/senha/sistema/portal\n- avisos = comunicados e novidades da escola\n- calendario = datas/eventos/feriados escolares\n- lead_novo = quer conhecer cursos ou se matricular, ainda não é aluno\n- professor = professor perguntando sobre suas disciplinas ou alunos\n- outro = qualquer outra coisa, incluindo saudação isolada, elogio, despedida ou mensagem confusa/incompreensível\n\nSe a mensagem atual for uma continuação genérica sem assunto novo claro (ex.: \"liste todos\", \"mostra mais\", \"sim\", \"não\", só um nome, só um número, só um e-mail), e houver uma \"categoria da conversa até agora\" informada, responda com essa mesma categoria em vez de \"outro\".\n\nExemplos:\nCategoria da conversa até agora: lead_novo / Mensagem: \"liste todos os cursos\" -> lead_novo\nCategoria da conversa até agora: financeiro / Mensagem: \"228.865.111-00\" -> financeiro\nCategoria da conversa até agora: nenhuma / Mensagem: \"bom dia\" -> outro\nCategoria da conversa até agora: nenhuma / Mensagem: \"quero saber sobre o curso de estética\" -> lead_novo"
+          "systemMessage": "Classifique a mensagem do usuário em UMA destas palavras, e responda SOMENTE com essa palavra, sem pontuação, sem explicação, sem repetir a pergunta:\n\nfinanceiro, secretaria, ti, avisos, calendario, lead_novo, professor, outro\n\n- financeiro = boleto/mensalidade/pagamento de quem já é aluno\n- secretaria = documento/declaração/prazo administrativo de quem já é aluno\n- ti = acesso/senha/sistema/portal\n- avisos = comunicados e novidades da escola\n- calendario = datas/eventos/feriados escolares\n- lead_novo = quer conhecer cursos ou se matricular, ainda não é aluno\n- professor = professor perguntando sobre suas disciplinas ou alunos\n- outro = qualquer outra coisa, incluindo saudação isolada, elogio, despedida ou mensagem confusa/incompreensível\n\nREGRA QUE VEM ANTES DE TODAS AS OUTRAS: se a mensagem disser, de qualquer forma, que a pessoa NÃO é aluna / não está matriculada / ainda não estuda no IPESSP, responda lead_novo -- mesmo que a frase seja curta e pareça uma continuação genérica, e mesmo que a categoria da conversa até agora seja outra. Quem avisa que não é aluno é um interessado, e secretaria/financeiro só atendem matriculados.\n\nDúvida sobre um curso identificado pelo nome ou pelo nível (\"pós-graduação em farmácia estética\", \"a graduação de enfermagem\", \"esse MBA\") é lead_novo por padrão. Só classifique como secretaria/financeiro se a mensagem pedir algo administrativo do próprio vínculo da pessoa (declaração, histórico, boleto, prazo).\n\nSe a mensagem atual for uma continuação genérica sem assunto novo claro (ex.: \"liste todos\", \"mostra mais\", \"sim\", \"não\", só um nome, só um número, só um e-mail), e houver uma \"categoria da conversa até agora\" informada, responda com essa mesma categoria em vez de \"outro\". Isso não vale pra mensagem que declara não ter vínculo -- essa é sempre lead_novo, ver regra acima.\n\nExemplos:\nCategoria da conversa até agora: lead_novo / Mensagem: \"liste todos os cursos\" -> lead_novo\nCategoria da conversa até agora: financeiro / Mensagem: \"228.865.111-00\" -> financeiro\nCategoria da conversa até agora: nenhuma / Mensagem: \"bom dia\" -> outro\nCategoria da conversa até agora: nenhuma / Mensagem: \"quero saber sobre o curso de estética\" -> lead_novo\nCategoria da conversa até agora: secretaria / Mensagem: \"Não sou aluno\" -> lead_novo\nCategoria da conversa até agora: secretaria / Mensagem: \"Gostaria de tirar dúvidas sobre a pós graduação em farmácia estética\" -> lead_novo"
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
@@ -814,7 +814,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const item = $input.first().json;\nconst tipo = item.cpfInfo?.tipo || null;\nlet categoria = item.categoria || null;\n\n// Guarda centralizada: roda depois que a categoria foi definida por QUALQUER\n// caminho (regex direto, sticky-cache, ou classificador de IA), pra nunca\n// deixar 'professor' passar sem confirmar tipo === 'professor' no cache --\n// antes essa checagem só rodava no caminho de regex, deixando o fallback de IA\n// sem essa proteção.\nif (categoria === 'professor' && tipo !== 'professor') {\n  categoria = null;\n}\n\nreturn [{ json: { ...item, categoria } }];"
+        "jsCode": "const item = $input.first().json;\nconst tipo = item.cpfInfo?.tipo || null;\nlet categoria = item.categoria || null;\n\n// Guarda centralizada: roda depois que a categoria foi definida por QUALQUER\n// caminho (regex direto, sticky-cache, ou classificador de IA), pra nunca\n// deixar 'professor' passar sem confirmar tipo === 'professor' no cache --\n// antes essa checagem só rodava no caminho de regex, deixando o fallback de IA\n// sem essa proteção.\nif (categoria === 'professor' && tipo !== 'professor') {\n  categoria = null;\n}\n\n// O par da regra acima, que tinha ficado pra trás: \"Classificar por Regra\"\n// tem as DUAS checagens de professor, mas só esta primeira foi trazida pra cá\n// quando a guarda virou centralizada. Resultado: o caminho de regex protegia o\n// professor de cair no financeiro, e o caminho do classificador de IA não --\n// bastava a mensagem ser ambígua o bastante pra chegar no classificador e ser\n// lida como financeiro pro professor ir parar no Agent Financeiro, que ia\n// consultar boleto com o CPF dele. Mesma classe de buraco que motivou criar\n// este nó, só que na outra metade da regra.\nif (categoria === 'financeiro' && tipo === 'professor') {\n  categoria = null;\n}\n\nreturn [{ json: { ...item, categoria } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -827,7 +827,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const item = $input.first().json;\n\n// Preâmbulo único, compartilhado pelos 5 agentes (Financeiro/Secretaria/TI/\n// Leads/Professor) -- antes esse bloco (persona, regras de formatação\n// WhatsApp, anti-alucinação, privacidade de CPF/CRM, telefones de fallback)\n// estava colado igual em cada um dos 5 systemMessage. Qualquer ajuste (ex.:\n// trocar um telefone) exigia editar em 5 lugares, com risco real de um ficar\n// desatualizado. Agora é um só ponto de edição; cada agente só define seu\n// texto específico e referencia {{ $json.preambulo }} no início do próprio\n// systemMessage.\nconst TELEFONE_SECRETARIA = '5511997738431';\nconst TELEFONE_TI = '5511919237687';\nconst TELEFONE_FINANCEIRO = '5511998393640';\n\nconst preambulo = `Você é \"Eliza\", assistente virtual do IPESSP no WhatsApp. Seja cordial, objetiva e profissional -- nunca use gírias (\"tô\", \"cê\", \"e aí\", \"blz\").\n\nFORMATAÇÃO WHATSAPP (não é markdown padrão): negrito usa UM asterisco de cada lado, tipo *assim* -- nunca **assim** com dois. Itálico é _assim_, com um underline. Não use #, ##, nem blocos de código.\nListas: um item por linha começando com \"- \" ou um emoji, com uma linha em branco entre cada item.\nFormate valores em R$ e datas no padrão brasileiro. Respostas curtas.\n\nNunca invente informação -- use só dados retornados pelas tools. Nunca mencione nenhum código/ID interno retornado pelas tools (\"codigo\", \"codigoBoleto\" etc.) -- refira-se pela descrição/data, nunca pelo número solto.\n\nNunca use as palavras \"CRM\" ou \"lead\" com o usuário, nem diga que ele \"já está registrado/cadastrado\" de uma conversa anterior -- trate sempre como se fosse a primeira vez, mesmo que internamente já exista um registro.\n\nSe a mensagem trouxer um trecho \"[Sistema: CPF: ...]\", é um dado pré-identificado só pra seu uso interno -- nunca confirme, mencione ou mostre esse CPF ao usuário (nem mascarado).\n\nSe a dúvida estiver fora do que você resolve aqui, direcione: Secretaria wa.me/${TELEFONE_SECRETARIA} · TI/Suporte wa.me/${TELEFONE_TI} · Financeiro wa.me/${TELEFONE_FINANCEIRO}.`;\n\nreturn [{ json: { ...item, preambulo } }];"
+        "jsCode": "const item = $input.first().json;\n\n// Preâmbulo único, compartilhado pelos 5 agentes (Financeiro/Secretaria/TI/\n// Leads/Professor) -- antes esse bloco (persona, regras de formatação\n// WhatsApp, anti-alucinação, privacidade de CPF/CRM, telefones de fallback)\n// estava colado igual em cada um dos 5 systemMessage. Qualquer ajuste (ex.:\n// trocar um telefone) exigia editar em 5 lugares, com risco real de um ficar\n// desatualizado. Agora é um só ponto de edição; cada agente só define seu\n// texto específico e referencia {{ $json.preambulo }} no início do próprio\n// systemMessage.\nconst TELEFONE_SECRETARIA = '5511997738431';\nconst TELEFONE_TI = '5511919237687';\nconst TELEFONE_FINANCEIRO = '5511998393640';\n\nconst phone = item.body.phone;\nconst agora = Date.now();\nconst staticData = $getWorkflowStaticData('global');\n\n// --- Continuidade da conversa entre setores -------------------------------\n// A memória dos agentes passou a ser uma só por telefone (antes era uma por\n// categoria: {telefone}:secretaria, {telefone}:lead_novo...). Com memórias\n// separadas, toda troca de assunto recomeçava do zero -- o agente novo não\n// sabia nada do que a pessoa já tinha contado e repetia as mesmas perguntas.\n// Aqui a gente registra qual setor atendeu o turno anterior pra avisar o\n// agente atual, no preâmbulo, que ele está recebendo uma conversa em\n// andamento (e não deve recomeçar com saudação nem re-perguntar o que já foi\n// respondido no histórico).\nstaticData.atendimentos = staticData.atendimentos || {};\nconst TTL_CONVERSA = 6 * 60 * 60 * 1000;\nconst anterior = staticData.atendimentos[phone];\nconst conversaEmAndamento = !!(anterior && (agora - anterior.ts) < TTL_CONVERSA);\nconst setorAnterior = conversaEmAndamento ? anterior.categoria : null;\nstaticData.atendimentos[phone] = { categoria: item.categoria, ts: agora };\n\n// --- Mensagens enviadas fora de qualquer agente ---------------------------\n// O menu inicial e o aviso de \"só entendo texto\" saem por nós HTTP soltos,\n// sem passar por agente nenhum -- então nunca entravam na memória. O agente\n// do turno seguinte via só a réplica do usuário, sem o estímulo, e respondia\n// no vácuo: um usuário real levou o aviso de mídia, respondeu \"É texto\n// mesmo\", e a Eliza concordou (\"Sim, é texto mesmo!\") com uma frase que ela\n// nunca tinha dito. Os nós \"Registrar Envio Automático (...)\" gravam esses\n// envios aqui e o preâmbulo devolve como contexto.\nstaticData.envios = staticData.envios || {};\nconst TTL_ENVIOS = 30 * 60 * 1000;\nconst envios = (staticData.envios[phone] || []).filter((e) => (agora - e.ts) < TTL_ENVIOS);\nstaticData.envios[phone] = envios;\n\nconst blocoEnvios = envios.length\n  ? `\\n\\nMENSAGENS AUTOMÁTICAS QUE O SISTEMA JÁ MANDOU PRA ESTA PESSOA (ela recebeu, mas não estão no histórico da conversa -- considere-as ditas por você, não repita e não contradiga):\\n${envios.map((e) => `- ${e.texto}`).join('\\n')}`\n  : '';\n\nconst blocoTransferencia = (setorAnterior && setorAnterior !== item.categoria)\n  ? `\\n\\nESTA CONVERSA VEIO TRANSFERIDA do atendimento de ${setorAnterior} -- ela já estava em andamento. Leia o histórico antes de responder: não se apresente de novo e não peça nada que a pessoa já tenha informado.`\n  : '';\n\nconst preambulo = `Você é \"Eliza\", assistente virtual do IPESSP no WhatsApp. Seja cordial, objetiva e profissional -- nunca use gírias (\"tô\", \"cê\", \"e aí\", \"blz\").\n\nFORMATAÇÃO WHATSAPP (não é markdown padrão): negrito usa UM asterisco de cada lado, tipo *assim* -- nunca **assim** com dois. Itálico é _assim_, com um underline. Não use #, ##, nem blocos de código.\nListas: um item por linha começando com \"- \" ou um emoji, com uma linha em branco entre cada item.\nFormate valores em R$ e datas no padrão brasileiro. Respostas curtas.\n\nSó cumprimente (\"Olá\", se apresentar como Eliza) se esta for de fato a primeira mensagem trocada com a pessoa. Se já existir histórico nesta conversa, ou uma mensagem automática listada abaixo, vá direto ao ponto -- repetir a apresentação a cada turno faz o atendimento parecer que reiniciou.\n\nNunca escreva suas sugestões como se fossem opções de um menu clicável (lista curta de itens soltos, um por linha). No WhatsApp o usuário responde repetindo o item -- ele acha que clicou -- e a conversa trava. Pergunte em frase corrida.\n\nO histórico desta conversa pode conter trechos atendidos por outro setor. Use como contexto, mas responda só o que é do seu escopo.\n\nNunca invente informação -- use só dados retornados pelas tools. Nunca mencione nenhum código/ID interno retornado pelas tools (\"codigo\", \"codigoBoleto\" etc.) -- refira-se pela descrição/data, nunca pelo número solto.\n\nNunca use as palavras \"CRM\" ou \"lead\" com o usuário, nem diga que ele \"já está registrado/cadastrado\" de uma conversa anterior -- fale como se fosse a primeira vez que ele procura a gente, mesmo que internamente já exista um registro. Isso vale só pros registros dos nossos sistemas: o histórico DESTA conversa você usa normalmente.\n\nSe a mensagem trouxer um trecho \"[Sistema: CPF: ...]\", é um dado pré-identificado só pra seu uso interno -- nunca confirme, mencione ou mostre esse CPF ao usuário (nem mascarado).\n\nSe a dúvida estiver fora do que você resolve aqui, direcione: Secretaria wa.me/${TELEFONE_SECRETARIA} · TI/Suporte wa.me/${TELEFONE_TI} · Financeiro wa.me/${TELEFONE_FINANCEIRO}.\nNUNCA use esses números para quem ainda NÃO é aluno e quer conhecer cursos ou se matricular: novos alunos são atendidos aqui mesmo, pelo próprio bot. Mandar um interessado embora com um link wa.me é perder a matrícula -- nenhum desses três números é \"atendimento de novos alunos\".${blocoTransferencia}${blocoEnvios}`;\n\n// --- Boas-vindas da triagem de novos alunos -------------------------------\n// O Agent Leads decidia enviar o texto fixo de boas-vindas com base em \"não\n// tem histórico anterior\". Com a memória compartilhada isso deixou de valer:\n// quem chega transferido da Secretaria já tem histórico e nunca receberia a\n// abertura, e quem volta dias depois receberia de novo. Quem decide agora é\n// este nó, com um registro próprio por telefone.\nstaticData.leadsSaudados = staticData.leadsSaudados || {};\nconst TTL_SAUDACAO = 12 * 60 * 60 * 1000;\nconst saudadoEm = staticData.leadsSaudados[phone];\nconst jaSaudado = !!(saudadoEm && (agora - saudadoEm) < TTL_SAUDACAO);\n\nlet instrucaoBoasVindasLeads = '';\nif (item.categoria === 'lead_novo') {\n  staticData.leadsSaudados[phone] = agora;\n  if (jaSaudado) {\n    instrucaoBoasVindasLeads = 'Esta pessoa JÁ recebeu o texto de boas-vindas da triagem -- NÃO envie de novo. Continue de onde a conversa parou e peça só os dados que ainda faltam.';\n  } else if (conversaEmAndamento) {\n    instrucaoBoasVindasLeads = 'Esta pessoa acabou de ser transferida de outro atendimento, então a conversa já está em andamento: NÃO envie o texto de boas-vindas nem se apresente de novo. Faça uma ponte de uma frase (\"posso te ajudar com isso\") e peça, em seguida, nome completo, e-mail e curso de interesse -- pulando o que ela já tiver informado no histórico.';\n  } else {\n    instrucaoBoasVindasLeads = 'Esta é a primeira mensagem desta pessoa na triagem de novos alunos: comece enviando o texto de boas-vindas abaixo, exatamente como está.';\n  }\n}\n\nreturn [{ json: { ...item, preambulo, instrucaoBoasVindasLeads, setorAnterior } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -1105,7 +1105,7 @@
         "promptType": "define",
         "text": "={{ $json.body.text.message }}",
         "options": {
-          "systemMessage": "={{ $json.preambulo }}\n\nVocê atende SOMENTE quem JÁ é aluno matriculado, com dúvidas sobre documentos, declarações, prazos e situação de matrícula. Use a tool \"Consultar Secretaria\" com o CPF (peça se ainda não tiver, olhando primeiro o contexto \"[Sistema: CPF: ...]\").\n\nDocumentos, declarações e prazos são exatamente o que você resolve aqui -- nunca use a linha de direcionamento acima pra própria Secretaria; se faltar o CPF, peça o CPF em vez de redirecionar.\n\nSe durante a conversa ficar claro que a pessoa NÃO é aluna e quer se matricular pela primeira vez, não tente atender aqui -- explique rapidamente que vai te direcionar para o atendimento de novos alunos e encerre essa resposta sem inventar dados de curso.\n\nSe o usuário pedir explicitamente para falar com um atendente humano, ou se mesmo usando \"Consultar Secretaria\" você não conseguir resolver a dúvida, use \"Encaminhar para Humano (Secretaria)\" com um resumo objetivo do que já foi conversado. Depois de chamar essa tool, avise o usuário que a secretaria foi acionada e vai entrar em contato por WhatsApp -- não repita a mesma pergunta que já tentou resolver."
+          "systemMessage": "={{ $json.preambulo }}\n\nVocê atende SOMENTE quem JÁ é aluno matriculado, com dúvidas sobre documentos, declarações, prazos e situação de matrícula. Use a tool \"Consultar Secretaria\" com o CPF (peça se ainda não tiver, olhando primeiro o contexto \"[Sistema: CPF: ...]\").\n\nDocumentos, declarações e prazos são exatamente o que você resolve aqui -- nunca use a linha de direcionamento acima pra própria Secretaria; se faltar o CPF, peça o CPF em vez de redirecionar.\n\nSe durante a conversa ficar claro que a pessoa NÃO é aluna e quer conhecer cursos ou se matricular pela primeira vez, NÃO a mande embora e NUNCA passe um telefone ou link wa.me nesse caso -- o IPESSP atende novos alunos por aqui mesmo, e nenhum dos números do direcionamento acima é \"atendimento de novos alunos\". Chame a tool \"Encaminhar para Novos Alunos\" com um resumo do que ela já contou (curso ou área de interesse, o que perguntou) e responda em 1-2 frases que uma consultora de novos alunos vai falar com ela por aqui mesmo, em breve. Não invente nome, valor ou duração de curso.\n\nSe o usuário pedir explicitamente para falar com um atendente humano, ou se mesmo usando \"Consultar Secretaria\" você não conseguir resolver a dúvida, use \"Encaminhar para Humano (Secretaria)\" com um resumo objetivo do que já foi conversado. Depois de chamar essa tool, avise o usuário que a secretaria foi acionada e vai entrar em contato por WhatsApp -- não repita a mesma pergunta que já tentou resolver."
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
@@ -1139,7 +1139,7 @@
         "promptType": "define",
         "text": "={{ $json.body.text.message }}",
         "options": {
-          "systemMessage": "={{ $json.preambulo }}\n\nVocê atende quem AINDA NÃO é aluno e quer conhecer cursos ou se matricular. Esse atendimento é uma TRIAGEM curta -- o objetivo é coletar o essencial rápido e encaminhar pra um consultor humano, não fazer uma consultoria completa de cursos pelo chat.\n\nSe esta for a primeira mensagem desta conversa (sem nenhum histórico anterior), responda EXATAMENTE com este texto, sem alterar nada, sem adicionar nem remover nada, nem antes nem depois:\n\n\"Olá! Aqui é a Eliza! Seja muito bem-vindo(a) à Faculdade IPESSP, é um prazer ter você aqui.\n\nPara te direcionar ao consultor e agilizar seu atendimento, poderia me informar:\n\n- Seu nome completo\n- Seu melhor e-mail\n- Curso de interesse\"\n\nDepois que a pessoa responder essas informações (nome, email e curso de interesse):\n1. Pergunte se pode enviar novidades e promoções por WhatsApp, e registre a resposta em whatsappOptin.\n2. Chame \"Registrar Lead CRM\" com nome, email e cursoInteresse (texto livre da resposta da pessoa é suficiente aqui -- não precisa consultar \"Consultar Cursos\" só pra isso).\n3. Depois de registrar, confirme brevemente (1-2 frases curtas) que os dados foram recebidos e que a equipe vai entrar em contato em breve -- não precisa ser um texto fixo, o node \"Corrigir Formatação WhatsApp\" já garante a frase final exata que o usuário recebe (detecta a chamada da tool e substitui sua resposta por um texto padronizado), então sua resposta aqui não aparece pro usuário nesse caso; ainda assim não se despeça com frases longas tipo \"qualquer dúvida estou à disposição\".\n\nSe em algum momento a pessoa perguntar especificamente sobre um curso (duração, valores, modalidade), aí sim use \"Consultar Cursos\" e responda só com dados reais -- nunca invente nome, duração ou valor de curso. Nessa resposta com os dados do curso, não use emojis, mesmo que a formatação geral acima permita -- só texto corrido e *negrito* quando fizer sentido. Mas não ofereça esse detalhamento por conta própria antes de coletar os 3 dados acima -- o objetivo aqui é agilizar o encaminhamento pro consultor, não vender o curso pelo chat.\n\nSempre que responder sobre um curso específico (após usar \"Consultar Cursos\"), em seguida chame \"Enviar Informativo do Curso\" com o id desse curso, para mandar o PDF/material informativo complementando sua resposta em texto -- não é preciso a pessoa pedir o PDF, envie automaticamente. Se a tool retornar erro dizendo que o material ainda não está cadastrado, apenas siga a conversa normalmente sem mencionar esse erro para a pessoa.\n\nMesmo que a pessoa já tenha demonstrado interesse antes, trate sempre como se fosse a primeira conversa -- nunca diga que ela já tem cadastro ou interesse registrado.\n\nNão peça CPF nesse atendimento -- isso só entra depois, no fluxo de inscrição, que não é feito por aqui.",
+          "systemMessage": "={{ $json.preambulo }}\n\nVocê atende quem AINDA NÃO é aluno e quer conhecer cursos ou se matricular. Esse atendimento é uma TRIAGEM curta -- o objetivo é coletar o essencial rápido e encaminhar pra um consultor humano, não fazer uma consultoria completa de cursos pelo chat.\n\n{{ $json.instrucaoBoasVindasLeads }}\n\nTexto de boas-vindas da triagem -- use somente quando a instrução acima mandar enviá-lo, e aí EXATAMENTE assim, sem alterar nada, sem adicionar nem remover nada, nem antes nem depois:\n\n\"Olá! Aqui é a Eliza! Seja muito bem-vindo(a) à Faculdade IPESSP, é um prazer ter você aqui.\n\nPara te direcionar ao consultor e agilizar seu atendimento, poderia me informar:\n\n- Seu nome completo\n- Seu melhor e-mail\n- Curso de interesse\"\n\nDepois que a pessoa responder essas informações (nome, email e curso de interesse):\n1. Pergunte se pode enviar novidades e promoções por WhatsApp, e registre a resposta em whatsappOptin.\n2. Chame \"Registrar Lead CRM\" com nome, email e cursoInteresse (texto livre da resposta da pessoa é suficiente aqui -- não precisa consultar \"Consultar Cursos\" só pra isso).\n3. Depois de registrar, confirme brevemente (1-2 frases curtas) que os dados foram recebidos e que a equipe vai entrar em contato em breve -- não precisa ser um texto fixo, o node \"Corrigir Formatação WhatsApp\" já garante a frase final exata que o usuário recebe (detecta a chamada da tool e substitui sua resposta por um texto padronizado), então sua resposta aqui não aparece pro usuário nesse caso; ainda assim não se despeça com frases longas tipo \"qualquer dúvida estou à disposição\".\n\nSe em algum momento a pessoa perguntar especificamente sobre um curso (duração, valores, modalidade), aí sim use \"Consultar Cursos\" e responda só com dados reais -- nunca invente nome, duração ou valor de curso. Nessa resposta com os dados do curso, não use emojis, mesmo que a formatação geral acima permita -- só texto corrido e *negrito* quando fizer sentido. Mas não ofereça esse detalhamento por conta própria antes de coletar os 3 dados acima -- o objetivo aqui é agilizar o encaminhamento pro consultor, não vender o curso pelo chat.\n\nSempre que responder sobre um curso específico (após usar \"Consultar Cursos\"), em seguida chame \"Enviar Informativo do Curso\" com o id desse curso, para mandar o PDF/material informativo complementando sua resposta em texto -- não é preciso a pessoa pedir o PDF, envie automaticamente. Se a tool retornar erro dizendo que o material ainda não está cadastrado, apenas siga a conversa normalmente sem mencionar esse erro para a pessoa.\n\nNunca diga que a pessoa já tem cadastro, interesse registrado ou histórico com a gente, mesmo que exista um registro interno de uma conversa antiga. Isso vale só pro que está guardado nos nossos sistemas -- o que ela contou nesta mesma conversa (inclusive antes de ser transferida pra você) você USA normalmente, em vez de perguntar de novo.\n\nNão peça CPF nesse atendimento -- isso só entra depois, no fluxo de inscrição, que não é feito por aqui.",
           "returnIntermediateSteps": true
         }
       },
@@ -1172,8 +1172,8 @@
     {
       "parameters": {
         "sessionIdType": "customKey",
-        "sessionKey": "={{ $('Webhook').first().json.body.phone }}:financeiro",
-        "contextWindowLength": 10
+        "sessionKey": "={{ $('Webhook').first().json.body.phone }}",
+        "contextWindowLength": 20
       },
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.4,
@@ -1187,8 +1187,8 @@
     {
       "parameters": {
         "sessionIdType": "customKey",
-        "sessionKey": "={{ $('Webhook').first().json.body.phone }}:secretaria",
-        "contextWindowLength": 10
+        "sessionKey": "={{ $('Webhook').first().json.body.phone }}",
+        "contextWindowLength": 20
       },
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.4,
@@ -1202,8 +1202,8 @@
     {
       "parameters": {
         "sessionIdType": "customKey",
-        "sessionKey": "={{ $('Webhook').first().json.body.phone }}:ti",
-        "contextWindowLength": 10
+        "sessionKey": "={{ $('Webhook').first().json.body.phone }}",
+        "contextWindowLength": 20
       },
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.4,
@@ -1217,8 +1217,8 @@
     {
       "parameters": {
         "sessionIdType": "customKey",
-        "sessionKey": "={{ $('Webhook').first().json.body.phone }}:lead_novo",
-        "contextWindowLength": 10
+        "sessionKey": "={{ $('Webhook').first().json.body.phone }}",
+        "contextWindowLength": 20
       },
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.4,
@@ -1232,8 +1232,8 @@
     {
       "parameters": {
         "sessionIdType": "customKey",
-        "sessionKey": "={{ $('Webhook').first().json.body.phone }}:professor",
-        "contextWindowLength": 10
+        "sessionKey": "={{ $('Webhook').first().json.body.phone }}",
+        "contextWindowLength": 20
       },
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.4,
@@ -1401,6 +1401,73 @@
       ],
       "id": "244b7e5c-d2e6-4c12-9e94-6e6c3b6b5a6e",
       "name": "Encaminhar para Humano (Secretaria)"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Encaminha um INTERESSADO que ainda não é aluno para uma consultora humana de novos alunos, via WhatsApp. Use quando a pessoa disser que não é aluna / não está matriculada e quiser conhecer cursos ou se matricular. Nunca mande a pessoa embora com um telefone: chame esta tool e avise que a consultora vai falar com ela por aqui mesmo.",
+        "method": "POST",
+        "url": "={{ $env.INTEGRACAO_API_URL }}/ia/encaminhar-humano",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"setor\": \"comercial\",\n  \"telefone\": \"{{ $('Webhook').item.json.body.phone }}\",\n  \"resumo\": \"{{ $fromAI('resumo', 'Resumo objetivo (2-4 frases) do que a pessoa procura: curso ou área de interesse, o que ela perguntou e qualquer dado que já tenha informado, para a consultora continuar sem repetir perguntas') }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        1152,
+        856
+      ],
+      "id": "9b3f27d1-4c58-4a76-9d02-7f1c8b4ae330",
+      "name": "Encaminhar para Novos Alunos"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || {};\n\n// Figurinha, reação e áudio de \"curtida\" são cortesia, não pedido. Responder\n// a isso com o aviso de \"só entendo texto\" reabre do nada um atendimento que\n// já tinha se encerrado bem -- foi o que aconteceu com um usuário real que\n// mandou uma figurinha de agradecimento depois do \"muito obrigado\" e recebeu\n// de volta um \"Olá!\" com telefone e e-mail do Financeiro. Ignora em silêncio:\n// devolver [] encerra o ramo sem enviar nada.\nconst ehCortesia = !!(\n  body.sticker ||\n  body.reaction ||\n  body.messageType === 'ReactionMessage' ||\n  body.messageType === 'StickerMessage'\n);\nif (ehCortesia) return [];\n\n// A mensagem não cita mais telefone/e-mail de setor nenhum. O texto antigo\n// era fixo no Financeiro (\"(11) 99839-3640 / matricula.financeiro@ipessp.edu.br\")\n// e saía igual em qualquer conversa -- inclusive numa de Secretaria, o que\n// deixava o usuário com um contato que não tinha nada a ver com o assunto.\n// Quem precisa de humano é encaminhado pelas tools de cada agente, que já\n// sabem o setor certo.\nconst mensagens = [\n  'Recebi seu arquivo, mas por aqui eu só consigo ler mensagens de texto. Pode me escrever o que você precisa que eu te ajudo. 😊',\n  'Obrigada! Por aqui eu ainda só entendo texto -- me conta por escrito o que você precisa que eu resolvo com você.',\n];\n\nreturn [{\n  json: {\n    phone: body.phone,\n    mensagem: mensagens[Math.floor(Math.random() * mensagens.length)],\n  },\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        608,
+        -160
+      ],
+      "id": "3c7a91e4-2b16-4d5f-8a03-5e1d9f2c7b48",
+      "name": "Avaliar Mídia Recebida"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Grava no histórico paralelo (lido pelo nó \"Preparar Preâmbulo\n// Compartilhado\") o que foi enviado fora de qualquer agente. Sem isso o\n// agente do próximo turno não sabe que este aviso saiu: um usuário real\n// respondeu \"É texto mesmo\" logo depois dele e a Eliza, sem contexto nenhum,\n// concordou com uma frase que nunca tinha dito (\"Sim, é texto mesmo!\").\nconst phone = $('Webhook').first().json.body.phone;\nconst texto = $('Avaliar Mídia Recebida').first().json.mensagem;\n\nconst staticData = $getWorkflowStaticData('global');\nstaticData.envios = staticData.envios || {};\nconst agora = Date.now();\nconst TTL_ENVIOS = 30 * 60 * 1000;\n\nconst lista = (staticData.envios[phone] || []).filter((e) => (agora - e.ts) < TTL_ENVIOS);\nlista.push({ texto: `Aviso automático (mídia não suportada): \"${texto}\"`, ts: agora });\nstaticData.envios[phone] = lista.slice(-3);\n\nreturn [{ json: { ok: true } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        944,
+        -272
+      ],
+      "id": "5f2b8c30-9d41-4e7a-b6c8-1a3e7d905c62",
+      "name": "Registrar Envio Automático (Mídia)"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Mesmo histórico paralelo do aviso de mídia: o menu é enviado por um nó HTTP\n// solto, sem agente, e por isso não entrava em memória nenhuma. O agente que\n// atendia a opção escolhida achava que era a primeira mensagem da conversa e\n// mandava uma segunda saudação, quase idêntica à do menu, dois balões\n// seguidos.\nconst phone = $('Webhook').first().json.body.phone;\n\nconst staticData = $getWorkflowStaticData('global');\nstaticData.envios = staticData.envios || {};\nconst agora = Date.now();\nconst TTL_ENVIOS = 30 * 60 * 1000;\n\nconst lista = (staticData.envios[phone] || []).filter((e) => (agora - e.ts) < TTL_ENVIOS);\nlista.push({\n  texto: 'Menu principal: saudação \"Olá! Sou a Eliza, assistente virtual do IPESSP\" + lista de opções (cursos, financeiro, secretaria, TI, avisos, calendário). A pessoa JÁ foi cumprimentada e você JÁ se apresentou.',\n  ts: agora,\n});\nstaticData.envios[phone] = lista.slice(-3);\n\nreturn [{ json: { ok: true } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        704,
+        -272
+      ],
+      "id": "7d4e1a95-6c83-42b0-9e15-8f0b2c6d31a7",
+      "name": "Registrar Envio Automático (Menu)"
     }
   ],
   "pinData": {
@@ -1488,7 +1555,7 @@
         ],
         [
           {
-            "node": "Responder Mídia Não Suportada",
+            "node": "Avaliar Mídia Recebida",
             "type": "main",
             "index": 0
           }
@@ -2099,6 +2166,50 @@
           {
             "node": "Agent Secretaria",
             "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Encaminhar para Novos Alunos": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agent Secretaria",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Avaliar Mídia Recebida": {
+      "main": [
+        [
+          {
+            "node": "Responder Mídia Não Suportada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Responder Mídia Não Suportada": {
+      "main": [
+        [
+          {
+            "node": "Registrar Envio Automático (Mídia)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Menu Inicial": {
+      "main": [
+        [
+          {
+            "node": "Registrar Envio Automático (Menu)",
+            "type": "main",
             "index": 0
           }
         ]
