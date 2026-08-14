@@ -201,7 +201,7 @@ function executarTurno(wf, payload, opcoes = {}) {
 
     saidas[nome] = saida;
     if (nome === 'Aplicar Guarda de Categoria') rastro.categoria = saida[0]?.json?.categoria ?? null;
-    if (nome === 'Preparar Preâmbulo Compartilhado') rastro.contexto = saida[0]?.json;
+    if (nome === 'Montar Preâmbulo') rastro.contexto = saida[0]?.json;
 
     if (!saida.length) { rastro.ignorado = true; continue; } // code node que devolve [] encerra o ramo
     for (const destino of proximos(nome, ramo)) fila.push({ nome: destino, itens: saida });

@@ -269,7 +269,7 @@ module.exports = function conversas({ wf }) {
       const t = c.texto('bom dia');
       ok(t.enviouMenu, 'não enviou o menu');
       igual(t.agente, null, 'saudação não deveria acionar agente');
-      ok(c.staticData.envios?.['5519996991300']?.length, 'o envio do menu não foi registrado');
+      ok(c.staticData.sessoes?.['5519996991300']?.envios?.length, 'o envio do menu não foi registrado');
     });
 
     teste('o registro do menu evita a segunda saudação no turno seguinte', () => {

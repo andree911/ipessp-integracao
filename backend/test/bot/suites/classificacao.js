@@ -2,10 +2,14 @@
 /**
  * Suíte 2 — Classificação (uma mensagem por vez, código real do nó).
  *
- * Roda o jsCode do "Classificar por Regra" direto do JSON do workflow. A tabela
- * mistura os casos que quebraram em produção com as regressões que precisam
- * continuar funcionando -- a correção do lead não pode ter roubado mensagem de
- * secretaria/financeiro/TI.
+ * Roda o jsCode do "Classificar por Regra" e, em seguida, "Aplicar Guarda de
+ * Categoria" -- as duas checagens de professor (financeiro vs professor sem
+ * tipo confirmado, professor vs financeiro) foram centralizadas só na guarda
+ * de propósito, pra não repetir a mesma regra em dois nós; testar apenas
+ * "Classificar por Regra" isolado não veria mais essa proteção, porque ela
+ * não mora mais lá. A tabela mistura os casos que quebraram em produção com
+ * as regressões que precisam continuar funcionando -- a correção do lead não
+ * pode ter roubado mensagem de secretaria/financeiro/TI.
  *
  * `null` aqui não é falha: significa "sem palavra-chave clara, manda pro
  * Classificador de Intenção (IA)", que é o desenho do fluxo.
@@ -13,19 +17,24 @@
 const { suite, teste, igual, ok } = require('../assert');
 const { criarRelogio } = require('../runtime');
 
-/** Executa só o nó de classificação, isolado. */
+/** Executa "Classificar por Regra" seguido de "Aplicar Guarda de Categoria" -- o mesmo par que roda em produção pra toda mensagem resolvida por regra. */
 function classificar(wf, mensagem, { tipo = null, categoriaMenu = null } = {}) {
-  const node = wf.nodes.find((n) => n.name === 'Classificar por Regra');
-  const item = {
-    categoria: categoriaMenu,
-    cpfInfo: tipo ? { tipo } : null,
-    body: { phone: '5519996991300' },
-  };
+  const regra = wf.nodes.find((n) => n.name === 'Classificar por Regra');
+  const guarda = wf.nodes.find((n) => n.name === 'Aplicar Guarda de Categoria');
+  const cpfInfo = tipo ? { tipo } : null;
+  const item = { categoria: categoriaMenu, cpfInfo, body: { phone: '5519996991300' } };
   const relogio = criarRelogio();
+  const staticData = {};
+  const $getWorkflowStaticData = () => staticData;
   const $ = () => ({ first: () => ({ json: { body: { text: { message: mensagem } } } }) });
-  const fn = new Function('$input', '$', '$getWorkflowStaticData', 'Date', node.parameters.jsCode);
-  const saida = fn({ first: () => ({ json: item }) }, $, () => ({}), relogio.Date);
-  return saida[0].json.categoria;
+
+  const fnRegra = new Function('$input', '$', '$getWorkflowStaticData', 'Date', regra.parameters.jsCode);
+  const saidaRegra = fnRegra({ first: () => ({ json: item }) }, $, $getWorkflowStaticData, relogio.Date)[0].json;
+
+  const fnGuarda = new Function('$input', '$getWorkflowStaticData', 'Date', guarda.parameters.jsCode);
+  const saidaGuarda = fnGuarda({ first: () => ({ json: saidaRegra }) }, $getWorkflowStaticData, relogio.Date)[0].json;
+
+  return saidaGuarda.categoria;
 }
 
 // [mensagem, tipo no cache de CPF, categoria vinda do menu, esperado, motivo]
