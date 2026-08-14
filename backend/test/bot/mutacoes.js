@@ -96,6 +96,14 @@ return [{ json: { ...original, categoria } }];`);
   'nó vira órfão': (wf) => {
     delete wf.connections['Avaliar Mídia Recebida'];
   },
+  'menu volta a ter emoji e a ambiguidade de "matrícula"': (wf) => {
+    const n = no(wf, 'Enviar Menu Inicial');
+    n.parameters.jsonBody = n.parameters.jsonBody
+      .replace("title: 'Secretaria', description: 'Documentos, declarações e situação de matrícula'",
+        "title: '📋 Secretaria', description: 'Matrícula, documentos e declarações'")
+      .replace("title: 'Informações de cursos', description: 'Ainda não é aluno? Cursos, valores e matrícula'",
+        "title: '📚 Informações de cursos', description: 'Cursos, valores e matrícula'");
+  },
 };
 
 let pegou = 0;

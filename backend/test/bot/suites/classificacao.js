@@ -14,8 +14,33 @@
  * `null` aqui não é falha: significa "sem palavra-chave clara, manda pro
  * Classificador de Intenção (IA)", que é o desenho do fluxo.
  */
-const { suite, teste, igual, ok } = require('../assert');
+const { suite, teste, igual, ok, casa, naoCasa } = require('../assert');
 const { criarRelogio } = require('../runtime');
+
+/** Emoji de verdade (pictográfico) -- não pega acento nem pontuação comum. */
+const EMOJI_RE = /\p{Extended_Pictographic}/u;
+
+/**
+ * Avalia de verdade o jsonBody de "Enviar Menu Inicial" (é um template
+ * `={{ JSON.stringify({...}) }}`) e devolve o objeto resultante. Precisa de
+ * `$` porque a expressão lê `$('Webhook').item.json.body.phone`; a saudação
+ * sorteada não importa aqui (as 3 variantes são checadas contra o texto bruto
+ * do nó, não contra este objeto), então trava Math.random em 0 só pra ter uma
+ * saída determinística.
+ */
+function extrairMenu(wf) {
+  const node = wf.nodes.find((n) => n.name === 'Enviar Menu Inicial');
+  const corpo = node.parameters.jsonBody.match(/^=\{\{([\s\S]*)\}\}$/)[1];
+  const $ = () => ({ item: { json: { body: { phone: '5511999999999' } } } });
+  const fn = new Function('$', `return (${corpo});`);
+  const original = Math.random;
+  Math.random = () => 0;
+  try {
+    return { node, menu: JSON.parse(fn($)) };
+  } finally {
+    Math.random = original;
+  }
+}
 
 /** Executa "Classificar por Regra" seguido de "Aplicar Guarda de Categoria" -- o mesmo par que roda em produção pra toda mensagem resolvida por regra. */
 function classificar(wf, mensagem, { tipo = null, categoriaMenu = null } = {}) {
@@ -133,6 +158,37 @@ module.exports = function classificacao({ wf }) {
       const sec = fn({ first: () => ({ json: { body: { phone: '55', listResponseMessage: { selectedRowId: 'secretaria' } } } }) });
       ok(/sem montar lista de opções/i.test(sec[0].json.body.text.message),
         'o contexto da Secretaria não proíbe a lista que o usuário leu como botão');
+    });
+  });
+
+  suite('Menu inicial — texto sem ambiguidade e sem emoji', () => {
+    const { node, menu } = extrairMenu(wf);
+
+    teste('nenhum título/descrição do menu usa emoji', () => {
+      for (const o of menu.optionList.options) {
+        naoCasa(o.title, EMOJI_RE, `título de "${o.id}" ainda tem emoji`);
+        naoCasa(o.description, EMOJI_RE, `descrição de "${o.id}" ainda tem emoji`);
+      }
+    });
+
+    teste('a saudação do menu não usa emoji (nenhuma das 3 variantes)', () => {
+      naoCasa(node.parameters.jsonBody, EMOJI_RE, 'o texto bruto do nó ainda tem emoji em algum lugar');
+    });
+
+    teste('só o item de novos alunos fala em "matrícula" solta -- Secretaria fala em "situação de matrícula"', () => {
+      // As duas descrições usavam a palavra "Matrícula" -- foi assim que um
+      // interessado (ainda não aluno) escolheu "Secretaria" achando que era
+      // ali que resolvia a matrícula dele, quando esse setor só atende quem
+      // já é aluno (ver suíte de conversas, cenário do incidente real).
+      // "situação de matrícula" é o jeito certo de falar disso pra quem já é
+      // aluno -- é uma consulta, não uma inscrição.
+      const secretaria = menu.optionList.options.find((o) => o.id === 'secretaria');
+      const matricula = menu.optionList.options.find((o) => o.id === 'matricula');
+      naoCasa(secretaria.description, /(?<!situação de )matr[íi]cula/i,
+        'a descrição da Secretaria voltou a usar "matrícula" solta, sem "situação de" na frente');
+      casa(matricula.description, /matr[íi]cula/i, 'o item de novos alunos parou de mencionar matrícula');
+      casa(matricula.description, /ainda não é aluno/i,
+        'o item de novos alunos não deixa claro que é pra quem ainda não é aluno');
     });
   });
 };
