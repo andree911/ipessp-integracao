@@ -90,7 +90,9 @@ export default () => ({
     // Avisado por WhatsApp quando o chatbot encaminha um atendimento de secretaria
     // pra humano (ver IaService.encaminharHumano) — mesmo padrão de telefoneFinanceiro acima.
     telefoneSecretaria: process.env.ZAPI_TELEFONE_SECRETARIA ?? '',
-    // Consultoras de marketing avisadas por WhatsApp assim que a IA registra um lead novo
+    // Consultoras de marketing avisadas por WhatsApp assim que a IA registra um
+    // lead novo — e também quando o chatbot encaminha um interessado que ainda
+    // não é aluno (setor 'comercial' em IaService.encaminharHumano).
     telefonesConsultorasMarketing: (process.env.ZAPI_TELEFONES_CONSULTORAS_MARKETING ?? '')
       .split(',')
       .map((t) => t.trim())

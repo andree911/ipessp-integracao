@@ -1,8 +1,10 @@
 import { IsIn, IsNotEmpty, IsString, MaxLength } from 'class-validator';
 
 export class EncaminharHumanoDto {
-  @IsIn(['financeiro', 'secretaria'])
-  setor: 'financeiro' | 'secretaria';
+  // 'comercial' = quem ainda não é aluno e quer se matricular; cai nas
+  // consultoras de marketing (ver IaService.encaminharHumano).
+  @IsIn(['financeiro', 'secretaria', 'comercial'])
+  setor: 'financeiro' | 'secretaria' | 'comercial';
 
   @IsNotEmpty()
   @IsString()
