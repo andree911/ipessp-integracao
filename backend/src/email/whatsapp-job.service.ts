@@ -2,14 +2,21 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
+import * as QRCode from 'qrcode';
 import { errMsg } from '../common/err.util';
 import { FinanceiroService } from '../financeiro/financeiro.service';
+import { SophiaService } from '../sophia/sophia.service';
+import { LancamentoAlunoApiModel } from '../sophia/types/sophia.types';
 import { WhatsAppService } from './whatsapp.service';
 import { EmailLog, EmailTipo } from './entities/email-log.entity';
 import { ClienteCache } from '../financeiro/entities/cliente-cache.entity';
 import { LancamentoCache } from '../financeiro/entities/lancamento-cache.entity';
 import { parseDateBR } from '../common/date.util';
+
+// Batch de chamadas concorrentes à Sophia por rodada -- mesmo valor e mesmo
+// motivo do EmailJobService (SOPHIA_BATCH_SIZE).
+const SOPHIA_BATCH_SIZE = 5;
 
 const WPP_ANTES_TIPO: Record<number, EmailTipo> = {
   7: 'wpp_antes_7',
@@ -61,6 +68,15 @@ interface OpcaoLista {
   title: string;
 }
 
+/** Um envio já decidido (bateu marco de dia, tem PIX) -- ver mesma interface em EmailJobService. */
+interface EnvioPendente {
+  cliente: ClienteCache;
+  lanc: LancamentoAlunoApiModel;
+  diffDias: number;
+  venc: Date;
+  tipo: EmailTipo;
+}
+
 @Injectable()
 export class WhatsAppJobService {
   private readonly logger = new Logger(WhatsAppJobService.name);
@@ -69,6 +85,7 @@ export class WhatsAppJobService {
     private readonly financeiro: FinanceiroService,
     private readonly whatsapp: WhatsAppService,
     private readonly config: ConfigService,
+    private readonly sophia: SophiaService,
     @InjectRepository(EmailLog)
     private readonly logRepo: Repository<EmailLog>,
     @InjectRepository(ClienteCache)
@@ -113,8 +130,8 @@ export class WhatsAppJobService {
     if (diffDias === 7) {
       return {
         texto: escolher([
-          `Oi, ${nome}! 👋\nPassando para lembrar que sua mensalidade com vencimento em *${venc}* já está disponível para pagamento.\nVocê pode pagar via PIX copia e cola ou pelo Portal do Aluno Sophia, onde também consegue emitir a 2ª via do boleto quando quiser.${pixBloco}\nAproveite para se antecipar e evitar imprevistos de última hora! 😉${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Acessar Portal Sophia')}`,
-          `Olá, ${nome}! 😊\nSua mensalidade vence em *${venc}* e já está liberada para pagamento. Você pode quitar via PIX copia e cola ou pelo Portal do Aluno Sophia, onde também dá pra emitir a 2ª via do boleto.${pixBloco}\nAdiantar o pagamento evita correria de última hora!${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Acessar Portal Sophia')}`,
+          `Oi, ${nome}! 👋\nPassando para lembrar que sua mensalidade com vencimento em *${venc}* já está disponível para pagamento.\nVocê pode pagar via PIX copia e cola ou pelo Portal do Aluno Sophia, onde também consegue emitir a 2ª via do boleto quando quiser.${pixBloco}\nAproveite para se antecipar e evitar imprevistos de última hora! 😉${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Quero pagar')}`,
+          `Olá, ${nome}! 😊\nSua mensalidade vence em *${venc}* e já está liberada para pagamento. Você pode quitar via PIX copia e cola ou pelo Portal do Aluno Sophia, onde também dá pra emitir a 2ª via do boleto.${pixBloco}\nAdiantar o pagamento evita correria de última hora!${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Quero pagar')}`,
         ]),
         opcoes,
       };
@@ -122,8 +139,8 @@ export class WhatsAppJobService {
     if (diffDias === 5) {
       return {
         texto: escolher([
-          `Olá, ${nome}!\nSua mensalidade vence em 5 dias (*${venc}*). Já está disponível para pagamento via PIX ou boleto, e também pelo Portal Sophia.${pixBloco}\nQue tal já deixar essa pendência resolvida? Assim você garante que tudo fique em dia sem se preocupar depois. 🙂${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Acessar Portal Sophia')}`,
-          `Oi, ${nome}, tudo certo?\nFaltam 5 dias para o vencimento da sua mensalidade (*${venc}*), que já pode ser paga via PIX, boleto ou pelo Portal Sophia.${pixBloco}\nVale a pena resolver isso logo e ficar tranquilo(a) depois. 🙂${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Acessar Portal Sophia')}`,
+          `Olá, ${nome}!\nSua mensalidade vence em 5 dias (*${venc}*). Já está disponível para pagamento via PIX ou boleto, e também pelo Portal Sophia.${pixBloco}\nQue tal já deixar essa pendência resolvida? Assim você garante que tudo fique em dia sem se preocupar depois. 🙂${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Quero pagar')}`,
+          `Oi, ${nome}, tudo certo?\nFaltam 5 dias para o vencimento da sua mensalidade (*${venc}*), que já pode ser paga via PIX, boleto ou pelo Portal Sophia.${pixBloco}\nVale a pena resolver isso logo e ficar tranquilo(a) depois. 🙂${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Quero pagar')}`,
         ]),
         opcoes,
       };
@@ -191,8 +208,8 @@ export class WhatsAppJobService {
     if (atraso === 7) {
       return {
         texto: escolher([
-          `Olá, ${nome}.\nSua mensalidade encontra-se em aberto há 7 dias. Reforçamos a importância da regularização para evitar o acréscimo de encargos e possíveis restrições acadêmicas.${pixBloco}\nVocê pode consultar e pagar também pelo Portal Sophia.${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Acessar Portal Sophia')}`,
-          `${nome}, tudo bem?\nJá são 7 dias com a mensalidade em aberto. É importante regularizar logo pra evitar mais encargos e possíveis restrições acadêmicas.${pixBloco}\nO Portal Sophia também está disponível pra consulta e pagamento.${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Acessar Portal Sophia')}`,
+          `Olá, ${nome}.\nSua mensalidade encontra-se em aberto há 7 dias. Reforçamos a importância da regularização para evitar o acréscimo de encargos e possíveis restrições acadêmicas.${pixBloco}\nVocê pode consultar e pagar também pelo Portal Sophia.${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Quero pagar')}`,
+          `${nome}, tudo bem?\nJá são 7 dias com a mensalidade em aberto. É importante regularizar logo pra evitar mais encargos e possíveis restrições acadêmicas.${pixBloco}\nO Portal Sophia também está disponível pra consulta e pagamento.${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Quero pagar')}`,
         ]),
         opcoes,
       };
@@ -256,8 +273,8 @@ export class WhatsAppJobService {
     if (diffDias > 0) {
       return {
         texto: escolher([
-          `📅 Olá, ${nome}!\nSua mensalidade vence em *${diffDias} dia(s)* (*${venc}*). Efetue o pagamento em dia para evitar juros e encargos.${pixBloco}${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Acessar Portal Sophia')}`,
-          `📅 Oi, ${nome}!\nFaltam *${diffDias} dia(s)* pro vencimento da sua mensalidade (*${venc}*). Pague em dia pra evitar juros e encargos.${pixBloco}${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Acessar Portal Sophia')}`,
+          `📅 Olá, ${nome}!\nSua mensalidade vence em *${diffDias} dia(s)* (*${venc}*). Efetue o pagamento em dia para evitar juros e encargos.${pixBloco}${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Quero pagar')}`,
+          `📅 Oi, ${nome}!\nFaltam *${diffDias} dia(s)* pro vencimento da sua mensalidade (*${venc}*). Pague em dia pra evitar juros e encargos.${pixBloco}${quickReply('Já paguei', 'Preciso de ajuda')}${cta('Quero pagar')}`,
         ]),
         opcoes,
       };
@@ -296,53 +313,67 @@ export class WhatsAppJobService {
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
 
-    const BATCH_LIMIT = 500;
-    const pendentes = (await this.financeiro.getLancamentosPendentes()).slice(
-      0,
-      BATCH_LIMIT,
+    const clientes = await this.financeiro.getClientesComTelefone();
+    this.logger.log(
+      `${clientes.length} aluno(s) com telefone cadastrado — consultando a Sophia ao vivo`,
     );
+
+    // Fase 1 (concorrente, em lotes): só descobre quem bate marco de dia
+    // hoje -- nenhuma mensagem é enviada ainda aqui. Mesma migração e mesmo
+    // motivo do EmailJobService.runEmailJob (incidente 2026-08-12): ler
+    // status de pagamento do cache local (lancamentos_cache) corria o risco
+    // de um lançamento substituído na Sophia nunca ser reavaliado. Indo
+    // direto na Sophia por aluno, a lista de lançamentos em aberto É a
+    // realidade atual.
+    let totalSemBoleto = 0;
+    let totalFalhaConsulta = 0;
+    const envios: EnvioPendente[] = [];
+
+    for (let i = 0; i < clientes.length; i += SOPHIA_BATCH_SIZE) {
+      const lote = clientes.slice(i, i + SOPHIA_BATCH_SIZE);
+      const resultados = await Promise.allSettled(
+        lote.map((cliente) =>
+          this.buscarEnviosDoAluno(cliente, diasAntes, diasApos, hoje),
+        ),
+      );
+      for (let j = 0; j < resultados.length; j++) {
+        const r = resultados[j];
+        if (r.status === 'fulfilled') {
+          envios.push(...r.value.envios);
+          totalSemBoleto += r.value.semBoleto;
+        } else {
+          totalFalhaConsulta++;
+          this.logger.warn(
+            `Falha ao consultar a Sophia pro aluno ${lote[j].codigoSophia} (${lote[j].nomeAluno}): ${errMsg(r.reason)} — pulando esse aluno nesta rodada.`,
+          );
+        }
+      }
+    }
+
+    // Teto de segurança pro volume de mensagens de UMA rodada -- não é sobre
+    // limite de conexão (como o SMTP do e-mail), é anti-banimento: mandar
+    // muito mais que o volume diário normal de uma vez é o tipo de pico que
+    // mais chama atenção de detecção de spam do WhatsApp.
+    const BATCH_LIMIT = 500;
+    const enviosLimitados = envios.slice(0, BATCH_LIMIT);
+    if (envios.length > BATCH_LIMIT) {
+      this.logger.warn(
+        `${envios.length} envios encontrados, cortando pro teto de ${BATCH_LIMIT} nesta rodada — o restante sai na próxima.`,
+      );
+    }
+
+    this.logger.log(`${enviosLimitados.length} mensagem(ns) de WhatsApp a enviar nesta rodada`);
+
+    // Fase 2 (sequencial, com delay randômico entre cada envio -- ver
+    // montarMensagem/delayAleatorio no topo do arquivo).
     let totalEnviados = 0;
     let totalErros = 0;
-    let totalSemBoleto = 0;
 
-    for (const { cliente, lancamento } of pendentes) {
-      if (!cliente.telefoneResponsavel) continue;
-
+    for (const { cliente, lanc, diffDias, venc, tipo } of enviosLimitados) {
       try {
-        const venc = parseDateBR(lancamento.dataVencimento);
-        venc.setHours(0, 0, 0, 0);
-        const diffDias = Math.round(
-          (venc.getTime() - hoje.getTime()) / 86_400_000,
-        );
-
-        let tipo: EmailTipo | null = null;
-
-        if (diffDias === 0) {
-          tipo = 'wpp_vencimento_hoje';
-        } else if (diffDias > 0 && diasAntes.includes(diffDias)) {
-          tipo = WPP_ANTES_TIPO[diffDias] ?? 'wpp_lembrete';
-        } else if (diffDias < 0 && diasApos.includes(Math.abs(diffDias))) {
-          tipo = WPP_APOS_TIPO[Math.abs(diffDias)] ?? 'wpp_cobranca';
-        }
-
-        if (!tipo) continue;
-
-        // Só cobra quem já tem o PIX gerado e sincronizado no cache — é o
-        // único dado de pagamento que essa mensagem inclui (montarMensagem
-        // só usa codigoPix, nunca linhaDigitavel/urlBoleto); sem isso a
-        // mensagem sairia sem nenhuma forma de pagamento anexada (ver mesmo
-        // ajuste em email-job.service.ts).
-        if (!lancamento.codigoPix) {
-          totalSemBoleto++;
-          continue;
-        }
-
+        const codigoLancamento = String(lanc.codigo);
         const jaEnviado = await this.logRepo.findOne({
-          where: {
-            codigoLancamento: String(lancamento.id),
-            tipo,
-            enviado: true,
-          },
+          where: { codigoLancamento, tipo, enviado: true },
         });
         if (
           jaEnviado &&
@@ -354,25 +385,23 @@ export class WhatsAppJobService {
           nomeResponsavel: cliente.nomeResponsavel ?? cliente.nomeAluno,
           nomeAluno: cliente.nomeAluno,
           vencimento: venc.toLocaleDateString('pt-BR'),
-          codigoPix: lancamento.codigoPix ?? undefined,
+          codigoPix: lanc.codigoPix ?? undefined,
           portalLink,
         });
 
         const log = this.logRepo.create({
-          codigoLancamento: String(lancamento.id),
+          codigoLancamento,
           nome: cliente.nomeAluno,
           tipo,
-          destinatario: cliente.telefoneResponsavel,
+          destinatario: cliente.telefoneResponsavel!,
           enviado: false,
         });
 
-        // Delay randômico antes de cada envio — nunca dispara em sequência
-        // instantânea (ver comentário no topo do arquivo).
         await delayAleatorio();
 
         try {
           await this.enviar(
-            cliente.telefoneResponsavel,
+            cliente.telefoneResponsavel!,
             mensagem.texto,
             mensagem.opcoes,
           );
@@ -389,20 +418,78 @@ export class WhatsAppJobService {
         await this.logRepo.save(log);
       } catch (err: unknown) {
         this.logger.error(
-          `Erro ao processar lançamento ${lancamento.id}: ${errMsg(err)}`,
+          `Erro ao processar lançamento ${lanc.codigo} (aluno ${cliente.codigoSophia}): ${errMsg(err)}`,
         );
       }
     }
 
     this.logger.log(
-      `=== Job WhatsApp concluído: ${totalEnviados} enviados, ${totalErros} erros, ${totalSemBoleto} sem PIX (pulados) ===`,
+      `=== Job WhatsApp concluído: ${totalEnviados} enviados, ${totalErros} erros, ${totalSemBoleto} sem PIX (pulados), ${totalFalhaConsulta} aluno(s) c/ falha na consulta à Sophia (pulados) ===`,
     );
   }
 
   /**
-   * Preview isolado: monta a mensagem real de um aluno específico (por CPF) e manda
-   * para `para` (ex.: o próprio número do responsável pelo teste), sem tocar no lote
-   * do cron nem no telefone real cadastrado do responsável do aluno.
+   * Fase 1 de runWhatsAppJob -- só decide quais lançamentos deste aluno
+   * batem marco de dia hoje, sem mandar nada. Lançada em lote/concorrente
+   * pelo chamador; joga erro de API pra fora de propósito (mesmo padrão de
+   * EmailJobService.buscarEnviosDoAluno).
+   */
+  private async buscarEnviosDoAluno(
+    cliente: ClienteCache,
+    diasAntes: number[],
+    diasApos: number[],
+    hoje: Date,
+  ): Promise<{ envios: EnvioPendente[]; semBoleto: number }> {
+    const envios: EnvioPendente[] = [];
+    let semBoleto = 0;
+
+    if (!cliente.codigoSophia || !cliente.telefoneResponsavel) {
+      return { envios, semBoleto };
+    }
+
+    const lancamentosAluno = await this.sophia.getLancamentosAluno(cliente.codigoSophia);
+
+    for (const lanc of lancamentosAluno) {
+      if (lanc.recebido && lanc.recebido > 0) continue; // já pago -- não há nada a avaliar
+
+      try {
+        const venc = parseDateBR(lanc.dataVencimento.substring(0, 10));
+        venc.setHours(0, 0, 0, 0);
+        const diffDias = Math.round((venc.getTime() - hoje.getTime()) / 86_400_000);
+
+        let tipo: EmailTipo | null = null;
+        if (diffDias === 0) {
+          tipo = 'wpp_vencimento_hoje';
+        } else if (diffDias > 0 && diasAntes.includes(diffDias)) {
+          tipo = WPP_ANTES_TIPO[diffDias] ?? 'wpp_lembrete';
+        } else if (diffDias < 0 && diasApos.includes(Math.abs(diffDias))) {
+          tipo = WPP_APOS_TIPO[Math.abs(diffDias)] ?? 'wpp_cobranca';
+        }
+        if (!tipo) continue;
+
+        // Só cobra quem já tem PIX gerado -- montarMensagem só usa
+        // codigoPix, nunca linhaDigitavel/urlBoleto (mesmo ajuste do
+        // EmailJobService).
+        if (!lanc.codigoPix) {
+          semBoleto++;
+          continue;
+        }
+
+        envios.push({ cliente, lanc, diffDias, venc, tipo });
+      } catch (err: unknown) {
+        this.logger.error(`Erro ao calcular marco do lançamento ${lanc.codigo} (aluno ${cliente.codigoSophia}): ${errMsg(err)}`);
+      }
+    }
+
+    return { envios, semBoleto };
+  }
+
+  /**
+   * Preview isolado: consulta a Sophia ao vivo pro aluno (mesma fonte do job
+   * real agora -- só usa o cache local pra achar o codigoSophia a partir do
+   * CPF) e monta a mensagem real do lançamento em aberto mais próximo,
+   * mandando pra `para` (ex.: o próprio número do responsável pelo teste),
+   * sem tocar no telefone real cadastrado do responsável do aluno.
    */
   async previewPorCpf(
     cpf: string,
@@ -416,23 +503,23 @@ export class WhatsAppJobService {
         'Nenhum aluno encontrado para o CPF informado. Verifique se o CPF do responsável financeiro está cadastrado.',
       );
     }
-
-    const lancamentos = await this.lancamentoRepo.find({
-      where: { codigoCliente: In(clientes.map((c) => c.id)), recebido: false },
-    });
-    if (lancamentos.length === 0) {
-      throw new Error(
-        `${clientes[0].nomeAluno} não possui lançamentos em aberto`,
-      );
+    const cliente = clientes.find((c) => c.codigoSophia != null) ?? clientes[0];
+    if (!cliente.codigoSophia) {
+      throw new Error(`${cliente.nomeAluno} não tem código Sophia associado no cache local.`);
     }
 
-    lancamentos.sort((a, b) =>
-      a.dataVencimento.localeCompare(b.dataVencimento),
+    const lancamentosAluno = await this.sophia.getLancamentosAluno(cliente.codigoSophia);
+    const abertos = lancamentosAluno.filter((l) => !l.recebido || l.recebido <= 0);
+    if (abertos.length === 0) {
+      throw new Error(`${cliente.nomeAluno} não possui lançamentos em aberto na Sophia.`);
+    }
+    abertos.sort((a, b) =>
+      parseDateBR(a.dataVencimento.substring(0, 10)).getTime() -
+      parseDateBR(b.dataVencimento.substring(0, 10)).getTime(),
     );
-    const lancamento = lancamentos[0];
-    const cliente = clientes.find((c) => c.id === lancamento.codigoCliente)!;
+    const lanc = abertos[0];
 
-    return [await this.enviarPreview(cliente, lancamento, para, diasSimulados)];
+    return [await this.enviarPreviewLive(cliente, lanc, para, diasSimulados)];
   }
 
   /** `diasSimulados` — ver comentário de previewPorCpf, mesma convenção. */
@@ -457,10 +544,61 @@ export class WhatsAppJobService {
         `Cliente do lançamento ${codigoLancamento} não encontrado`,
       );
 
-    return [await this.enviarPreview(cliente, lancamento, para, diasSimulados)];
+    return [await this.enviarPreviewCache(cliente, lancamento, para, diasSimulados)];
   }
 
-  private async enviarPreview(
+  /** Preview a partir do lançamento AO VIVO da Sophia -- usado por previewPorCpf. */
+  private async enviarPreviewLive(
+    cliente: ClienteCache,
+    lanc: LancamentoAlunoApiModel,
+    para: string,
+    diasSimulados?: number,
+  ): Promise<{ aluno: string; tipo: string; lancamento: number }> {
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+
+    let venc: Date;
+    let diffDias: number;
+    if (diasSimulados !== undefined) {
+      diffDias = diasSimulados;
+      venc = new Date(hoje.getTime() + diasSimulados * 86_400_000);
+    } else {
+      venc = parseDateBR(lanc.dataVencimento.substring(0, 10));
+      venc.setHours(0, 0, 0, 0);
+      diffDias = Math.round((venc.getTime() - hoje.getTime()) / 86_400_000);
+    }
+
+    const portalLink =
+      this.config.get<string>('email.linkPortalAluno') ||
+      this.config.get<string>('email.siteUrl') ||
+      undefined;
+
+    const mensagem = this.montarMensagem(diffDias, {
+      nomeResponsavel: cliente.nomeResponsavel ?? cliente.nomeAluno,
+      nomeAluno: cliente.nomeAluno,
+      vencimento: venc.toLocaleDateString('pt-BR'),
+      codigoPix: lanc.codigoPix ?? undefined,
+      portalLink,
+    });
+
+    await this.enviar(
+      para,
+      `🧪 *[PREVIEW]*\n\n${mensagem.texto}`,
+      mensagem.opcoes,
+    );
+
+    const tipo =
+      diffDias === 0
+        ? 'wpp_vencimento_hoje'
+        : diffDias > 0
+          ? (WPP_ANTES_TIPO[diffDias] ?? 'wpp_lembrete')
+          : (WPP_APOS_TIPO[Math.abs(diffDias)] ?? 'wpp_cobranca');
+
+    return { aluno: cliente.nomeAluno, tipo, lancamento: lanc.codigo };
+  }
+
+  /** Preview a partir do cache local -- ver comentário de previewPorLancamento (teste manual, cache-based por design). */
+  private async enviarPreviewCache(
     cliente: ClienteCache,
     lancamento: LancamentoCache,
     para: string,
@@ -507,6 +645,161 @@ export class WhatsAppJobService {
           : (WPP_APOS_TIPO[Math.abs(diffDias)] ?? 'wpp_cobranca');
 
     return { aluno: cliente.nomeAluno, tipo, lancamento: lancamento.id };
+  }
+
+  /**
+   * Resposta a uma opção da lista da mensagem de cobrança (ja_paguei/ajuda/
+   * portal) -- chamado pelo n8n quando o Z-API entrega um listResponseMessage
+   * com um desses IDs. Esses 3 IDs não existem no mapa de menu principal do
+   * bot (Bot-IPESSP-WhatsApp.roteado.json, node "Mapear Seleção do Menu"),
+   * então sem essa rota eles caiam no agente de IA genérico só com o título
+   * do botão como contexto, sem saber que veio de uma cobrança.
+   */
+  async responderOpcaoCobranca(
+    selectedRowId: string,
+    telefone: string,
+  ): Promise<{ mensagem: string }> {
+    if (selectedRowId === 'portal') {
+      const mensagem = await this.enviarPixOuPortal(telefone);
+      return { mensagem };
+    }
+
+    if (selectedRowId === 'ajuda') {
+      const telefoneFinanceiro = this.config.get<string>('zapi.telefoneFinanceiro');
+      const emailFinanceiro = this.config.get<string>('email.emailNotificacoes');
+      const linkWa = telefoneFinanceiro ? `https://wa.me/${telefoneFinanceiro.replace(/\D/g, '')}` : undefined;
+      const mensagem =
+        (linkWa
+          ? `Para tratar da sua pendência, entre em contato diretamente com o setor financeiro: ${linkWa}`
+          : 'Para tratar da sua pendência, entre em contato com o setor financeiro.') +
+        (emailFinanceiro ? `\n\nSe preferir, também pode mandar um e-mail: ${emailFinanceiro}` : '');
+      await this.whatsapp.enviarTexto(telefone, mensagem);
+      return { mensagem };
+    }
+
+    if (selectedRowId === 'ja_paguei') {
+      const mensagem = await this.checarPagamentoAoVivo(telefone);
+      await this.whatsapp.enviarTexto(telefone, mensagem);
+      return { mensagem };
+    }
+
+    throw new NotFoundException(`Opção "${selectedRowId}" não reconhecida.`);
+  }
+
+  /**
+   * Consulta a Sophia ao vivo pro(s) aluno(s) vinculado(s) a esse telefone --
+   * mesma fonte do job real (ver runWhatsAppJob). Se mais de um aluno usa o
+   * mesmo telefone de responsável (comum: pai/mãe com mais de um filho
+   * matriculado), não adivinha qual -- pede pra especificar, porque dar a
+   * resposta errada de pagamento pro aluno errado é pior que perguntar.
+   */
+  private async checarPagamentoAoVivo(telefone: string): Promise<string> {
+    const clientes = await this.buscarClientesPorTelefone(telefone);
+
+    if (clientes.length === 0) {
+      return 'Obrigado por avisar! Vamos verificar seu pagamento e atualizar por aqui em breve.';
+    }
+    if (clientes.length > 1) {
+      return 'Obrigado por avisar! Encontramos mais de um aluno vinculado a esse número — pra eu confirmar certinho, me diga o nome completo de quem fez o pagamento.';
+    }
+
+    const cliente = clientes[0];
+    const nome = cliente.nomeResponsavel ?? cliente.nomeAluno;
+
+    try {
+      const lancamentos = await this.sophia.getLancamentosAluno(cliente.codigoSophia!);
+      const abertos = lancamentos.filter((l) => !l.recebido || l.recebido <= 0);
+      if (abertos.length === 0) {
+        return `Confirmado, ${nome}! Não identificamos nenhuma pendência em aberto no seu nome. Obrigado! 😊`;
+      }
+      return `Oi, ${nome}! Ainda não identificamos esse pagamento no nosso sistema — isso é normal, pode levar até 3 dias úteis pra compensar (mais ainda se foi boleto). Se já pagou há mais tempo que isso, nos avise que vamos verificar com atenção.`;
+    } catch (err: unknown) {
+      this.logger.warn(`checarPagamentoAoVivo: falha ao consultar Sophia pro aluno ${cliente.codigoSophia}: ${errMsg(err)}`);
+      return 'Obrigado por avisar! No momento não conseguimos consultar seu pagamento automaticamente — nossa equipe vai verificar manualmente.';
+    }
+  }
+
+  /**
+   * Busca o lançamento em aberto mais próximo do vencimento pro(s) aluno(s)
+   * vinculado(s) a esse telefone (mesma consulta ao vivo de checarPagamentoAoVivo)
+   * e manda o PIX copia-e-cola + QR code de imagem, com o link do Portal como
+   * complemento -- não como única opção, que era o comportamento antigo.
+   * Mesma regra de ambiguidade de checarPagamentoAoVivo: mais de um aluno no
+   * mesmo telefone não adivinha qual, cai no link genérico do Portal.
+   */
+  private async enviarPixOuPortal(telefone: string): Promise<string> {
+    const portalLink =
+      this.config.get<string>('email.linkPortalAluno') ||
+      this.config.get<string>('email.siteUrl');
+
+    const enviarSoLink = async (): Promise<string> => {
+      const mensagem = portalLink
+        ? `Aqui está o link do Portal do Aluno Sophia: ${portalLink}`
+        : 'No momento não temos o link do Portal disponível — qualquer dúvida, fale com a secretaria.';
+      await this.whatsapp.enviarTexto(telefone, mensagem);
+      return mensagem;
+    };
+
+    const clientes = await this.buscarClientesPorTelefone(telefone);
+    if (clientes.length !== 1) return enviarSoLink();
+
+    const cliente = clientes[0];
+    try {
+      const lancamentos = await this.sophia.getLancamentosAluno(cliente.codigoSophia!);
+      const abertos = lancamentos.filter((l) => !l.recebido || l.recebido <= 0);
+      if (abertos.length === 0) {
+        const mensagem = `Não encontramos nenhuma pendência em aberto no seu nome.${portalLink ? ` Se precisar, o Portal do Aluno também está disponível: ${portalLink}` : ''}`;
+        await this.whatsapp.enviarTexto(telefone, mensagem);
+        return mensagem;
+      }
+
+      abertos.sort((a, b) =>
+        parseDateBR(a.dataVencimento.substring(0, 10)).getTime() -
+        parseDateBR(b.dataVencimento.substring(0, 10)).getTime(),
+      );
+      const lanc = abertos[0];
+      const venc = parseDateBR(lanc.dataVencimento.substring(0, 10)).toLocaleDateString('pt-BR');
+
+      const partes = [`Segue o pagamento da sua mensalidade mais próxima (vencimento *${venc}*):`];
+      if (lanc.codigoPix) partes.push(`\n*PIX Copia e Cola:*\n\`${lanc.codigoPix}\``);
+      if (portalLink) partes.push(`\nVocê também pode acessar o Portal do Aluno Sophia: ${portalLink}`);
+      const mensagem = partes.join('\n');
+
+      await this.whatsapp.enviarTexto(telefone, mensagem);
+
+      if (lanc.codigoPix) {
+        try {
+          const qrBuffer = await QRCode.toBuffer(lanc.codigoPix, { width: 260, margin: 1, type: 'png' });
+          await this.whatsapp.enviarImagem(telefone, qrBuffer.toString('base64'), 'QR Code PIX');
+        } catch (err: unknown) {
+          this.logger.warn(`enviarPixOuPortal: falha ao gerar/enviar QR code pro telefone ${telefone}: ${errMsg(err)}`);
+        }
+      }
+
+      return mensagem;
+    } catch (err: unknown) {
+      this.logger.warn(`enviarPixOuPortal: falha ao consultar Sophia pro aluno ${cliente.codigoSophia}: ${errMsg(err)}`);
+      return enviarSoLink();
+    }
+  }
+
+  /**
+   * Casa o telefone que vem do webhook (formato bruto do WhatsApp) contra
+   * telefoneResponsavel no cache, comparando só os últimos 8 dígitos --
+   * robusto a diferenças de DDI/9º dígito entre o que a Sophia guardou e o
+   * que o WhatsApp manda. Postgres puro (regexp_replace) porque TypeORM não
+   * tem um jeito portável de normalizar dígitos direto na query.
+   */
+  private async buscarClientesPorTelefone(telefoneWebhook: string): Promise<ClienteCache[]> {
+    const digitos = telefoneWebhook.replace(/\D/g, '');
+    const sufixo = digitos.slice(-8);
+    if (sufixo.length < 8) return [];
+
+    return this.clienteRepo
+      .createQueryBuilder('c')
+      .where(`regexp_replace(c."telefoneResponsavel", '\\D', '', 'g') LIKE :sufixo`, { sufixo: `%${sufixo}` })
+      .andWhere('c.codigoSophia IS NOT NULL')
+      .getMany();
   }
 
   /**

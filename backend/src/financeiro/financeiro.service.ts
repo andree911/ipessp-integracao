@@ -245,17 +245,6 @@ export class FinanceiroService {
     };
   }
 
-  async getLancamentosPendentes(): Promise<{ cliente: ClienteCache; lancamento: LancamentoCache }[]> {
-    const lancamentos = await this.lancamentoRepo.find({ where: { recebido: false } });
-    if (lancamentos.length === 0) return [];
-    const ids = [...new Set(lancamentos.map(l => l.codigoCliente))];
-    const clientes = await this.clienteRepo.findBy({ id: In(ids) });
-    const mapaClientes = new Map(clientes.map(c => [c.id, c]));
-    return lancamentos
-      .map(lancamento => ({ cliente: mapaClientes.get(lancamento.codigoCliente), lancamento }))
-      .filter((r): r is { cliente: ClienteCache; lancamento: LancamentoCache } => r.cliente !== undefined);
-  }
-
   /**
    * Roster de alunos com e-mail cadastrado, pra uso do EmailJobService ao
    * consultar a Sophia ao vivo em vez de ler status de pagamento do cache.
@@ -270,6 +259,16 @@ export class FinanceiroService {
       .createQueryBuilder('c')
       .where('c.emailResponsavel IS NOT NULL')
       .andWhere("c.emailResponsavel != ''")
+      .andWhere('c.codigoSophia IS NOT NULL')
+      .getMany();
+  }
+
+  /** Mesmo roster de getClientesComEmail, mas pra WhatsAppJobService (telefone em vez de e-mail). */
+  async getClientesComTelefone(): Promise<ClienteCache[]> {
+    return this.clienteRepo
+      .createQueryBuilder('c')
+      .where('c.telefoneResponsavel IS NOT NULL')
+      .andWhere("c.telefoneResponsavel != ''")
       .andWhere('c.codigoSophia IS NOT NULL')
       .getMany();
   }

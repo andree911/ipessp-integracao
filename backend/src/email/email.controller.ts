@@ -199,6 +199,22 @@ export class EmailController {
     }
   }
 
+  @Post('whatsapp/resposta-opcao')
+  @HttpCode(200)
+  async whatsappRespostaOpcao(
+    @Body('selectedRowId') selectedRowId: string,
+    @Body('telefone') telefone: string,
+  ): Promise<{ ok: boolean; mensagem: string }> {
+    if (!selectedRowId)
+      throw new BadRequestException('Informe o campo "selectedRowId"');
+    if (!telefone) throw new BadRequestException('Informe o campo "telefone"');
+    const { mensagem } = await this.whatsappJobService.responderOpcaoCobranca(
+      selectedRowId,
+      telefone,
+    );
+    return { ok: true, mensagem };
+  }
+
   @Post('test')
   @HttpCode(200)
   async testar(

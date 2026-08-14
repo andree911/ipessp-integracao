@@ -142,6 +142,39 @@ export class WhatsAppService {
     }
   }
 
+  /** Envia uma imagem (ex.: QR code do PIX) em base64. Propaga erro — quem chama decide o fallback. */
+  async enviarImagem(
+    telefone: string,
+    base64: string,
+    caption?: string,
+  ): Promise<void> {
+    const instanceId = this.config.get<string>('zapi.instanceId');
+    const token = this.config.get<string>('zapi.token');
+    const clientToken = this.config.get<string>('zapi.clientToken');
+
+    if (!instanceId || !token) {
+      throw new Error('Z-API não configurada — imagem não pode ser enviada');
+    }
+
+    const url = `https://api.z-api.io/instances/${instanceId}/token/${token}/send-image`;
+    const phone = telefone.replace(/\D/g, '');
+
+    try {
+      await firstValueFrom(
+        this.http.post(
+          url,
+          { phone, image: base64, caption },
+          { headers: { 'Client-Token': clientToken ?? '' } },
+        ),
+      );
+    } catch (err) {
+      this.logger.warn(
+        `WhatsApp: falha ao enviar imagem para ${phone} — ${detalheErro(err)}`,
+      );
+      throw err;
+    }
+  }
+
   /** Envia um documento (ex.: PDF de boleto) em base64. Propaga erro — quem chama decide o fallback. */
   async enviarDocumento(
     telefone: string,
