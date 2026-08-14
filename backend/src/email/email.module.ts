@@ -6,6 +6,7 @@ import { EmailJobService } from './email-job.service';
 import { WhatsAppService } from './whatsapp.service';
 import { WhatsAppJobService } from './whatsapp-job.service';
 import { EmailController } from './email.controller';
+import { WhatsAppWebhookController } from './whatsapp-webhook.controller';
 import { EmailLog } from './entities/email-log.entity';
 import { LancamentoCache } from '../financeiro/entities/lancamento-cache.entity';
 import { ClienteCache } from '../financeiro/entities/cliente-cache.entity';
@@ -15,7 +16,7 @@ import { AdminApiKeyGuard } from '../admin/guards/admin-api-key.guard';
 
 @Module({
   imports: [TypeOrmModule.forFeature([EmailLog, LancamentoCache, ClienteCache]), HttpModule, SophiaModule, FinanceiroModule],
-  controllers: [EmailController],
+  controllers: [EmailController, WhatsAppWebhookController],
   providers: [EmailService, EmailJobService, WhatsAppService, WhatsAppJobService, AdminApiKeyGuard],
   exports: [EmailService, EmailJobService, WhatsAppService],
 })

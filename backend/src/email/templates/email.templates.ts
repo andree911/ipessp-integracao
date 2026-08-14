@@ -580,6 +580,8 @@ interface BaseOpcoes {
   botaoAntesSeguranca?: boolean;
   /** Texto do botão CTA principal — default 'VEJA COMO ACESSAR SUA FATURA' (ver `botaoPrincipal`). */
   textoBotaoPrincipal?: string;
+  /** Link do botão CTA principal — default linkComoAcessar/linkPortalAluno (ver `comoAcessarUrl` em `base`). */
+  linkBotaoPrincipal?: string;
 }
 
 // Mesma linha fina usada entre as linhas do card de resumo (RA/Descrição/etc.).
@@ -589,7 +591,7 @@ const divisoria = `
   </table>`;
 
 function base(subject: string, introTitulo: string, descParagrafo: string, nota: string, data: EmailData, preheader = '', opcoes?: BaseOpcoes): string {
-  const comoAcessarUrl = data.linkComoAcessar ?? data.linkPortalAluno ?? '#';
+  const comoAcessarUrl = opcoes?.linkBotaoPrincipal ?? data.linkComoAcessar ?? data.linkPortalAluno ?? '#';
   const ocultarPagamento = opcoes?.ocultarPagamento ?? false;
   const temHero = !!opcoes?.heroImagemUrl;
 
@@ -1056,6 +1058,8 @@ export function templateRenegociacaoOferta(data: EmailData): { subject: string; 
     </tr>
   </table>`;
 
+  const telWhatsappFinanceiro = (data.telefoneEscola ?? '').replace(/\D/g, '');
+
   return {
     subject,
     html: base(subject, 'Ainda d&#225; tempo de regularizar com condi&#231;&#245;es especiais.', desc + beneficios, nota, data, preheader, {
@@ -1065,6 +1069,7 @@ export function templateRenegociacaoOferta(data: EmailData): { subject: string; 
       heroImagemAlt: 'Dois estudantes do IPESSP conversando',
       botaoAntesSeguranca: true,
       textoBotaoPrincipal: 'CLIQUE AQUI PARA NEGOCIAR SEUS DÉBITOS',
+      linkBotaoPrincipal: telWhatsappFinanceiro ? `https://wa.me/55${telWhatsappFinanceiro}` : undefined,
     }),
   };
 }
@@ -1097,6 +1102,7 @@ export function templateRenegociacaoLembrete(data: EmailData): { subject: string
       heroImagemAlt: 'Retrato de estudante do IPESSP',
       botaoAntesSeguranca: true,
       textoBotaoPrincipal: 'CLIQUE AQUI PARA NEGOCIAR SEUS DÉBITOS',
+      linkBotaoPrincipal: telWhatsapp ? `https://wa.me/55${telWhatsapp}` : undefined,
     }),
   };
 }

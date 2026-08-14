@@ -104,6 +104,15 @@ export default () => ({
     diasApos: (process.env.WPP_DIAS_APOS ?? '1,2,3,7,8,9,10,12,15,20')
       .split(',')
       .map((d) => parseInt(d.trim(), 10)),
+    // Mesmo par usado hoje só pelo "Filtro Modo Teste" do n8n -- precisa
+    // existir também aqui porque o webhook da Z-API passou a bater primeiro
+    // no backend (ver WhatsAppWebhookController), não mais direto no n8n.
+    modoTeste: process.env.ZAPI_MODO_TESTE ?? 'false',
+    telefoneTeste: process.env.ZAPI_TELEFONE_TESTE ?? '',
+    // URL do fluxo "Encaminhar Leads" no n8n -- tudo que não for resposta de
+    // opção de cobrança é repassado pra cá sem alteração, pra não quebrar o
+    // encaminhamento de lead que já funciona hoje.
+    n8nWebhookUrl: process.env.N8N_WHATSAPP_WEBHOOK_URL ?? '',
   },
   jwt: {
     secret: process.env.JWT_SECRET || (() => { throw new Error('JWT_SECRET env var is required'); })(),
