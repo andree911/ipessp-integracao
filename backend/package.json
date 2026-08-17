@@ -17,7 +17,10 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "test:bot": "node test/bot/run.js",
+    "test:bot:ia": "node test/bot/run.js --ia",
+    "test:bot:mutacao": "node test/bot/mutacoes.js"
   },
   "dependencies": {
     "@nestjs/axios": "^4.0.1",
@@ -36,13 +39,13 @@
     "cookie-parser": "^1.4.7",
     "form-data": "^4.0.5",
     "jsonwebtoken": "^9.0.3",
-    "mercadopago": "^3.1.0",
     "minio": "^8.0.6",
     "nodemailer": "^8.0.11",
     "pg": "^8.22.0",
     "qrcode": "^1.5.4",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
+    "sharp": "^0.35.3",
     "typeorm": "^1.0.0"
   },
   "devDependencies": {

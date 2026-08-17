@@ -1,4 +1,10 @@
-import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  Index,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 // Sem tabela de "conta" própria: a senha validada é sempre a real da Sophia
 // (via ValidarLogin), então a sessão guarda direto os dados necessários pra

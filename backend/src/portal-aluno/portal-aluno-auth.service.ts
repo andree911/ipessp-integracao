@@ -38,15 +38,24 @@ export class PortalAlunoAuthService {
 
     let resultado: { acessoValido: boolean };
     try {
-      resultado = await this.sophia.validarLogin({ codigo: ra, senha: dto.senha });
+      resultado = await this.sophia.validarLogin({
+        codigo: ra,
+        senha: dto.senha,
+      });
     } catch {
-      throw new UnauthorizedException('Não foi possível validar seu login agora. Tente novamente em instantes.');
+      throw new UnauthorizedException(
+        'Não foi possível validar seu login agora. Tente novamente em instantes.',
+      );
     }
     if (!resultado.acessoValido) {
       throw new UnauthorizedException('RA ou senha inválidos.');
     }
 
-    return this.emitirSessao({ ra, codigoSophia: cliente.codigoSophia, nome: cliente.nomeAluno });
+    return this.emitirSessao({
+      ra,
+      codigoSophia: cliente.codigoSophia,
+      nome: cliente.nomeAluno,
+    });
   }
 
   async refresh(refreshTokenRaw: string) {
@@ -57,11 +66,17 @@ export class PortalAlunoAuthService {
     }
 
     await this.refreshRepo.delete(registro.id);
-    return this.emitirSessao({ ra: registro.ra, codigoSophia: registro.codigoSophia, nome: registro.nome });
+    return this.emitirSessao({
+      ra: registro.ra,
+      codigoSophia: registro.codigoSophia,
+      nome: registro.nome,
+    });
   }
 
   async logout(refreshTokenRaw: string) {
-    await this.refreshRepo.delete({ tokenHash: this.hashToken(refreshTokenRaw) });
+    await this.refreshRepo.delete({
+      tokenHash: this.hashToken(refreshTokenRaw),
+    });
     return { ok: true };
   }
 

@@ -1,4 +1,12 @@
-import { BadRequestException, Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { TiService } from './ti.service';
 import { CriarChamadoDto } from './dto/criar-chamado.dto';
@@ -16,7 +24,8 @@ export class TiController {
 
   @Get('chamados')
   listarPorTelefone(@Query('telefone') telefone: string) {
-    if (!telefone) throw new BadRequestException('Parâmetro telefone é obrigatório');
+    if (!telefone)
+      throw new BadRequestException('Parâmetro telefone é obrigatório');
     return this.tiService.listarPorTelefone(telefone);
   }
 }

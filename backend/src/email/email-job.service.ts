@@ -25,27 +25,57 @@ import {
   type EmailData,
   type CancelamentoEmailData,
 } from './templates/email.templates';
-import { parseDateBR } from '../common/date.util';
+import { mesmoDiaBR, parseDateBR } from '../common/date.util';
+import { encontrarSubstitutosPagos } from '../common/lancamento-substituto.util';
 
 const QR_CID = 'qrpix@email';
 
+// Batch de chamadas concorrentes à Sophia por rodada -- mesmo valor do
+// SyncService (SYNC_BATCH_SIZE), pra não abrir uma leva muito maior de
+// conexões simultâneas do que o resto do sistema já costuma abrir.
+const SOPHIA_BATCH_SIZE = 5;
+
 const EMAIL_ANTES_TIPO: Record<number, EmailTipo> = {
-  7: 'lembrete_7', 5: 'lembrete_5', 3: 'lembrete_3', 1: 'lembrete_1',
+  7: 'lembrete_7',
+  5: 'lembrete_5',
+  3: 'lembrete_3',
+  1: 'lembrete_1',
 };
 const EMAIL_AVISO_TIPO: Record<number, EmailTipo> = {
-  10: 'aviso_10', 9: 'aviso_9', 8: 'aviso_8', 7: 'aviso_7', 6: 'aviso_6',
-  4: 'aviso_4',   3: 'aviso_3', 2: 'aviso_2', 1: 'aviso_1',
+  10: 'aviso_10',
+  9: 'aviso_9',
+  8: 'aviso_8',
+  7: 'aviso_7',
+  6: 'aviso_6',
+  4: 'aviso_4',
+  3: 'aviso_3',
+  2: 'aviso_2',
+  1: 'aviso_1',
 };
 const EMAIL_APOS_TIPO: Record<number, EmailTipo> = {
-  1: 'cobranca_1',   2: 'cobranca_2',  3: 'cobranca_3',  7: 'cobranca_7',
-  8: 'cobranca_8',   9: 'cobranca_9',  10: 'cobranca_10', 12: 'cobranca_12',
-  15: 'cobranca_15', 20: 'cobranca_20', 25: 'cobranca_25', 30: 'cobranca_30',
+  1: 'cobranca_1',
+  2: 'cobranca_2',
+  3: 'cobranca_3',
+  7: 'cobranca_7',
+  8: 'cobranca_8',
+  9: 'cobranca_9',
+  10: 'cobranca_10',
+  12: 'cobranca_12',
+  15: 'cobranca_15',
+  20: 'cobranca_20',
+  25: 'cobranca_25',
+  30: 'cobranca_30',
 };
 
-function templatePorTipo(tipo: EmailTipo, emailData: EmailData): { subject: string; html: string } {
+function templatePorTipo(
+  tipo: EmailTipo,
+  emailData: EmailData,
+): { subject: string; html: string } {
   if (tipo === 'vencimento_hoje') return templateVencimentoHoje(emailData);
-  if (tipo === 'renegociacao_oferta') return templateRenegociacaoOferta(emailData);
-  if (tipo === 'renegociacao_lembrete') return templateRenegociacaoLembrete(emailData);
+  if (tipo === 'renegociacao_oferta')
+    return templateRenegociacaoOferta(emailData);
+  if (tipo === 'renegociacao_lembrete')
+    return templateRenegociacaoLembrete(emailData);
   if (tipo.startsWith('aviso')) return templateAviso(emailData);
   if (tipo.startsWith('lembrete')) return templateLembrete(emailData);
   return templateCobranca(emailData);
@@ -64,6 +94,30 @@ async function gerarQrCode(texto: string): Promise<Buffer | undefined> {
   }
 }
 
+interface MarcosConfig {
+  diasAntes: number[];
+  diasAviso: number[];
+  diasAposVencimento: number[];
+  diasRenegociacaoOverlap: number[];
+}
+
+/**
+ * Um envio já decidido (bateu marco de dia, tem boleto/PIX) -- separado em
+ * duas fases porque a consulta à Sophia pode rodar em lote/concorrente sem
+ * problema, mas o ENVIO de e-mail não pode: o Office 365 (SMTP) tem limite
+ * de conexões concorrentes por conta, e mandar vários e-mails ao mesmo tempo
+ * (um por aluno do lote) já bateu esse limite em teste real
+ * (`432 4.3.2 Concurrent connections limit exceeded`). O job antigo nunca
+ * batia nisso porque enviava tudo num loop sequencial simples.
+ */
+interface EnvioPendente {
+  cliente: ClienteCache;
+  lanc: LancamentoAlunoApiModel;
+  diffDias: number;
+  venc: Date;
+  tipos: EmailTipo[];
+}
+
 @Injectable()
 export class EmailJobService {
   private readonly logger = new Logger(EmailJobService.name);
@@ -76,7 +130,9 @@ export class EmailJobService {
 
   toggleHabilitado(ativo: boolean): void {
     this.runtimeEnabled = ativo;
-    this.logger.log(`Job de emails ${ativo ? 'habilitado' : 'desabilitado'} via runtime`);
+    this.logger.log(
+      `Job de emails ${ativo ? 'habilitado' : 'desabilitado'} via runtime`,
+    );
   }
 
   constructor(
@@ -93,7 +149,20 @@ export class EmailJobService {
   ) {}
 
   private formatarCompetencia(competencia: string): string {
-    const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    const meses = [
+      'Janeiro',
+      'Fevereiro',
+      'Março',
+      'Abril',
+      'Maio',
+      'Junho',
+      'Julho',
+      'Agosto',
+      'Setembro',
+      'Outubro',
+      'Novembro',
+      'Dezembro',
+    ];
     const match = competencia.match(/(\d{4})[-/](\d{2})|(\d{2})[-/](\d{4})/);
     if (!match) return competencia;
     const ano = match[1] ?? match[4];
@@ -104,24 +173,70 @@ export class EmailJobService {
 
   private dadosEscola() {
     return {
-      nomeEscola:     this.config.get<string>('email.nomeEscola') ?? 'Escola',
-      emailEscola:    this.config.get<string>('email.from') ?? '',
+      nomeEscola: this.config.get<string>('email.nomeEscola') ?? 'Escola',
+      emailEscola: this.config.get<string>('email.from') ?? '',
       telefoneEscola: this.config.get<string>('email.telefoneEscola') ?? '',
-      logoUrl:        this.config.get<string>('email.logoUrl') || undefined,
-      siteUrl:        this.config.get<string>('email.siteUrl') || undefined,
-      assetsBaseUrl:  this.config.get<string>('email.assetsBaseUrl') || undefined,
-      instagramUrl:   this.config.get<string>('email.instagramUrl') || undefined,
-      facebookUrl:    this.config.get<string>('email.facebookUrl') || undefined,
-      youtubeUrl:     this.config.get<string>('email.youtubeUrl') || undefined,
-      linkedinUrl:    this.config.get<string>('email.linkedinUrl') || undefined,
-      cnpj:           this.config.get<string>('email.cnpj') || undefined,
-      endereco:       this.config.get<string>('email.endereco') || undefined,
-      linkPortalAluno: this.config.get<string>('email.linkPortalAluno') || undefined,
-      linkSegundaVia:  this.config.get<string>('email.linkPortalAluno') || undefined,
+      logoUrl: this.config.get<string>('email.logoUrl') || undefined,
+      siteUrl: this.config.get<string>('email.siteUrl') || undefined,
+      assetsBaseUrl:
+        this.config.get<string>('email.assetsBaseUrl') || undefined,
+      instagramUrl: this.config.get<string>('email.instagramUrl') || undefined,
+      facebookUrl: this.config.get<string>('email.facebookUrl') || undefined,
+      youtubeUrl: this.config.get<string>('email.youtubeUrl') || undefined,
+      linkedinUrl: this.config.get<string>('email.linkedinUrl') || undefined,
+      cnpj: this.config.get<string>('email.cnpj') || undefined,
+      endereco: this.config.get<string>('email.endereco') || undefined,
+      linkPortalAluno:
+        this.config.get<string>('email.linkPortalAluno') || undefined,
+      linkSegundaVia:
+        this.config.get<string>('email.linkPortalAluno') || undefined,
       linkComoAcessar: (() => {
         const base = this.config.get<string>('backendUrl');
         return base ? `${base}/como-pagar` : undefined;
       })(),
+    };
+  }
+
+  private carregarMarcos(): MarcosConfig {
+    return {
+      diasAntes: this.config.get<number[]>('email.diasAntes') ?? [7, 5, 3, 1],
+      diasAviso: this.config.get<number[]>('email.diasAviso') ?? [
+        10, 9, 8, 7, 6, 4, 3, 2, 1,
+      ],
+      diasAposVencimento: this.config.get<number[]>(
+        'email.diasAposVencimento',
+      ) ?? [1, 2, 3, 7, 8, 9, 10, 12, 15, 20, 25, 30],
+      diasRenegociacaoOverlap: this.config.get<number[]>(
+        'email.diasRenegociacaoOverlap',
+      ) ?? [1, 3, 7],
+    };
+  }
+
+  /** Monta o EmailData a partir do lançamento AO VIVO da Sophia (não do cache) -- ver runEmailJob. */
+  private buildEmailDataLive(
+    cliente: ClienteCache,
+    lanc: LancamentoAlunoApiModel,
+    diffDias: number,
+    venc: Date,
+    escola: ReturnType<typeof this.dadosEscola>,
+  ): EmailData {
+    return {
+      nomeAluno: cliente.nomeAluno,
+      nomeResponsavel: cliente.nomeResponsavel ?? cliente.nomeAluno,
+      descricao: 'Mensalidade',
+      valor: `R$ ${Number(lanc.valorPrevisto).toFixed(2).replace('.', ',')}`,
+      vencimento: venc.toLocaleDateString('pt-BR'),
+      diasRestantes: diffDias > 0 ? diffDias : undefined,
+      diasAtraso: diffDias < 0 ? Math.abs(diffDias) : undefined,
+      codigoBarras: lanc.linhaDigitavel ?? undefined,
+      urlBoleto: lanc.urlBoletoDigital ?? undefined,
+      codigoPix: lanc.codigoPix ?? undefined,
+      qrCodeUrl: lanc.codigoPix ? `cid:${QR_CID}` : undefined,
+      codigoMatricula: cliente.ra ?? String(cliente.codigoSophia ?? cliente.id),
+      competencia: lanc.competencia
+        ? this.formatarCompetencia(lanc.competencia)
+        : undefined,
+      ...escola,
     };
   }
 
@@ -144,20 +259,31 @@ export class EmailJobService {
   async enviarCancelamento(
     ra: string,
     tipo: 'academico' | 'financeiro' | 'reembolso',
-    overrides?: Partial<Pick<CancelamentoEmailData,
-      'numeroParcelasRestantes' | 'valorParcela' | 'somaValor' | 'valorMulta' | 'parcelasEmAtraso' | 'saldoDevedor'
-    >>,
+    overrides?: Partial<
+      Pick<
+        CancelamentoEmailData,
+        | 'numeroParcelasRestantes'
+        | 'valorParcela'
+        | 'somaValor'
+        | 'valorMulta'
+        | 'parcelasEmAtraso'
+        | 'saldoDevedor'
+      >
+    >,
   ): Promise<{ enviado: boolean; para: string; subject: string }> {
     const resumo = await this.financeiro.getResumoCancelamento(ra);
     if (!resumo.emailResponsavel) {
-      throw new Error(`Aluno '${resumo.nomeAluno}' não tem e-mail de responsável cadastrado`);
+      throw new Error(
+        `Aluno '${resumo.nomeAluno}' não tem e-mail de responsável cadastrado`,
+      );
     }
 
     const escola = this.dadosEscola();
     const emailData: CancelamentoEmailData = {
       ...escola,
       nomeAluno: resumo.nomeAluno,
-      numeroParcelasRestantes: overrides?.numeroParcelasRestantes ?? resumo.parcelasEmAberto,
+      numeroParcelasRestantes:
+        overrides?.numeroParcelasRestantes ?? resumo.parcelasEmAberto,
       valorParcela: overrides?.valorParcela ?? resumo.valorParcela,
       somaValor: overrides?.somaValor ?? resumo.somaValor,
       valorMulta: overrides?.valorMulta ?? resumo.valorMulta,
@@ -165,16 +291,18 @@ export class EmailJobService {
       saldoDevedor: overrides?.saldoDevedor ?? resumo.saldoDevedor,
     };
 
-    const template = tipo === 'academico'
-      ? templateCancelamentoAcademico(emailData)
-      : tipo === 'reembolso'
-        ? templateCancelamentoReembolso(emailData)
-        : templateCancelamentoFinanceiro(emailData);
-    const tipoLog: EmailTipo = tipo === 'academico'
-      ? 'cancelamento_academico'
-      : tipo === 'reembolso'
-        ? 'cancelamento_reembolso'
-        : 'cancelamento_financeiro';
+    const template =
+      tipo === 'academico'
+        ? templateCancelamentoAcademico(emailData)
+        : tipo === 'reembolso'
+          ? templateCancelamentoReembolso(emailData)
+          : templateCancelamentoFinanceiro(emailData);
+    const tipoLog: EmailTipo =
+      tipo === 'academico'
+        ? 'cancelamento_academico'
+        : tipo === 'reembolso'
+          ? 'cancelamento_reembolso'
+          : 'cancelamento_financeiro';
 
     // Remetente próprio (EMAIL_CANCELAMENTO_FROM) — financeiro, pedagógico e
     // trancamento recebem cópia em CC (vars opcionais; endereços vazios
@@ -227,11 +355,23 @@ export class EmailJobService {
       });
       throw err;
     }
-    return { enviado: true, para: resumo.emailResponsavel, subject: template.subject };
+    return {
+      enviado: true,
+      para: resumo.emailResponsavel,
+      subject: template.subject,
+    };
   }
 
   /** Histórico de e-mails enviados (cobrança, leads, cancelamento) — exclui WhatsApp, que usa a mesma tabela. */
-  async listarHistoricoEmail(page = 1, limit = 50): Promise<{ items: EmailLog[]; total: number; page: number; limit: number }> {
+  async listarHistoricoEmail(
+    page = 1,
+    limit = 50,
+  ): Promise<{
+    items: EmailLog[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
     const [items, total] = await this.emailLogRepo
       .createQueryBuilder('log')
       .where("log.tipo NOT LIKE 'wpp\\_%'")
@@ -248,126 +388,116 @@ export class EmailJobService {
   }
 
   /**
-   * `origem: 'cron'` (as duas rodadas automáticas, 7h e 19h) nunca pula por
-   * duplicidade — quem continua pendente recebe nas duas. `origem: 'manual'`
-   * (POST /email/trigger) só reenvia se ainda não tiver mandado esse mesmo
-   * tipo pra esse lançamento hoje, pra não duplicar se alguém disparar sem
-   * querer entre as rodadas do cron.
+   * Consulta a Sophia AO VIVO, aluno por aluno, em vez de ler o status de
+   * pagamento do cache local (lancamentos_cache).
+   *
+   * Motivação (incidente de 2026-08-12, ver memória do projeto): o cache só
+   * é atualizado pelo sync de hora em hora, e a Sophia às vezes substitui um
+   * lançamento por outro (código E vencimento diferentes) sem nunca marcar
+   * o antigo como pago -- ele ficava "pendente" pra sempre no cache, gerando
+   * cobrança pra quem já tinha pago há semanas (caso real: Renata da Cruz
+   * Silva). A camada de heurística de "substituto" adicionada depois
+   * resolvia isso na maioria dos casos, mas ainda dependia de uma lista de
+   * candidatos vinda do cache -- se o cache nunca soubesse que um lançamento
+   * precisa ser reavaliado, ele nunca entrava nem na checagem.
+   *
+   * Indo direto na Sophia pra cada aluno, a lista de candidatos É a
+   * realidade atual -- não existe "foto antiga" nenhuma pra sobreviver como
+   * fantasma. O cache local continua existindo e sendo usado só pro ROSTER
+   * de contato (nome/e-mail/codigoSophia via getClientesComEmail) -- esse
+   * dado não tem o mesmo risco (não é status de pagamento, e o pior caso de
+   * ficar desatualizado é não notificar alguém, não cobrar quem já pagou).
+   *
+   * O atraso de reconciliação da própria Sophia (ela demorar a marcar
+   * `recebido` mesmo depois do pagamento cair) NÃO é resolvido por isso --
+   * a checagem já era ao vivo nesse ponto antes desta mudança também. Só
+   * desaparece de vez com a migração pro ipessp-core (webhook do Itaú).
    */
   async runEmailJob(origem: 'cron' | 'manual' = 'cron'): Promise<void> {
     if (!this.habilitado) {
-      this.logger.warn('Job de emails desabilitado (EMAIL_CRON_HABILITADO=false)');
+      this.logger.warn(
+        'Job de emails desabilitado (EMAIL_CRON_HABILITADO=false)',
+      );
       return;
     }
-    this.logger.log('=== Iniciando job de emails ===');
+    this.logger.log(`=== Iniciando job de emails (origem: ${origem}) ===`);
 
-    const diasAntes = this.config.get<number[]>('email.diasAntes') ?? [7, 5, 3, 1];
-    const diasAviso = this.config.get<number[]>('email.diasAviso') ?? [10, 9, 8, 7, 6, 4, 3, 2, 1];
-    const diasAposVencimento = this.config.get<number[]>('email.diasAposVencimento') ?? [1, 2, 3, 7, 8, 9, 10, 12, 15, 20, 25, 30];
-    const diasRenegociacaoOverlap = this.config.get<number[]>('email.diasRenegociacaoOverlap') ?? [1, 3, 7];
-    const somenteComCodigo = this.config.get<string>('email.somenteComCodigo') === 'true';
+    const marcos = this.carregarMarcos();
+    const somenteComCodigo =
+      this.config.get<string>('email.somenteComCodigo') === 'true';
     const escola = this.dadosEscola();
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
 
-    const BATCH_LIMIT = 500;
+    const clientes = await this.financeiro.getClientesComEmail();
+    this.logger.log(
+      `${clientes.length} aluno(s) com e-mail cadastrado — consultando a Sophia ao vivo`,
+    );
 
-    // BATCH_LIMIT precisa cortar quem VAI RECEBER email hoje, não o total de
-    // pendências em aberto -- getLancamentosPendentes() traz TODO lançamento
-    // com recebido=false (na prática, milhares, considerando parcelas futuras
-    // de todo aluno ativo), e a esmagadora maioria não bate com nenhum marco
-    // de dia hoje. Um bug anterior aplicava o .slice(0, BATCH_LIMIT) direto
-    // nesse total bruto, cortando aleatoriamente ~90% das pendências ANTES de
-    // checar se batiam com o dia de hoje -- na prática, a maior parte dos
-    // alunos que deveriam receber cobrança hoje nunca era nem avaliada.
-    // Agora o filtro por marco de dia (cálculo em memória, sem custo de API)
-    // roda primeiro sobre TODO o cache, e o corte de 500 vale só sobre quem
-    // já bateu com um marco -- preservando a intenção original do limite
-    // (não estourar o volume de emails/chamadas à Sophia numa rodada).
-    const todosPendentes = await this.financeiro.getLancamentosPendentes();
-    const candidatos = todosPendentes
-      .filter(({ cliente }) => !!cliente.emailResponsavel)
-      .map(({ cliente, lancamento }) => {
-        // cliente.emailResponsavel é string | null no entity -- o filter acima
-        // já garante que não é null aqui, mas o TS não propaga essa checagem
-        // através do .filter()/.map() da array, então captura num campo à
-        // parte já tipado como string pra não perder a garantia de tipo mais
-        // à frente no loop de envio.
-        const email = cliente.emailResponsavel!;
+    // Fase 1 (concorrente, em lotes): só descobre QUEM tem marco de dia hoje
+    // -- nenhum e-mail é enviado ainda aqui.
+    let totalSemBoleto = 0;
+    let totalFalhaConsulta = 0;
+    const envios: EnvioPendente[] = [];
 
-        // parseDateBR/calcularTipos não fazem I/O e não lançam exceção hoje,
-        // mas o try/catch aqui preserva a mesma garantia que o loop de envio
-        // já tinha: um lançamento com dado malformado é pulado e logado, sem
-        // derrubar a rodada inteira.
-        try {
-          const venc = parseDateBR(lancamento.dataVencimento);
-          venc.setHours(0, 0, 0, 0);
-          const diffDias = Math.round((venc.getTime() - hoje.getTime()) / 86_400_000);
-          let tipos = this.calcularTipos(diffDias, diasAntes, diasAviso, diasAposVencimento, diasRenegociacaoOverlap);
-          if (somenteComCodigo) {
-            tipos = tipos.filter((t) => !t.startsWith('aviso') && !t.startsWith('renegociacao'));
-          }
-          return { cliente, lancamento, email, venc, diffDias, tipos };
-        } catch (err: unknown) {
-          this.logger.error(`Erro ao calcular marco do lançamento ${lancamento.id}: ${errMsg(err)}`);
-          return { cliente, lancamento, email, venc: hoje, diffDias: 0, tipos: [] as EmailTipo[] };
+    for (let i = 0; i < clientes.length; i += SOPHIA_BATCH_SIZE) {
+      const lote = clientes.slice(i, i + SOPHIA_BATCH_SIZE);
+      const resultados = await Promise.allSettled(
+        lote.map((cliente) =>
+          this.buscarEnviosDoAluno(cliente, marcos, somenteComCodigo, hoje),
+        ),
+      );
+      for (let j = 0; j < resultados.length; j++) {
+        const r = resultados[j];
+        if (r.status === 'fulfilled') {
+          envios.push(...r.value.envios);
+          totalSemBoleto += r.value.semBoleto;
+        } else {
+          totalFalhaConsulta++;
+          this.logger.warn(
+            `Falha ao consultar a Sophia pro aluno ${lote[j].codigoSophia} (${lote[j].nomeAluno}): ${errMsg(r.reason)} — pulando esse aluno nesta rodada.`,
+          );
         }
-      })
-      .filter(({ tipos }) => tipos.length > 0);
+      }
+    }
 
-    const pendentes = candidatos.slice(0, BATCH_LIMIT);
-    const cacheAlunos = new Map<number, LancamentoAlunoApiModel[]>();
+    this.logger.log(`${envios.length} email(is) a enviar nesta rodada`);
+
+    // Fase 2 (sequencial): o SMTP (Office 365) tem limite de conexões
+    // concorrentes por conta -- mandar em paralelo (como a fase 1 faz com a
+    // Sophia) já bateu esse limite em teste real
+    // (`432 4.3.2 Concurrent connections limit exceeded`). Mesmo padrão
+    // sequencial do job antigo.
     let totalEnviados = 0;
     let totalErros = 0;
-    let totalJaPagos = 0;
-    let totalSemBoleto = 0;
 
-    for (const { cliente, lancamento, email, venc, diffDias, tipos } of pendentes) {
+    for (const envio of envios) {
       try {
-        // Só cobra quem já tem boleto gerado e sincronizado no cache — sem
-        // linhaDigitavel o email sairia "vazio" (sem código de barras nem
-        // PIX pra pagar), o que confunde mais do que ajuda.
-        if (!lancamento.linhaDigitavel) {
-          totalSemBoleto++;
-          continue;
-        }
-
-        if (!(await this.aindaPendenteNaSophia(cliente, lancamento, cacheAlunos))) {
-          totalJaPagos++;
-          continue;
-        }
-
-        const emailData: EmailData = {
-          nomeAluno:       cliente.nomeAluno,
-          nomeResponsavel: cliente.nomeResponsavel ?? cliente.nomeAluno,
-          descricao:       'Mensalidade',
-          valor:           `R$ ${Number(lancamento.valorPrevisto).toFixed(2).replace('.', ',')}`,
-          vencimento:      venc.toLocaleDateString('pt-BR'),
-          diasRestantes:   diffDias > 0 ? diffDias : undefined,
-          diasAtraso:      diffDias < 0 ? Math.abs(diffDias) : undefined,
-          codigoBarras:    lancamento.linhaDigitavel ?? undefined,
-          urlBoleto:       lancamento.urlBoleto ?? undefined,
-          codigoPix:       lancamento.codigoPix ?? undefined,
-          qrCodeUrl:       lancamento.codigoPix ? `cid:${QR_CID}` : undefined,
-          codigoMatricula: cliente.ra ?? String(cliente.codigoSophia ?? cliente.id),
-          competencia:     lancamento.competencia ? this.formatarCompetencia(lancamento.competencia) : undefined,
-          ...escola,
-        };
-
-        const qrBuffer = lancamento.codigoPix ? await gerarQrCode(lancamento.codigoPix) : undefined;
+        const { cliente, lanc, diffDias, venc, tipos } = envio;
+        const email = cliente.emailResponsavel!;
+        const emailData = this.buildEmailDataLive(
+          cliente,
+          lanc,
+          diffDias,
+          venc,
+          escola,
+        );
+        const qrBuffer = lanc.codigoPix
+          ? await gerarQrCode(lanc.codigoPix)
+          : undefined;
+        const codigoLancamento = String(lanc.codigo);
 
         for (const tipo of tipos) {
-          if (origem === 'manual') {
-            const jaEnviado = await this.emailLogRepo.findOne({
-              where: { codigoLancamento: String(lancamento.id), tipo, enviado: true },
-            });
-            if (jaEnviado && new Date(jaEnviado.enviadoEm).toDateString() === hoje.toDateString()) continue;
-          }
+          const jaEnviado = await this.emailLogRepo.findOne({
+            where: { codigoLancamento, tipo, enviado: true },
+          });
+          if (jaEnviado && mesmoDiaBR(new Date(jaEnviado.enviadoEm), hoje))
+            continue;
 
           const template = templatePorTipo(tipo, emailData);
 
           const log = this.emailLogRepo.create({
-            codigoLancamento: String(lancamento.id),
+            codigoLancamento,
             nome: cliente.nomeAluno,
             tipo,
             destinatario: email,
@@ -382,8 +512,12 @@ export class EmailJobService {
 
           try {
             await this.emailService.enviar(
-              email, template.subject, template.html,
-              qrBuffer ? [{ cid: QR_CID, buffer: qrBuffer, nome: 'qrpix.png' }] : undefined,
+              email,
+              template.subject,
+              template.html,
+              qrBuffer
+                ? [{ cid: QR_CID, buffer: qrBuffer, nome: 'qrpix.png' }]
+                : undefined,
               ccComercial ? { cc: ccComercial } : undefined,
             );
             log.enviado = true;
@@ -391,25 +525,98 @@ export class EmailJobService {
           } catch (err: unknown) {
             log.erro = errMsg(err);
             totalErros++;
-            this.logger.error(`Erro ao enviar email para ${email}: ${errMsg(err)}`);
+            this.logger.error(
+              `Erro ao enviar email para ${email}: ${errMsg(err)}`,
+            );
           }
 
           await this.emailLogRepo.save(log);
         }
       } catch (err: unknown) {
-        this.logger.error(`Erro ao processar lançamento ${lancamento.id}: ${errMsg(err)}`);
+        this.logger.error(
+          `Erro ao processar lançamento ${envio.lanc.codigo} (aluno ${envio.cliente.codigoSophia}): ${errMsg(err)}`,
+        );
       }
     }
 
-    this.logger.log(`=== Job de emails concluído: ${totalEnviados} enviados, ${totalErros} erros, ${totalJaPagos} já pagos (pulados), ${totalSemBoleto} sem boleto (pulados) ===`);
+    this.logger.log(
+      `=== Job de emails concluído: ${totalEnviados} enviados, ${totalErros} erros, ${totalSemBoleto} sem boleto (pulados), ${totalFalhaConsulta} aluno(s) c/ falha na consulta à Sophia (pulados) ===`,
+    );
   }
 
   /**
-   * O cache local (lancamentos_cache) só é atualizado pelo sync de hora em
-   * hora — se o aluno pagou depois do último ciclo, o "recebido" local ainda
-   * está desatualizado. Antes de mandar o email, confere ao vivo na Sophia
-   * se a parcela realmente continua em aberto, pra não cobrar quem já pagou.
-   * `cacheAlunos` evita repetir a chamada pro mesmo aluno dentro do mesmo run.
+   * Fase 1 de `runEmailJob` (e de `previewComDadosSophia`) -- só decide
+   * quais lançamentos deste aluno batem marco de dia hoje, sem mandar nada.
+   * Lançada em lote/concorrente pelo chamador; joga erro de API pra fora de
+   * propósito (o `Promise.allSettled` do chamador conta como "falha na
+   * consulta" e segue os outros, em vez de assumir silenciosamente "ainda
+   * pendente" -- mesmo erro do incidente de 2026-08-12).
+   */
+  private async buscarEnviosDoAluno(
+    cliente: ClienteCache,
+    marcos: MarcosConfig,
+    somenteComCodigo: boolean,
+    hoje: Date,
+  ): Promise<{ envios: EnvioPendente[]; semBoleto: number }> {
+    const envios: EnvioPendente[] = [];
+    let semBoleto = 0;
+
+    if (!cliente.codigoSophia || !cliente.emailResponsavel) {
+      return { envios, semBoleto };
+    }
+
+    const lancamentosAluno = await this.sophia.getLancamentosAluno(
+      cliente.codigoSophia,
+    );
+
+    for (const lanc of lancamentosAluno) {
+      if (lanc.recebido && lanc.recebido > 0) continue; // já pago -- não há nada a avaliar
+
+      try {
+        const venc = parseDateBR(lanc.dataVencimento.substring(0, 10));
+        venc.setHours(0, 0, 0, 0);
+        const diffDias = Math.round(
+          (venc.getTime() - hoje.getTime()) / 86_400_000,
+        );
+        let tipos = this.calcularTipos(
+          diffDias,
+          marcos.diasAntes,
+          marcos.diasAviso,
+          marcos.diasAposVencimento,
+          marcos.diasRenegociacaoOverlap,
+        );
+        if (somenteComCodigo) {
+          tipos = tipos.filter(
+            (t) => !t.startsWith('aviso') && !t.startsWith('renegociacao'),
+          );
+        }
+        if (tipos.length === 0) continue;
+
+        // Só cobra quem já tem boleto/PIX gerado -- sem isso o email sairia
+        // "vazio" (sem código pra pagar), o que confunde mais do que ajuda.
+        if (!lanc.linhaDigitavel) {
+          semBoleto++;
+          continue;
+        }
+
+        envios.push({ cliente, lanc, diffDias, venc, tipos });
+      } catch (err: unknown) {
+        this.logger.error(
+          `Erro ao calcular marco do lançamento ${lanc.codigo} (aluno ${cliente.codigoSophia}): ${errMsg(err)}`,
+        );
+      }
+    }
+
+    return { envios, semBoleto };
+  }
+
+  /**
+   * Ainda usado só por `previewPorLancamento` (teste manual de um registro
+   * específico do cache) -- o job real (`runEmailJob`) não depende mais
+   * disso, porque nunca parte de uma lista vinda do cache em primeiro lugar
+   * (ver comentário de `runEmailJob`). Mantido aqui porque a heurística de
+   * substituto (`encontrarSubstitutosPagos`) segue sendo útil pra esse teste
+   * pontual contra um id de cache específico.
    */
   private async aindaPendenteNaSophia(
     cliente: ClienteCache,
@@ -421,49 +628,56 @@ export class EmailJobService {
     try {
       let lancamentosAluno = cacheAlunos.get(cliente.codigoSophia);
       if (!lancamentosAluno) {
-        lancamentosAluno = await this.sophia.getLancamentosAluno(cliente.codigoSophia);
+        lancamentosAluno = await this.sophia.getLancamentosAluno(
+          cliente.codigoSophia,
+        );
         cacheAlunos.set(cliente.codigoSophia, lancamentosAluno);
       }
 
-      const atual = lancamentosAluno.find((l) => l.codigo === lancamento.codigoSophia);
-
-      if (atual && atual.recebido > 0) {
-        await this.lancamentoRepo.update(lancamento.id, { recebido: true });
-        this.logger.log(`Lançamento ${lancamento.id} já estava pago na Sophia — pulando email e corrigindo cache local`);
-        return false;
-      }
-
-      // Renegociação: a Sophia às vezes substitui um lançamento por outro
-      // (codigoSophia diferente) pra mesma data de vencimento, sem nunca
-      // marcar o antigo como pago -- ele fica "órfão" pendente pra sempre
-      // no nosso cache, mesmo com a dívida já quitada pelo substituto.
-      // Confirmado com casos reais: 5 alunos com dois lançamentos pra mesma
-      // data, um antigo (nunca atualizado) e um novo já pago. Se existir
-      // OUTRO lançamento do mesmo aluno com a mesma data de vencimento já
-      // pago, trata este como resolvido também.
-      // dataVencimento da Sophia (tanto no cache local quanto ao vivo) vem
-      // em "DD/MM/YYYY..." apesar do nome sugerir ISO -- new Date() direto
-      // nesse formato quebra silenciosamente (vira Invalid Date), por isso
-      // usa parseDateBR nos dois lados. O valor ao vivo pode ter sufixo de
-      // hora (por isso o .substring(0, 10) na importação em importacao.
-      // service.ts) -- aplica o mesmo corte aqui antes de parsear.
-      const vencAtual = parseDateBR(lancamento.dataVencimento).toDateString();
-      const substituto = lancamentosAluno.find((l) =>
-        l.codigo !== lancamento.codigoSophia &&
-        l.recebido > 0 &&
-        parseDateBR(l.dataVencimento.substring(0, 10)).toDateString() === vencAtual,
+      const atual = lancamentosAluno.find(
+        (l) => l.codigo === lancamento.codigoSophia,
       );
-      if (substituto) {
+
+      if (atual) {
+        if (atual.recebido > 0) {
+          await this.lancamentoRepo.update(lancamento.id, { recebido: true });
+          this.logger.log(
+            `Lançamento ${lancamento.id} já estava pago na Sophia — pulando email e corrigindo cache local`,
+          );
+          return false;
+        }
+        return true;
+      }
+
+      const candidatos = encontrarSubstitutosPagos(
+        {
+          dataVencimento: lancamento.dataVencimento,
+          valorPrevisto: lancamento.valorPrevisto,
+        },
+        lancamentosAluno,
+      );
+
+      if (candidatos.length === 1) {
         await this.lancamentoRepo.update(lancamento.id, { recebido: true });
-        this.logger.log(`Lançamento ${lancamento.id} parece substituído por outro já pago (mesma data de vencimento, codigoSophia diferente) — pulando email e corrigindo cache local`);
+        this.logger.log(
+          `Lançamento ${lancamento.id} parece substituído por outro já pago (código ${candidatos[0].codigo}, vencimento ${candidatos[0].dataVencimento}) — pulando email e corrigindo cache local`,
+        );
         return false;
       }
 
-      if (!atual) return true; // não achou na Sophia — não bloqueia por segurança
-      return true;
+      this.logger.warn(
+        `Lançamento ${lancamento.id} (código Sophia ${lancamento.codigoSophia}) não encontrado ao vivo na Sophia` +
+          (candidatos.length > 1
+            ? ` — ${candidatos.length} substitutos possíveis, ambíguo`
+            : ' e sem substituto plausível') +
+          ` — pulando email, REVISAR MANUALMENTE.`,
+      );
+      return false;
     } catch (err: unknown) {
-      this.logger.warn(`Falha ao conferir pagamento ao vivo do lançamento ${lancamento.id}: ${errMsg(err)}`);
-      return true; // checagem falhou — não bloqueia o envio
+      this.logger.warn(
+        `Falha ao conferir pagamento ao vivo do lançamento ${lancamento.id}: ${errMsg(err)} — pulando envio por segurança.`,
+      );
+      return false;
     }
   }
 
@@ -490,117 +704,149 @@ export class EmailJobService {
     if (diffDias === 0) return ['vencimento_hoje'];
     if (diffDias > 0) {
       const tipos: EmailTipo[] = [];
-      if (diasAntes.includes(diffDias)) tipos.push(EMAIL_ANTES_TIPO[diffDias] ?? 'lembrete');
-      if (diasAviso.includes(diffDias)) tipos.push(EMAIL_AVISO_TIPO[diffDias] ?? 'aviso');
+      if (diasAntes.includes(diffDias))
+        tipos.push(EMAIL_ANTES_TIPO[diffDias] ?? 'lembrete');
+      if (diasAviso.includes(diffDias))
+        tipos.push(EMAIL_AVISO_TIPO[diffDias] ?? 'aviso');
       return tipos;
     }
 
     const diasAtraso = Math.abs(diffDias);
     const tipos: EmailTipo[] = [];
-    if (diasAposVencimento.includes(diasAtraso)) tipos.push(EMAIL_APOS_TIPO[diasAtraso] ?? 'cobranca');
-    if (diasRenegociacaoOverlap.includes(diasAtraso) || !diasAposVencimento.includes(diasAtraso)) {
+    if (diasAposVencimento.includes(diasAtraso))
+      tipos.push(EMAIL_APOS_TIPO[diasAtraso] ?? 'cobranca');
+    if (
+      diasRenegociacaoOverlap.includes(diasAtraso) ||
+      !diasAposVencimento.includes(diasAtraso)
+    ) {
       tipos.push(sortearTipoRenegociacao());
     }
     return tipos;
   }
 
   /**
-   * Manda, pro destinatário de teste, uma cópia do email de TODA pendência
-   * que REALMENTE dispararia um email hoje no job real (mesmos marcos de dia
-   * configurados) — pra simular "como se fosse produção" de verdade, incluindo
-   * o volume de emails que sairiam, não só um exemplo isolado.
+   * Mesma lógica do job real (`runEmailJob`), mas mandando pro destinatário
+   * de teste em vez do responsável de cada aluno, e sem gravar em
+   * `email_log`. Como consulta a Sophia ao vivo pra cada aluno com e-mail
+   * cadastrado (mesma fonte do job real agora), esse preview tem o mesmo
+   * custo/tempo de uma rodada real -- pode levar bem mais que os antigos
+   * segundos de uma leitura só do cache.
    *
    * `diasSimulados` (opcional) restringe a busca a um único marco específico
    * — mesma convenção do diffDias interno (positivo = dias antes de vencer,
-   * negativo = dias em atraso, 0 = vence hoje) — em vez de considerar TODOS
-   * os marcos configurados. Os dados continuam 100% reais (vencimento e
-   * valor de cada aluno não são forjados); só filtra quem está exatamente
-   * naquele dia hoje. Dá erro se o dia pedido não estiver configurado em
-   * EMAIL_DIAS_ANTES/EMAIL_DIAS_APOS (nunca geraria email nenhum) — mesmo
-   * sem isso, se ninguém estiver exatamente nesse dia hoje, também dá erro.
+   * negativo = dias em atraso, 0 = vence hoje).
    *
    * `somenteComCodigo` (opcional) restringe aos tipos que embutem boleto/PIX
    * (lembrete_*, cobranca_*, vencimento_hoje) — exclui aviso_* e
-   * renegociacao_*, que não têm código de pagamento. Útil pra comparar
-   * contra relatórios tipo o da própria Sophia, que costuma reportar só a
-   * "cobrança" nesse sentido.
+   * renegociacao_*, que não têm código de pagamento.
    */
-  async previewComDadosSophia(destinatario: string, diasSimulados?: number, somenteComCodigo?: boolean): Promise<{ aluno: string; tipo: string; lancamento: number }[]> {
+  async previewComDadosSophia(
+    destinatario: string,
+    diasSimulados?: number,
+    somenteComCodigo?: boolean,
+  ): Promise<{ aluno: string; tipo: string; lancamento: number }[]> {
     const escola = this.dadosEscola();
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
 
-    const diasAntes = this.config.get<number[]>('email.diasAntes') ?? [7, 5, 3, 1];
-    const diasAviso = this.config.get<number[]>('email.diasAviso') ?? [10, 9, 8, 7, 6, 4, 3, 2, 1];
-    const diasAposVencimento = this.config.get<number[]>('email.diasAposVencimento') ?? [1, 2, 3, 7, 8, 9, 10, 12, 15, 20, 25, 30];
-    const diasRenegociacaoOverlap = this.config.get<number[]>('email.diasRenegociacaoOverlap') ?? [1, 3, 7];
+    const marcos = this.carregarMarcos();
+    const somenteComCodigoFinal =
+      somenteComCodigo ??
+      this.config.get<string>('email.somenteComCodigo') === 'true';
 
-    if (diasSimulados !== undefined && this.calcularTipos(diasSimulados, diasAntes, diasAviso, diasAposVencimento, diasRenegociacaoOverlap).length === 0) {
-      throw new Error(`O dia simulado (${diasSimulados}) não está em EMAIL_DIAS_ANTES/EMAIL_DIAS_AVISO/EMAIL_DIAS_APOS, e (se for atraso) já está coberto só pelo cobranca — nenhum email real seria disparado nesse marco.`);
+    if (
+      diasSimulados !== undefined &&
+      this.calcularTipos(
+        diasSimulados,
+        marcos.diasAntes,
+        marcos.diasAviso,
+        marcos.diasAposVencimento,
+        marcos.diasRenegociacaoOverlap,
+      ).length === 0
+    ) {
+      throw new Error(
+        `O dia simulado (${diasSimulados}) não está em EMAIL_DIAS_ANTES/EMAIL_DIAS_AVISO/EMAIL_DIAS_APOS, e (se for atraso) já está coberto só pelo cobranca — nenhum email real seria disparado nesse marco.`,
+      );
     }
 
-    const pendentes = await this.financeiro.getLancamentosPendentes();
-    if (pendentes.length === 0) throw new Error('Nenhum lançamento em aberto encontrado no banco local');
+    const clientes = await this.financeiro.getClientesComEmail();
+    if (clientes.length === 0)
+      throw new Error(
+        'Nenhum aluno com e-mail cadastrado encontrado no cache local.',
+      );
 
-    const cacheAlunos = new Map<number, LancamentoAlunoApiModel[]>();
-    const resultados: { aluno: string; tipo: string; lancamento: number }[] = [];
-
-    for (const { cliente, lancamento } of pendentes) {
-      if (!cliente.emailResponsavel) continue;
-      const venc = parseDateBR(lancamento.dataVencimento);
-      venc.setHours(0, 0, 0, 0);
-      const diffDias = Math.round((venc.getTime() - hoje.getTime()) / 86_400_000);
-      if (diasSimulados !== undefined && diffDias !== diasSimulados) continue;
-      let tipos = this.calcularTipos(diffDias, diasAntes, diasAviso, diasAposVencimento, diasRenegociacaoOverlap);
-      if (somenteComCodigo) {
-        tipos = tipos.filter((t) => !t.startsWith('aviso') && !t.startsWith('renegociacao'));
+    // Fase 1 (concorrente, em lotes): só descobre quem bate o marco pedido.
+    const envios: EnvioPendente[] = [];
+    for (let i = 0; i < clientes.length; i += SOPHIA_BATCH_SIZE) {
+      const lote = clientes.slice(i, i + SOPHIA_BATCH_SIZE);
+      const resultados = await Promise.allSettled(
+        lote.map((cliente) =>
+          this.buscarEnviosDoAluno(
+            cliente,
+            marcos,
+            somenteComCodigoFinal,
+            hoje,
+          ),
+        ),
+      );
+      for (let j = 0; j < resultados.length; j++) {
+        const r = resultados[j];
+        if (r.status === 'fulfilled') {
+          const filtrados =
+            diasSimulados !== undefined
+              ? r.value.envios.filter((e) => e.diffDias === diasSimulados)
+              : r.value.envios;
+          envios.push(...filtrados);
+        } else {
+          this.logger.warn(
+            `previewComDadosSophia: falha ao consultar aluno ${lote[j].codigoSophia}: ${errMsg(r.reason)}`,
+          );
+        }
       }
-      if (tipos.length === 0) continue;
-      // Mesmo filtro do job real: sem boleto/PIX gerado o email sairia sem
-      // código pra pagar. Antes esse método (usado por /email/test/sophia)
-      // não tinha essa trava, então o preview "achava" gente que o job real
-      // -- e o próprio Sophia -- nunca notificariam, inflando a comparação.
-      if (!lancamento.linhaDigitavel) continue;
-      if (!(await this.aindaPendenteNaSophia(cliente, lancamento, cacheAlunos))) continue;
+    }
 
-      const emailData: EmailData = {
-        nomeAluno:       cliente.nomeAluno,
-        nomeResponsavel: cliente.nomeResponsavel ?? cliente.nomeAluno,
-        descricao:       'Mensalidade',
-        valor:           `R$ ${Number(lancamento.valorPrevisto).toFixed(2).replace('.', ',')}`,
-        vencimento:      venc.toLocaleDateString('pt-BR'),
-        diasRestantes:   diffDias > 0 ? diffDias : undefined,
-        diasAtraso:      diffDias < 0 ? Math.abs(diffDias) : undefined,
-        codigoBarras:    lancamento.linhaDigitavel ?? undefined,
-        urlBoleto:       lancamento.urlBoleto ?? undefined,
-        codigoPix:       lancamento.codigoPix ?? undefined,
-        qrCodeUrl:       lancamento.codigoPix ? `cid:${QR_CID}` : undefined,
-        codigoMatricula: cliente.ra ?? String(cliente.codigoSophia ?? cliente.id),
-        competencia:     lancamento.competencia ? this.formatarCompetencia(lancamento.competencia) : undefined,
-        ...escola,
-      };
-
-      const qrBuffer = lancamento.codigoPix ? await gerarQrCode(lancamento.codigoPix) : undefined;
+    // Fase 2 (sequencial): mesmo motivo do runEmailJob -- SMTP não aceita o
+    // mesmo grau de concorrência da consulta à Sophia.
+    const resultados: { aluno: string; tipo: string; lancamento: number }[] =
+      [];
+    for (const { cliente, lanc, diffDias, venc, tipos } of envios) {
+      const emailData = this.buildEmailDataLive(
+        cliente,
+        lanc,
+        diffDias,
+        venc,
+        escola,
+      );
+      const qrBuffer = lanc.codigoPix
+        ? await gerarQrCode(lanc.codigoPix)
+        : undefined;
 
       for (const tipo of tipos) {
         const template = templatePorTipo(tipo, emailData);
-
         await this.emailService.enviar(
-          destinatario, `[PREVIEW] ${template.subject} — ${cliente.nomeAluno}`, template.html,
-          qrBuffer ? [{ cid: QR_CID, buffer: qrBuffer, nome: 'qrpix.png' }] : undefined,
+          destinatario,
+          `[PREVIEW] ${template.subject} — ${cliente.nomeAluno}`,
+          template.html,
+          qrBuffer
+            ? [{ cid: QR_CID, buffer: qrBuffer, nome: 'qrpix.png' }]
+            : undefined,
         );
-
-        resultados.push({ aluno: cliente.nomeAluno, tipo, lancamento: lancamento.id });
+        resultados.push({
+          aluno: cliente.nomeAluno,
+          tipo,
+          lancamento: lanc.codigo,
+        });
       }
     }
 
     if (resultados.length === 0) {
-      const motivo = diasSimulados !== undefined
-        ? `Nenhuma pendência está exatamente ${diasSimulados} dia(s) em relação ao vencimento hoje (ou as que estão já foram pagas na Sophia).`
-        : 'Nenhuma pendência hoje bate exatamente com os dias configurados (EMAIL_DIAS_ANTES/EMAIL_DIAS_AVISO/EMAIL_DIAS_APOS), ou as que bateriam já estão pagas na Sophia.';
+      const motivo =
+        diasSimulados !== undefined
+          ? `Nenhuma pendência está exatamente ${diasSimulados} dia(s) em relação ao vencimento hoje (segundo a Sophia agora).`
+          : 'Nenhuma pendência hoje bate exatamente com os dias configurados (EMAIL_DIAS_ANTES/EMAIL_DIAS_AVISO/EMAIL_DIAS_APOS), segundo a Sophia agora.';
       throw new Error(
         motivo +
-        ' Nenhum email real seria disparado agora. Use /email/test/cpf ou /email/test/lancamento pra testar um aluno específico mesmo assim.',
+          ' Nenhum email real seria disparado agora. Use /email/test/cpf pra testar um aluno específico mesmo assim.',
       );
     }
     return resultados;
@@ -608,28 +854,54 @@ export class EmailJobService {
 
   /**
    * `diasSimulados` (opcional) força o cenário de dia a testar, no lugar do
-   * diffDias real do lançamento mais próximo — mesma convenção do diffDias
-   * interno: positivo = dias antes de vencer, negativo = dias em atraso, 0 =
-   * vence hoje. Útil pra testar um marco específico (ex.: -1 = "1 dia após o
-   * vencimento") sem depender de existir um lançamento real batendo com ele
-   * hoje. Se o dia simulado não estiver em EMAIL_DIAS_ANTES/EMAIL_DIAS_APOS,
-   * dá erro (mesma regra do job real — não geraria email nenhum).
+   * diffDias real do lançamento em aberto mais próximo — mesma convenção do
+   * diffDias interno: positivo = dias antes de vencer, negativo = dias em
+   * atraso, 0 = vence hoje. Consulta a Sophia ao vivo pra esse aluno (mesma
+   * fonte do job real agora) -- só usa o cache local pra achar o
+   * codigoSophia a partir do CPF.
    */
-  async previewPorCpf(cpf: string, destinatario: string, diasSimulados?: number): Promise<{ aluno: string; tipo: string; lancamento: number }[]> {
+  async previewPorCpf(
+    cpf: string,
+    destinatario: string,
+    diasSimulados?: number,
+  ): Promise<{ aluno: string; tipo: string; lancamento: number }[]> {
     const escola = this.dadosEscola();
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
 
-    const dados = await this.financeiro.getByCpf(cpf);
-    if (dados.pendencias.length === 0) throw new Error(`${dados.nomeAluno} não possui lançamentos em aberto`);
+    const cpfLimpo = cpf.replace(/\D/g, '');
+    const clientes = await this.clienteRepo.find({ where: { cpf: cpfLimpo } });
+    if (clientes.length === 0) {
+      throw new NotFoundException(
+        'Nenhum aluno encontrado para o CPF informado.',
+      );
+    }
+    const cliente = clientes.find((c) => c.codigoSophia != null) ?? clientes[0];
+    if (!cliente.codigoSophia) {
+      throw new Error(
+        `${cliente.nomeAluno} não tem código Sophia associado no cache local.`,
+      );
+    }
 
-    dados.pendencias.sort((a, b) => a.vencimento.localeCompare(b.vencimento));
-    const pend = dados.pendencias[0];
+    const lancamentosAluno = await this.sophia.getLancamentosAluno(
+      cliente.codigoSophia,
+    );
+    const abertos = lancamentosAluno.filter(
+      (l) => !l.recebido || l.recebido <= 0,
+    );
+    if (abertos.length === 0) {
+      throw new Error(
+        `${cliente.nomeAluno} não possui lançamentos em aberto na Sophia.`,
+      );
+    }
+    abertos.sort(
+      (a, b) =>
+        parseDateBR(a.dataVencimento.substring(0, 10)).getTime() -
+        parseDateBR(b.dataVencimento.substring(0, 10)).getTime(),
+    );
+    const pend = abertos[0];
 
-    const diasAntes = this.config.get<number[]>('email.diasAntes') ?? [7, 5, 3, 1];
-    const diasAviso = this.config.get<number[]>('email.diasAviso') ?? [10, 9, 8, 7, 6, 4, 3, 2, 1];
-    const diasAposVencimento = this.config.get<number[]>('email.diasAposVencimento') ?? [1, 2, 3, 7, 8, 9, 10, 12, 15, 20, 25, 30];
-    const diasRenegociacaoOverlap = this.config.get<number[]>('email.diasRenegociacaoOverlap') ?? [1, 3, 7];
+    const marcos = this.carregarMarcos();
 
     let venc: Date;
     let diffDias: number;
@@ -637,70 +909,104 @@ export class EmailJobService {
       diffDias = diasSimulados;
       venc = new Date(hoje.getTime() + diasSimulados * 86_400_000);
     } else {
-      venc = parseDateBR(pend.vencimento);
+      venc = parseDateBR(pend.dataVencimento.substring(0, 10));
       venc.setHours(0, 0, 0, 0);
       diffDias = Math.round((venc.getTime() - hoje.getTime()) / 86_400_000);
     }
 
-    let tipos = this.calcularTipos(diffDias, diasAntes, diasAviso, diasAposVencimento, diasRenegociacaoOverlap);
+    let tipos = this.calcularTipos(
+      diffDias,
+      marcos.diasAntes,
+      marcos.diasAviso,
+      marcos.diasAposVencimento,
+      marcos.diasRenegociacaoOverlap,
+    );
     if (diasSimulados !== undefined && tipos.length === 0) {
-      throw new Error(`O dia simulado (${diasSimulados}) não está em EMAIL_DIAS_ANTES/EMAIL_DIAS_AVISO/EMAIL_DIAS_APOS, e (se for atraso) já está coberto só pelo cobranca — nenhum email real seria disparado nesse marco.`);
+      throw new Error(
+        `O dia simulado (${diasSimulados}) não está em EMAIL_DIAS_ANTES/EMAIL_DIAS_AVISO/EMAIL_DIAS_APOS, e (se for atraso) já está coberto só pelo cobranca — nenhum email real seria disparado nesse marco.`,
+      );
     }
     if (tipos.length === 0) {
-      tipos = [diffDias === 0 ? 'vencimento_hoje' : diffDias < 0 ? 'cobranca' : 'lembrete'];
+      tipos = [
+        diffDias === 0
+          ? 'vencimento_hoje'
+          : diffDias < 0
+            ? 'cobranca'
+            : 'lembrete',
+      ];
     }
 
-    const emailData: EmailData = {
-      nomeAluno:       dados.nomeAluno,
-      nomeResponsavel: dados.nomeResponsavel,
-      descricao:       'Mensalidade',
-      valor:           `R$ ${pend.valor.toFixed(2).replace('.', ',')}`,
-      vencimento:      venc.toLocaleDateString('pt-BR'),
-      diasRestantes:   diffDias > 0 ? diffDias : undefined,
-      diasAtraso:      diffDias < 0 ? Math.abs(diffDias) : undefined,
-      codigoBarras:    pend.linhaDigitavel,
-      urlBoleto:       pend.urlBoleto,
-      codigoPix:       pend.codigoPix,
-      qrCodeUrl:       pend.codigoPix ? `cid:${QR_CID}` : undefined,
-      codigoMatricula: dados.ra ?? String(pend.codigo),
-      competencia:     pend.competencia ? this.formatarCompetencia(pend.competencia) : undefined,
-      ...escola,
-    };
-
-    const qrBuffer = pend.codigoPix ? await gerarQrCode(pend.codigoPix) : undefined;
-    const resultados: { aluno: string; tipo: string; lancamento: number }[] = [];
+    const emailData = this.buildEmailDataLive(
+      cliente,
+      pend,
+      diffDias,
+      venc,
+      escola,
+    );
+    const qrBuffer = pend.codigoPix
+      ? await gerarQrCode(pend.codigoPix)
+      : undefined;
+    const resultados: { aluno: string; tipo: string; lancamento: number }[] =
+      [];
 
     for (const tipo of tipos) {
       const template = templatePorTipo(tipo, emailData);
       await this.emailService.enviar(
-        destinatario, `[PREVIEW] ${template.subject}`, template.html,
-        qrBuffer ? [{ cid: QR_CID, buffer: qrBuffer, nome: 'qrpix.png' }] : undefined,
+        destinatario,
+        `[PREVIEW] ${template.subject}`,
+        template.html,
+        qrBuffer
+          ? [{ cid: QR_CID, buffer: qrBuffer, nome: 'qrpix.png' }]
+          : undefined,
       );
-      resultados.push({ aluno: dados.nomeAluno, tipo, lancamento: pend.codigo });
+      resultados.push({
+        aluno: cliente.nomeAluno,
+        tipo,
+        lancamento: pend.codigo,
+      });
     }
     return resultados;
   }
 
-  /** `diasSimulados` — ver comentário de previewPorCpf, mesma convenção e comportamento. */
-  async previewPorLancamento(codigoLancamento: number, destinatario: string, diasSimulados?: number): Promise<{ aluno: string; tipo: string; lancamento: number }[]> {
+  /**
+   * Teste manual de UM registro específico do cache local (`codigoLancamento`
+   * = id de `lancamentos_cache`, não código da Sophia) — diferente do job
+   * real e dos outros previews, que não dependem mais do cache pra decidir
+   * status de pagamento. Útil pra reproduzir/inspecionar um envio antigo já
+   * registrado no banco. `diasSimulados` — ver comentário de previewPorCpf.
+   */
+  async previewPorLancamento(
+    codigoLancamento: number,
+    destinatario: string,
+    diasSimulados?: number,
+  ): Promise<{ aluno: string; tipo: string; lancamento: number }[]> {
     const escola = this.dadosEscola();
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
 
-    const lancamento = await this.lancamentoRepo.findOne({ where: { id: codigoLancamento } });
-    if (!lancamento) throw new NotFoundException(`Lançamento ${codigoLancamento} não encontrado`);
+    const lancamento = await this.lancamentoRepo.findOne({
+      where: { id: codigoLancamento },
+    });
+    if (!lancamento)
+      throw new NotFoundException(
+        `Lançamento ${codigoLancamento} não encontrado`,
+      );
 
-    const cliente = await this.clienteRepo.findOne({ where: { id: lancamento.codigoCliente } });
-    if (!cliente) throw new NotFoundException(`Cliente do lançamento ${codigoLancamento} não encontrado`);
+    const cliente = await this.clienteRepo.findOne({
+      where: { id: lancamento.codigoCliente },
+    });
+    if (!cliente)
+      throw new NotFoundException(
+        `Cliente do lançamento ${codigoLancamento} não encontrado`,
+      );
 
     if (!(await this.aindaPendenteNaSophia(cliente, lancamento, new Map()))) {
-      throw new Error(`Lançamento ${codigoLancamento} já está pago na Sophia (cache local ainda não tinha sido atualizado pelo sync de hora em hora).`);
+      throw new Error(
+        `Lançamento ${codigoLancamento} já está pago (ou não encontrado/ambíguo) na Sophia.`,
+      );
     }
 
-    const diasAntes = this.config.get<number[]>('email.diasAntes') ?? [7, 5, 3, 1];
-    const diasAviso = this.config.get<number[]>('email.diasAviso') ?? [10, 9, 8, 7, 6, 4, 3, 2, 1];
-    const diasAposVencimento = this.config.get<number[]>('email.diasAposVencimento') ?? [1, 2, 3, 7, 8, 9, 10, 12, 15, 20, 25, 30];
-    const diasRenegociacaoOverlap = this.config.get<number[]>('email.diasRenegociacaoOverlap') ?? [1, 3, 7];
+    const marcos = this.carregarMarcos();
 
     let venc: Date;
     let diffDias: number;
@@ -713,41 +1019,68 @@ export class EmailJobService {
       diffDias = Math.round((venc.getTime() - hoje.getTime()) / 86_400_000);
     }
 
-    let tipos = this.calcularTipos(diffDias, diasAntes, diasAviso, diasAposVencimento, diasRenegociacaoOverlap);
+    let tipos = this.calcularTipos(
+      diffDias,
+      marcos.diasAntes,
+      marcos.diasAviso,
+      marcos.diasAposVencimento,
+      marcos.diasRenegociacaoOverlap,
+    );
     if (diasSimulados !== undefined && tipos.length === 0) {
-      throw new Error(`O dia simulado (${diasSimulados}) não está em EMAIL_DIAS_ANTES/EMAIL_DIAS_AVISO/EMAIL_DIAS_APOS, e (se for atraso) já está coberto só pelo cobranca — nenhum email real seria disparado nesse marco.`);
+      throw new Error(
+        `O dia simulado (${diasSimulados}) não está em EMAIL_DIAS_ANTES/EMAIL_DIAS_AVISO/EMAIL_DIAS_APOS, e (se for atraso) já está coberto só pelo cobranca — nenhum email real seria disparado nesse marco.`,
+      );
     }
     if (tipos.length === 0) {
-      tipos = [diffDias === 0 ? 'vencimento_hoje' : diffDias < 0 ? 'cobranca' : 'lembrete'];
+      tipos = [
+        diffDias === 0
+          ? 'vencimento_hoje'
+          : diffDias < 0
+            ? 'cobranca'
+            : 'lembrete',
+      ];
     }
 
     const emailData: EmailData = {
-      nomeAluno:       cliente.nomeAluno,
+      nomeAluno: cliente.nomeAluno,
       nomeResponsavel: cliente.nomeResponsavel ?? cliente.nomeAluno,
-      descricao:       'Mensalidade',
-      valor:           `R$ ${Number(lancamento.valorPrevisto).toFixed(2).replace('.', ',')}`,
-      vencimento:      venc.toLocaleDateString('pt-BR'),
-      diasRestantes:   diffDias > 0 ? diffDias : undefined,
-      diasAtraso:      diffDias < 0 ? Math.abs(diffDias) : undefined,
-      codigoBarras:    lancamento.linhaDigitavel ?? undefined,
-      urlBoleto:       lancamento.urlBoleto ?? undefined,
-      codigoPix:       lancamento.codigoPix ?? undefined,
-      qrCodeUrl:       lancamento.codigoPix ? `cid:${QR_CID}` : undefined,
+      descricao: 'Mensalidade',
+      valor: `R$ ${Number(lancamento.valorPrevisto).toFixed(2).replace('.', ',')}`,
+      vencimento: venc.toLocaleDateString('pt-BR'),
+      diasRestantes: diffDias > 0 ? diffDias : undefined,
+      diasAtraso: diffDias < 0 ? Math.abs(diffDias) : undefined,
+      codigoBarras: lancamento.linhaDigitavel ?? undefined,
+      urlBoleto: lancamento.urlBoleto ?? undefined,
+      codigoPix: lancamento.codigoPix ?? undefined,
+      qrCodeUrl: lancamento.codigoPix ? `cid:${QR_CID}` : undefined,
       codigoMatricula: cliente.ra ?? String(cliente.codigoSophia ?? cliente.id),
-      competencia:     lancamento.competencia ? this.formatarCompetencia(lancamento.competencia) : undefined,
+      competencia: lancamento.competencia
+        ? this.formatarCompetencia(lancamento.competencia)
+        : undefined,
       ...escola,
     };
 
-    const qrBuffer = lancamento.codigoPix ? await gerarQrCode(lancamento.codigoPix) : undefined;
-    const resultados: { aluno: string; tipo: string; lancamento: number }[] = [];
+    const qrBuffer = lancamento.codigoPix
+      ? await gerarQrCode(lancamento.codigoPix)
+      : undefined;
+    const resultados: { aluno: string; tipo: string; lancamento: number }[] =
+      [];
 
     for (const tipo of tipos) {
       const template = templatePorTipo(tipo, emailData);
       await this.emailService.enviar(
-        destinatario, `[PREVIEW] ${template.subject}`, template.html,
-        qrBuffer ? [{ cid: QR_CID, buffer: qrBuffer, nome: 'qrpix.png' }] : undefined,
+        destinatario,
+        `[PREVIEW] ${template.subject}`,
+        template.html,
+        qrBuffer
+          ? [{ cid: QR_CID, buffer: qrBuffer, nome: 'qrpix.png' }]
+          : undefined,
       );
-      resultados.push({ aluno: cliente.nomeAluno, tipo, lancamento: lancamento.id });
+      resultados.push({
+        aluno: cliente.nomeAluno,
+        tipo,
+        lancamento: lancamento.id,
+      });
     }
     return resultados;
   }

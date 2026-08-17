@@ -43,9 +43,12 @@ export default () => ({
     // Remetente exclusivo do e-mail de cancelamento — o SMTP_FROM padrão
     // continua recebendo cópia (CC) automaticamente, ver enviarCancelamento().
     cancelamentoFrom: process.env.EMAIL_CANCELAMENTO_FROM ?? '',
-    cancelamentoCcPedagogico: process.env.EMAIL_CANCELAMENTO_CC_PEDAGOGICO ?? '',
-    cancelamentoCcTrancamento: process.env.EMAIL_CANCELAMENTO_CC_TRANCAMENTO ?? '',
-    cancelamentoCcFinanceiro: process.env.EMAIL_CANCELAMENTO_CC_FINANCEIRO ?? '',
+    cancelamentoCcPedagogico:
+      process.env.EMAIL_CANCELAMENTO_CC_PEDAGOGICO ?? '',
+    cancelamentoCcTrancamento:
+      process.env.EMAIL_CANCELAMENTO_CC_TRANCAMENTO ?? '',
+    cancelamentoCcFinanceiro:
+      process.env.EMAIL_CANCELAMENTO_CC_FINANCEIRO ?? '',
     // CC do comercial nos e-mails de cobrança (tipo 'cobranca_*', pós-vencimento) —
     // não se aplica a lembrete/vencimento_hoje/aviso/renegociação.
     ccComercial: process.env.EMAIL_CC_COMERCIAL ?? '',
@@ -57,10 +60,14 @@ export default () => ({
     diasAviso: (process.env.EMAIL_DIAS_AVISO ?? '10,9,8,7,6,4,3,2,1')
       .split(',')
       .map((d) => parseInt(d.trim(), 10)),
-    diasAposVencimento: (process.env.EMAIL_DIAS_APOS ?? '1,2,3,7,8,9,10,12,15,20,25,30')
+    diasAposVencimento: (
+      process.env.EMAIL_DIAS_APOS ?? '1,2,3,7,8,9,10,12,15,20,25,30'
+    )
       .split(',')
       .map((d) => parseInt(d.trim(), 10)),
-    diasRenegociacaoOverlap: (process.env.EMAIL_DIAS_RENEGOCIACAO_OVERLAP ?? '1,3,7')
+    diasRenegociacaoOverlap: (
+      process.env.EMAIL_DIAS_RENEGOCIACAO_OVERLAP ?? '1,3,7'
+    )
       .split(',')
       .map((d) => parseInt(d.trim(), 10)),
     logoUrl: process.env.EMAIL_LOGO_URL ?? '',
@@ -82,9 +89,6 @@ export default () => ({
     emailNotificacoes: process.env.ESCOLA_EMAIL_NOTIFICACOES ?? '',
     linkPortalAluno: process.env.EMAIL_PORTAL_ALUNO_URL ?? '',
   },
-  n8n: {
-    leadsWebhookUrl: process.env.N8N_LEADS_WEBHOOK_URL ?? '',
-  },
   zapi: {
     instanceId: process.env.ZAPI_INSTANCE_ID ?? '',
     token: process.env.ZAPI_TOKEN ?? '',
@@ -93,37 +97,52 @@ export default () => ({
     // Avisado por WhatsApp quando o chatbot encaminha um atendimento de secretaria
     // pra humano (ver IaService.encaminharHumano) — mesmo padrão de telefoneFinanceiro acima.
     telefoneSecretaria: process.env.ZAPI_TELEFONE_SECRETARIA ?? '',
-    // Consultoras de marketing avisadas por WhatsApp assim que a IA registra um lead novo
-    telefonesConsultorasMarketing: (process.env.ZAPI_TELEFONES_CONSULTORAS_MARKETING ?? '')
+    // Consultoras de marketing avisadas por WhatsApp assim que a IA registra um
+    // lead novo — e também quando o chatbot encaminha um interessado que ainda
+    // não é aluno (setor 'comercial' em IaService.encaminharHumano).
+    telefonesConsultorasMarketing: (
+      process.env.ZAPI_TELEFONES_CONSULTORAS_MARKETING ?? ''
+    )
       .split(',')
       .map((t) => t.trim())
       .filter(Boolean),
     cronHabilitado: process.env.WPP_CRON_HABILITADO ?? 'false',
-    // Toggle separado do de cobrança acima — nutrição de lead e lembrete
-    // financeiro são jobs distintos, cada um liga/desliga sozinho
-    leadNurturingCronHabilitado: process.env.LEAD_WPP_CRON_HABILITADO ?? 'false',
     diasAntes: (process.env.WPP_DIAS_ANTES ?? '7,5,3,1')
       .split(',')
       .map((d) => parseInt(d.trim(), 10)),
     diasApos: (process.env.WPP_DIAS_APOS ?? '1,2,3,7,8,9,10,12,15,20')
       .split(',')
       .map((d) => parseInt(d.trim(), 10)),
+    // Mesmo par usado hoje só pelo "Filtro Modo Teste" do n8n -- precisa
+    // existir também aqui porque o webhook da Z-API passou a bater primeiro
+    // no backend (ver WhatsAppWebhookController), não mais direto no n8n.
+    modoTeste: process.env.ZAPI_MODO_TESTE ?? 'false',
+    telefoneTeste: process.env.ZAPI_TELEFONE_TESTE ?? '',
+    // URL do fluxo "Encaminhar Leads" no n8n -- tudo que não for resposta de
+    // opção de cobrança é repassado pra cá sem alteração, pra não quebrar o
+    // encaminhamento de lead que já funciona hoje.
+    n8nWebhookUrl: process.env.N8N_WHATSAPP_WEBHOOK_URL ?? '',
+    // Banners anexados nas mensagens do job de cobrança do WhatsApp (wpp_job)
+    // -- URL pública no MinIO da VPS. "Lembrete" vai nas mensagens antes/no
+    // dia do vencimento; "Cobrança" vai nas de atraso (pós-vencimento). Cada
+    // imagem é baixada uma vez por rodada do job e reenviada pra cada
+    // destinatário, não por lançamento. Vazio = recurso desligado pra aquele
+    // tipo (comportamento atual, só texto/lista).
+    imagemLembreteUrl: process.env.WPP_IMAGEM_LEMBRETE_URL ?? '',
+    imagemLembreteLegenda: process.env.WPP_IMAGEM_LEMBRETE_LEGENDA ?? '',
+    imagemCobrancaUrl: process.env.WPP_IMAGEM_COBRANCA_URL ?? '',
+    imagemCobrancaLegenda: process.env.WPP_IMAGEM_COBRANCA_LEGENDA ?? '',
   },
   jwt: {
-    secret: process.env.JWT_SECRET || (() => { throw new Error('JWT_SECRET env var is required'); })(),
+    secret:
+      process.env.JWT_SECRET ||
+      (() => {
+        throw new Error('JWT_SECRET env var is required');
+      })(),
     siteUrl: process.env.SITE_URL ?? 'http://localhost:3000',
   },
   admin: {
     apiKey: process.env.ADMIN_API_KEY ?? '',
   },
   backendUrl: process.env.BACKEND_URL ?? '',
-  mercadopago: {
-    accessToken: process.env.MP_ACCESS_TOKEN ?? '',
-    sandbox: process.env.MP_SANDBOX !== 'false',
-    successUrl: process.env.MP_SUCCESS_URL ?? '',
-    failureUrl: process.env.MP_FAILURE_URL ?? '',
-    pendingUrl: process.env.MP_PENDING_URL ?? '',
-    notificationUrl: process.env.MP_NOTIFICATION_URL ?? '',
-    webhookSecret: process.env.MP_WEBHOOK_SECRET ?? '',
-  },
 });

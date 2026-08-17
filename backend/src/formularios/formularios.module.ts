@@ -9,7 +9,11 @@ import { EmailModule } from '../email/email.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([MensagemContato, Manifestacao, SolicitacaoEvento]),
+    TypeOrmModule.forFeature([
+      MensagemContato,
+      Manifestacao,
+      SolicitacaoEvento,
+    ]),
     EmailModule,
   ],
   controllers: [FormulariosController],

@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Chamado } from './entities/chamado.entity';
 import { CriarChamadoDto } from './dto/criar-chamado.dto';
+import { maskTelefone } from '../common/mask.util';
 
 @Injectable()
 export class TiService {
@@ -26,10 +27,10 @@ export class TiService {
       telefoneSolicitante: telefone,
     });
 
-    const saved = await this.chamadoRepo.save(chamado) as Chamado;
+    const saved = await this.chamadoRepo.save(chamado);
     const ref = `CH-${saved.id.substring(0, 8).toUpperCase()}`;
 
-    this.logger.log(`Chamado ${ref} aberto por ${telefone}`);
+    this.logger.log(`Chamado ${ref} aberto por ${maskTelefone(telefone)}`);
     return { ref, status: saved.status, criadoEm: saved.createdAt };
   }
 
@@ -40,8 +41,9 @@ export class TiService {
       order: { createdAt: 'DESC' },
       take: 5,
     });
-    if (!chamados.length) throw new NotFoundException('Nenhum chamado encontrado para este número');
-    return chamados.map(c => ({
+    if (!chamados.length)
+      throw new NotFoundException('Nenhum chamado encontrado para este número');
+    return chamados.map((c) => ({
       ref: `CH-${c.id.substring(0, 8).toUpperCase()}`,
       titulo: c.titulo,
       status: c.status,

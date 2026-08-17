@@ -5,7 +5,9 @@ import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   if (!process.env.DATABASE_URL) {
-    throw new Error('DATABASE_URL não configurada — aplicação não pode iniciar');
+    throw new Error(
+      'DATABASE_URL não configurada — aplicação não pode iniciar',
+    );
   }
 
   const app = await NestFactory.create(AppModule);
@@ -30,4 +32,9 @@ async function bootstrap() {
   await app.listen(port);
   logger.log(`Serviço de integração rodando na porta ${port}`);
 }
-bootstrap();
+bootstrap().catch((err: unknown) => {
+  new Logger('Bootstrap').error(
+    `Falha ao iniciar a aplicação: ${err instanceof Error ? err.message : String(err)}`,
+  );
+  process.exit(1);
+});

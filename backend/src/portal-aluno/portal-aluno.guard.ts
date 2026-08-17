@@ -1,4 +1,9 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
 import * as jwt from 'jsonwebtoken';
@@ -23,7 +28,10 @@ export class PortalAlunoGuard implements CanActivate {
     }
 
     try {
-      const payload = jwt.verify(token, this.config.get<string>('jwt.secret')!) as PortalAlunoRequestUser;
+      const payload = jwt.verify(
+        token,
+        this.config.get<string>('jwt.secret')!,
+      ) as PortalAlunoRequestUser;
       (req as Request & { portalAluno: PortalAlunoRequestUser }).portalAluno = {
         codigoSophia: payload.codigoSophia,
         ra: payload.ra,

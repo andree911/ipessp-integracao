@@ -1,4 +1,10 @@
-import { IsEmail, IsIn, IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import {
+  IsEmail,
+  IsIn,
+  IsNotEmpty,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 
 export class ManifestacaoDto {
   @IsNotEmpty()

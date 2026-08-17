@@ -1,4 +1,10 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 // Nota: a coluna `url_pagina` mencionada no código antigo (LeadEmailService)
 // nunca chegou a ser criada de fato no banco (só existia um script manual
@@ -21,7 +27,13 @@ export class CursoConteudo {
   @Column({ nullable: true })
   duracao: string;
 
-  @Column({ name: 'preco_mensalidade', type: 'numeric', precision: 10, scale: 2, nullable: true })
+  @Column({
+    name: 'preco_mensalidade',
+    type: 'numeric',
+    precision: 10,
+    scale: 2,
+    nullable: true,
+  })
   precoMensalidade: string;
 
   @Column({ name: 'pdf_informativo_url', nullable: true })

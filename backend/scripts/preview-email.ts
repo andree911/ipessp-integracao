@@ -7,7 +7,6 @@ import {
   templateAviso,
   templateRenegociacaoOferta,
   templateRenegociacaoLembrete,
-  emailConfirmacaoMatricula,
 } from '../src/email/templates/email.templates';
 
 function comoDataUri(caminhoRelativo: string): string {
@@ -63,28 +62,6 @@ const templates = [
   { nome: 'aviso', fn: () => templateAviso(dadosFake) },
   { nome: 'renegociacao_oferta', fn: () => templateRenegociacaoOferta(dadosFake) },
   { nome: 'renegociacao_lembrete', fn: () => templateRenegociacaoLembrete(dadosFake) },
-  {
-    nome: 'confirmacao_matricula',
-    fn: () => ({
-      subject: `Sua matrícula em Biomedicina — Acesse o link de pagamento`,
-      html: emailConfirmacaoMatricula({
-        nomeAluno: dadosFake.nomeAluno,
-        curso: 'Biomedicina',
-        numeroParcelas: 12,
-        valorParcela: 890,
-        linkPagamento: 'https://mercadopago.com/checkout/exemplo',
-        nomeEscola: dadosFake.nomeEscola,
-        emailEscola: dadosFake.emailEscola,
-        telefoneEscola: dadosFake.telefoneEscola,
-        siteUrl: dadosFake.siteUrl,
-        instagramUrl: dadosFake.instagramUrl,
-        facebookUrl: dadosFake.facebookUrl,
-        youtubeUrl: dadosFake.youtubeUrl,
-        linkedinUrl: dadosFake.linkedinUrl,
-        iconesUrls: dadosFake.iconesUrls,
-      }),
-    }),
-  },
 ];
 
 const outDir = path.resolve(__dirname, '../email-preview');

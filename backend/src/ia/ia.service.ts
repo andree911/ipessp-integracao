@@ -11,6 +11,8 @@ import { Aviso } from './entities/aviso.entity';
 import { CalendarioEvento } from './entities/calendario.entity';
 import { CursoConteudo } from './entities/curso-conteudo.entity';
 import { AssociarTelefoneDto } from './dto/associar-telefone.dto';
+import { errMsg } from '../common/err.util';
+import { maskTelefone } from '../common/mask.util';
 
 @Injectable()
 export class IaService {
@@ -107,9 +109,14 @@ export class IaService {
       });
       // Formato snake_case pra bater 1:1 com o que o bot/n8n já espera (linha
       // direta do Supabase antes da migração) — evita reescrever o consumidor.
-      return avisos.map((a) => ({ id: a.id, titulo: a.titulo, mensagem: a.mensagem, criado_em: a.criadoEm }));
-    } catch (err: any) {
-      this.logger.error(`Erro ao buscar avisos: ${err.message}`);
+      return avisos.map((a) => ({
+        id: a.id,
+        titulo: a.titulo,
+        mensagem: a.mensagem,
+        criado_em: a.criadoEm,
+      }));
+    } catch (err: unknown) {
+      this.logger.error(`Erro ao buscar avisos: ${errMsg(err)}`);
       return [];
     }
   }
@@ -122,9 +129,15 @@ export class IaService {
         .where('c.dataEvento >= :hoje', { hoje })
         .orderBy('c.dataEvento', 'ASC')
         .getMany();
-      return eventos.map((c) => ({ id: c.id, titulo: c.titulo, descricao: c.descricao, data_evento: c.dataEvento, tipo: c.tipo }));
-    } catch (err: any) {
-      this.logger.error(`Erro ao buscar calendário: ${err.message}`);
+      return eventos.map((c) => ({
+        id: c.id,
+        titulo: c.titulo,
+        descricao: c.descricao,
+        data_evento: c.dataEvento,
+        tipo: c.tipo,
+      }));
+    } catch (err: unknown) {
+      this.logger.error(`Erro ao buscar calendário: ${errMsg(err)}`);
       return [];
     }
   }
@@ -223,10 +236,15 @@ export class IaService {
     codigoCurso: number,
     telefone: string,
   ): Promise<{ ok: boolean; erro?: string }> {
-    const curso = await this.cursoConteudoRepo.findOne({ where: { codigoCurso, ativo: true } });
+    const curso = await this.cursoConteudoRepo.findOne({
+      where: { codigoCurso, ativo: true },
+    });
 
     if (!curso) {
-      return { ok: false, erro: `Curso ${codigoCurso} não encontrado ou inativo.` };
+      return {
+        ok: false,
+        erro: `Curso ${codigoCurso} não encontrado ou inativo.`,
+      };
     }
     if (!curso.pdfInformativoUrl) {
       return {
@@ -236,7 +254,11 @@ export class IaService {
     }
 
     try {
-      await this.whatsapp.enviarDocumentoDeUrl(telefone, curso.pdfInformativoUrl, `${curso.nome}.pdf`);
+      await this.whatsapp.enviarDocumentoDeUrl(
+        telefone,
+        curso.pdfInformativoUrl,
+        `${curso.nome}.pdf`,
+      );
     } catch {
       return {
         ok: false,
@@ -249,15 +271,17 @@ export class IaService {
 
   private async getCursosConteudo() {
     try {
-      const cursos = await this.cursoConteudoRepo.find({ where: { ativo: true } });
+      const cursos = await this.cursoConteudoRepo.find({
+        where: { ativo: true },
+      });
       return cursos.map((c) => ({
         codigo_curso: c.codigoCurso,
         descricao: c.descricao,
         duracao: c.duracao,
         preco_mensalidade: c.precoMensalidade,
       }));
-    } catch (err: any) {
-      this.logger.error(`Erro ao buscar conteúdo de cursos: ${err.message}`);
+    } catch (err: unknown) {
+      this.logger.error(`Erro ao buscar conteúdo de cursos: ${errMsg(err)}`);
       return [];
     }
   }
@@ -281,7 +305,9 @@ export class IaService {
       ['telefone'],
     );
 
-    this.logger.log(`Associação telefone→CPF gravada: ${telefone}`);
+    this.logger.log(
+      `Associação telefone→CPF gravada: ${maskTelefone(telefone)}`,
+    );
     return { ok: true, telefone, cpf };
   }
 
@@ -305,30 +331,58 @@ export class IaService {
 
   /**
    * Encaminha o atendimento do chatbot pra um humano do setor, via WhatsApp
-   * — usado pelas tools "Encaminhar para Humano (Financeiro/Secretaria)" do
-   * bot quando o usuário pede um atendente ou o agente de IA não consegue
-   * resolver. `erro` (sem lançar exceção) é lido pela IA pra avisar o
-   * usuário adequadamente, mesmo quando o setor ainda não tem número
-   * configurado.
+   * — usado pelas tools "Encaminhar para Humano (Financeiro/Secretaria)" e
+   * "Encaminhar para Novos Alunos" do bot quando o usuário pede um atendente
+   * ou o agente de IA não consegue resolver. `erro` (sem lançar exceção) é
+   * lido pela IA pra avisar o usuário adequadamente, mesmo quando o setor
+   * ainda não tem número configurado.
+   *
+   * `comercial` é o destino de quem AINDA NÃO é aluno: antes, quando o Agent
+   * Secretaria descobria no meio da conversa que a pessoa não era matriculada,
+   * ele não tinha pra onde encaminhar e acabava mandando o interessado embora
+   * com o telefone da própria Secretaria travestido de "atendimento de novos
+   * alunos" — um lead real perdido. Agora avisa as consultoras de marketing,
+   * as mesmas já notificadas a cada lead registrado pelo CRM.
    */
   async encaminharHumano(
-    setor: 'financeiro' | 'secretaria',
+    setor: 'financeiro' | 'secretaria' | 'comercial',
     telefone: string,
     resumo: string,
   ): Promise<{ ok: boolean; erro?: string }> {
-    const destino = this.config.get<string>(
-      setor === 'financeiro' ? 'zapi.telefoneFinanceiro' : 'zapi.telefoneSecretaria',
-    );
-    if (!destino) {
-      this.logger.warn(`Encaminhamento pra humano (${setor}) sem número configurado — mensagem não enviada`);
+    const rotulos = {
+      financeiro: 'Financeiro',
+      secretaria: 'Secretaria',
+      comercial: 'Novos Alunos',
+    } as const;
+
+    // comercial fala com a equipe inteira (lista), os outros com um número só
+    const consultoras =
+      this.config.get<string[]>('zapi.telefonesConsultorasMarketing') ?? [];
+    const chaveSetor =
+      setor === 'financeiro'
+        ? 'zapi.telefoneFinanceiro'
+        : 'zapi.telefoneSecretaria';
+    const destinos =
+      setor === 'comercial'
+        ? consultoras
+        : [this.config.get<string>(chaveSetor) ?? ''].filter(Boolean);
+
+    if (destinos.length === 0) {
+      this.logger.warn(
+        `Encaminhamento pra humano (${setor}) sem número configurado — mensagem não enviada`,
+      );
       return {
         ok: false,
         erro: `Ainda não há um atendente humano configurado para ${setor} por aqui — avise o usuário que ele pode ligar ou mandar e-mail pros canais oficiais.`,
       };
     }
 
-    const mensagem = `🔔 *Atendimento humano solicitado — ${setor === 'financeiro' ? 'Financeiro' : 'Secretaria'}*\n\nContato do aluno: ${telefone}\n\n${resumo}`;
-    await this.whatsapp.enviarTexto(destino, mensagem);
+    const contato =
+      setor === 'comercial' ? 'Contato do interessado' : 'Contato do aluno';
+    const mensagem = `🔔 *Atendimento humano solicitado — ${rotulos[setor]}*\n\n${contato}: ${telefone}\n\n${resumo}`;
+    for (const destino of destinos) {
+      await this.whatsapp.enviarTexto(destino, mensagem);
+    }
     return { ok: true };
   }
 }
