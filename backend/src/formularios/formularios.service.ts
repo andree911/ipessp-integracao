@@ -4,6 +4,10 @@ import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { EmailService } from '../email/email.service';
 import { errMsg } from '../common/err.util';
+import {
+  escHtml,
+  renderInternalNotificationEmail,
+} from '../common/internal-notification.util';
 import { MensagemContato } from './entities/mensagem-contato.entity';
 import { Manifestacao } from './entities/manifestacao.entity';
 import { SolicitacaoEvento } from './entities/solicitacao-evento.entity';
@@ -17,9 +21,6 @@ const TIPO_LABEL: Record<string, string> = {
   elogio: 'Elogio',
   outro: 'Outro',
 };
-
-const esc = (s: string) =>
-  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
 
 @Injectable()
 export class FormulariosService {
@@ -54,12 +55,12 @@ export class FormulariosService {
     void this.notificar(
       `[${this.nomeEscola}] Novo contato: ${dto.assunto ?? 'sem assunto'}`,
       `
-        <p><strong>Nome:</strong> ${esc(dto.nome)}</p>
-        <p><strong>E-mail:</strong> ${esc(dto.email)}</p>
-        ${dto.telefone ? `<p><strong>Telefone:</strong> ${esc(dto.telefone)}</p>` : ''}
-        ${dto.assunto ? `<p><strong>Assunto:</strong> ${esc(dto.assunto)}</p>` : ''}
+        <p><strong>Nome:</strong> ${escHtml(dto.nome)}</p>
+        <p><strong>E-mail:</strong> ${escHtml(dto.email)}</p>
+        ${dto.telefone ? `<p><strong>Telefone:</strong> ${escHtml(dto.telefone)}</p>` : ''}
+        ${dto.assunto ? `<p><strong>Assunto:</strong> ${escHtml(dto.assunto)}</p>` : ''}
         <p><strong>Mensagem:</strong></p>
-        <p>${esc(dto.mensagem)}</p>
+        <p>${escHtml(dto.mensagem)}</p>
       `,
     );
 
@@ -68,37 +69,42 @@ export class FormulariosService {
 
   async criarManifestacao(dto: ManifestacaoDto): Promise<Manifestacao> {
     const registro = await this.manifestacaoRepo.save(
-      this.manifestacaoRepo.create({ ...dto, tipo: dto.tipo as Manifestacao['tipo'] }),
+      this.manifestacaoRepo.create({
+        ...dto,
+        tipo: dto.tipo as Manifestacao['tipo'],
+      }),
     );
 
     void this.notificar(
       `[${this.nomeEscola}] Ouvidoria — ${TIPO_LABEL[dto.tipo] ?? dto.tipo}`,
       `
-        <p><strong>Tipo:</strong> ${TIPO_LABEL[dto.tipo] ?? esc(dto.tipo)}</p>
-        <p><strong>Nome:</strong> ${esc(dto.nome)}</p>
-        <p><strong>E-mail:</strong> ${esc(dto.email)}</p>
+        <p><strong>Tipo:</strong> ${TIPO_LABEL[dto.tipo] ?? escHtml(dto.tipo)}</p>
+        <p><strong>Nome:</strong> ${escHtml(dto.nome)}</p>
+        <p><strong>E-mail:</strong> ${escHtml(dto.email)}</p>
         <p><strong>Mensagem:</strong></p>
-        <p>${esc(dto.mensagem)}</p>
+        <p>${escHtml(dto.mensagem)}</p>
       `,
     );
 
     return registro;
   }
 
-  async criarSolicitacaoEvento(dto: SolicitacaoEventoDto): Promise<SolicitacaoEvento> {
+  async criarSolicitacaoEvento(
+    dto: SolicitacaoEventoDto,
+  ): Promise<SolicitacaoEvento> {
     const registro = await this.eventoRepo.save(this.eventoRepo.create(dto));
 
     void this.notificar(
       `[${this.nomeEscola}] Solicitação de espaço para evento`,
       `
-        <p><strong>Nome:</strong> ${esc(dto.nome)}</p>
-        <p><strong>E-mail:</strong> ${esc(dto.email)}</p>
-        ${dto.telefone ? `<p><strong>Telefone:</strong> ${esc(dto.telefone)}</p>` : ''}
-        ${dto.organizacao ? `<p><strong>Organização:</strong> ${esc(dto.organizacao)}</p>` : ''}
-        ${dto.tipoEvento ? `<p><strong>Tipo de evento:</strong> ${esc(dto.tipoEvento)}</p>` : ''}
-        ${dto.dataEvento ? `<p><strong>Data do evento:</strong> ${esc(dto.dataEvento)}</p>` : ''}
+        <p><strong>Nome:</strong> ${escHtml(dto.nome)}</p>
+        <p><strong>E-mail:</strong> ${escHtml(dto.email)}</p>
+        ${dto.telefone ? `<p><strong>Telefone:</strong> ${escHtml(dto.telefone)}</p>` : ''}
+        ${dto.organizacao ? `<p><strong>Organização:</strong> ${escHtml(dto.organizacao)}</p>` : ''}
+        ${dto.tipoEvento ? `<p><strong>Tipo de evento:</strong> ${escHtml(dto.tipoEvento)}</p>` : ''}
+        ${dto.dataEvento ? `<p><strong>Data do evento:</strong> ${escHtml(dto.dataEvento)}</p>` : ''}
         <p><strong>Descrição:</strong></p>
-        <p>${esc(dto.descricao)}</p>
+        <p>${escHtml(dto.descricao)}</p>
       `,
     );
 
@@ -109,18 +115,16 @@ export class FormulariosService {
     const para = this.emailDestino;
     if (!para) return;
     try {
-      await this.emailService.enviar(
-        para,
-        assunto,
-        `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;padding:24px;color:#333;">
-          <h2 style="color:#C8102E;">${assunto}</h2>
-          ${corpo}
-          <hr style="margin-top:24px;border:none;border-top:1px solid #eee;">
-          <p style="font-size:11px;color:#999;">Enviado automaticamente pelo sistema ${this.nomeEscola}</p>
-        </body></html>`,
-      );
+      const html = renderInternalNotificationEmail({
+        nomeEscola: this.nomeEscola,
+        titulo: assunto,
+        corpoHtml: corpo,
+      });
+      await this.emailService.enviar(para, assunto, html);
     } catch (err: unknown) {
-      this.logger.warn(`Falha ao notificar por email (${assunto}): ${errMsg(err)}`);
+      this.logger.warn(
+        `Falha ao notificar por email (${assunto}): ${errMsg(err)}`,
+      );
     }
   }
 }

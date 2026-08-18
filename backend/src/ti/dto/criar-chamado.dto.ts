@@ -1,10 +1,18 @@
 import { Transform } from 'class-transformer';
-import { IsIn, IsNotEmpty, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
+import {
+  IsIn,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Matches,
+  MaxLength,
+} from 'class-validator';
 
 // n8n (via $fromAI) sempre manda string, nunca omite o campo: quando a IA não
 // sabe classificar, o valor vem como "". @IsOptional() só ignora null/undefined,
 // então sem esse Transform "" cairia no IsIn e voltaria 400.
-const undefinedSeVazio = ({ value }: { value: string }) => (value === '' ? undefined : value);
+const undefinedSeVazio = ({ value }: { value: string }) =>
+  value === '' ? undefined : value;
 
 export class CriarChamadoDto {
   @IsNotEmpty()
@@ -32,7 +40,7 @@ export class CriarChamadoDto {
   @IsNotEmpty()
   @IsString()
   @MaxLength(20)
-  @Matches(/^\+?[\d\s()\-]{10,20}$/, { message: 'Telefone inválido' })
+  @Matches(/^\+?[\d\s()-]{10,20}$/, { message: 'Telefone inválido' })
   telefoneSolicitante: string;
 
   @IsOptional()

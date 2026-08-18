@@ -82,7 +82,9 @@ export class ImportacaoService {
             });
             lancamentosImportados++;
           } catch (err: unknown) {
-            erros.push(`Lançamento ${lanc.codigoSophia} do cliente ${reg.codigoSophia}: ${errMsg(err)}`);
+            erros.push(
+              `Lançamento ${lanc.codigoSophia} do cliente ${reg.codigoSophia}: ${errMsg(err)}`,
+            );
           }
         }
 
@@ -97,8 +99,12 @@ export class ImportacaoService {
         // Silva, ver memória do projeto) -- essa é a correção na fonte,
         // complementar à checagem defensiva que já existe no email-job.
         try {
-          const codigosVivos = new Set(reg.lancamentos.map((l) => l.codigoSophia));
-          const abertos = await this.financeiro.getLancamentosAbertosDoCliente(cliente.id);
+          const codigosVivos = new Set(
+            reg.lancamentos.map((l) => l.codigoSophia),
+          );
+          const abertos = await this.financeiro.getLancamentosAbertosDoCliente(
+            cliente.id,
+          );
           const orfaos = abertos.filter(
             (a) => a.codigoSophia != null && !codigosVivos.has(a.codigoSophia),
           );
@@ -106,7 +112,10 @@ export class ImportacaoService {
           const usados = new Set<number>();
           for (const orfao of orfaos) {
             const candidatos = encontrarSubstitutosPagos(
-              { dataVencimento: orfao.dataVencimento, valorPrevisto: Number(orfao.valorPrevisto) },
+              {
+                dataVencimento: orfao.dataVencimento,
+                valorPrevisto: orfao.valorPrevisto,
+              },
               reg.lancamentos.map((l) => ({
                 codigo: l.codigoSophia,
                 recebido: l.recebido,
@@ -118,7 +127,10 @@ export class ImportacaoService {
 
             if (candidatos.length === 1) {
               usados.add(candidatos[0].codigo);
-              await this.financeiro.marcarRecebido(orfao.codigoSophia!, cliente.id);
+              await this.financeiro.marcarRecebido(
+                orfao.codigoSophia!,
+                cliente.id,
+              );
               orfaosResolvidos++;
               this.logger.log(
                 `Lançamento órfão ${orfao.id} (cliente ${cliente.id}) resolvido — substituto código ${candidatos[0].codigo}`,
@@ -130,7 +142,9 @@ export class ImportacaoService {
             }
           }
         } catch (err: unknown) {
-          erros.push(`Reconciliação de órfãos do cliente ${reg.codigoSophia}: ${errMsg(err)}`);
+          erros.push(
+            `Reconciliação de órfãos do cliente ${reg.codigoSophia}: ${errMsg(err)}`,
+          );
         }
       } catch (err: unknown) {
         erros.push(`Cliente ${reg.codigoSophia}: ${errMsg(err)}`);
@@ -139,10 +153,16 @@ export class ImportacaoService {
 
     this.logger.log(
       `Importação concluída: ${clientesImportados} clientes, ${lancamentosImportados} lançamentos, ` +
-      `${orfaosResolvidos} órfãos resolvidos, ${orfaosAmbiguos} órfãos ambíguos, ${orfaosSemMatch} órfãos sem match, ` +
-      `${erros.length} erros`,
+        `${orfaosResolvidos} órfãos resolvidos, ${orfaosAmbiguos} órfãos ambíguos, ${orfaosSemMatch} órfãos sem match, ` +
+        `${erros.length} erros`,
     );
-    return { clientesImportados, lancamentosImportados, orfaosResolvidos, orfaosAmbiguos, orfaosSemMatch, erros };
+    return {
+      clientesImportados,
+      lancamentosImportados,
+      orfaosResolvidos,
+      orfaosAmbiguos,
+      orfaosSemMatch,
+      erros,
+    };
   }
-
 }

@@ -3,10 +3,12 @@ import {
   Post,
   Get,
   HttpCode,
+  HttpException,
   Body,
   BadRequestException,
   NotFoundException,
   InternalServerErrorException,
+  Logger,
   ParseIntPipe,
   UseGuards,
 } from '@nestjs/common';
@@ -24,6 +26,8 @@ import { AdminApiKeyGuard } from '../admin/guards/admin-api-key.guard';
 @UseGuards(AdminApiKeyGuard)
 @Controller('email')
 export class EmailController {
+  private readonly logger = new Logger(EmailController.name);
+
   constructor(
     private readonly jobService: EmailJobService,
     private readonly emailService: EmailService,
@@ -36,7 +40,11 @@ export class EmailController {
   @Post('trigger')
   @HttpCode(202)
   trigger(): { message: string } {
-    void this.jobService.runEmailJob('manual');
+    this.jobService.runEmailJob('manual').catch((err: unknown) => {
+      this.logger.error(
+        `Job de emails (disparo manual) falhou: ${errMsg(err)}`,
+      );
+    });
     return { message: 'Job de emails iniciado' };
   }
 
@@ -103,9 +111,8 @@ export class EmailController {
       );
       return { ok: true, enviados };
     } catch (err: unknown) {
+      if (err instanceof HttpException) throw err;
       const msg = errMsg(err);
-      if (msg.includes('não encontrado na cache'))
-        throw new NotFoundException(msg);
       if (msg.includes('não possui lançamentos'))
         throw new NotFoundException(msg);
       throw new InternalServerErrorException(msg);
@@ -135,7 +142,7 @@ export class EmailController {
       );
       return { ok: true, enviados };
     } catch (err: unknown) {
-      if ((err as { status?: number }).status === 404) throw err;
+      if (err instanceof HttpException) throw err;
       throw new InternalServerErrorException(errMsg(err));
     }
   }
@@ -163,9 +170,8 @@ export class EmailController {
       );
       return { ok: true, enviados };
     } catch (err: unknown) {
+      if (err instanceof HttpException) throw err;
       const msg = errMsg(err);
-      if (msg.includes('Nenhum aluno encontrado'))
-        throw new NotFoundException(msg);
       if (msg.includes('não possui lançamentos'))
         throw new NotFoundException(msg);
       throw new InternalServerErrorException(msg);
@@ -225,8 +231,8 @@ export class EmailController {
         'Informe o campo "para" com o email de destino',
       );
     const { subject, html } = templateLembrete({
-      nomeAluno: 'André Nicézio (Teste)',
-      nomeResponsavel: 'André Nicézio',
+      nomeAluno: 'Aluno de Teste',
+      nomeResponsavel: 'Responsável de Teste',
       descricao: 'Mensalidade — Pós-Graduação em Análises Clínicas',
       valor: 'R$ 890,00',
       vencimento: new Date(Date.now() + 3 * 86400000).toLocaleDateString(

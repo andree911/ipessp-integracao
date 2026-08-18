@@ -1,11 +1,27 @@
-import { Body, Controller, HttpCode, Logger, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  Logger,
+  Post,
+  Query,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { WhatsAppJobService } from './whatsapp-job.service';
 import { errMsg } from '../common/err.util';
 
-const OPCOES_COBRANCA = ['ja_paguei', 'ajuda', 'portal'];
+const OPCOES_COBRANCA = ['ja_paguei', 'ajuda', 'portal', 'site'];
+
+/** "pagar_whatsapp:123" carrega o código do lançamento no id -- ver montarMensagem/cta em WhatsAppJobService. */
+function ehOpcaoCobranca(selectedRowId: string): boolean {
+  return (
+    OPCOES_COBRANCA.includes(selectedRowId) ||
+    selectedRowId.startsWith('pagar_whatsapp')
+  );
+}
 
 interface ZApiWebhookPayload {
   fromMe?: boolean;
@@ -21,9 +37,10 @@ interface ZApiWebhookPayload {
  * de 2026-08-14: a resposta de cobrança precisa ser 100% backend, sem
  * depender de nenhum fluxo do n8n no caminho -- nem pra receber, nem pra
  * decidir, nem pra enviar). Sem guard de admin-key de propósito: quem chama
- * aqui é a Z-API, não um cliente autenticado nosso.
+ * aqui é a Z-API, não um cliente autenticado nosso -- a origem é verificada
+ * pelo secret na query string (ver verificarOrigem), não por Bearer token.
  *
- * Tudo que NÃO for uma das 3 opções da lista de cobrança é repassado sem
+ * Tudo que NÃO for uma das opções da lista de cobrança (OPCOES_COBRANCA) é repassado sem
  * alteração pro fluxo "Encaminhar Leads" do n8n, que continua cuidando de
  * leads normalmente -- só o dono do roteamento de ENTRADA mudou, a lógica de
  * lead em si continua 100% no n8n/Core, sem duplicar aqui.
@@ -40,7 +57,12 @@ export class WhatsAppWebhookController {
 
   @Post('webhook')
   @HttpCode(200)
-  async receberWebhook(@Body() payload: ZApiWebhookPayload): Promise<{ ok: boolean }> {
+  async receberWebhook(
+    @Body() payload: ZApiWebhookPayload,
+    @Query('secret') secret?: string,
+  ): Promise<{ ok: boolean }> {
+    this.verificarOrigem(secret);
+
     // Mesmo filtro que só existia no n8n ("Filtro Modo Teste") -- em modo
     // teste, só o telefone de teste é processado; qualquer outro é
     // silenciosamente ignorado (nem responde cobrança, nem repassa lead).
@@ -53,9 +75,12 @@ export class WhatsAppWebhookController {
     if (payload.fromMe) return { ok: true };
 
     const selectedRowId = payload.listResponseMessage?.selectedRowId;
-    if (selectedRowId && OPCOES_COBRANCA.includes(selectedRowId) && payload.phone) {
+    if (selectedRowId && ehOpcaoCobranca(selectedRowId) && payload.phone) {
       try {
-        await this.whatsappJobService.responderOpcaoCobranca(selectedRowId, payload.phone);
+        await this.whatsappJobService.responderOpcaoCobranca(
+          selectedRowId,
+          payload.phone,
+        );
       } catch (err: unknown) {
         this.logger.error(
           `Falha ao responder opção "${selectedRowId}" pro telefone ${payload.phone}: ${errMsg(err)}`,
@@ -66,6 +91,22 @@ export class WhatsAppWebhookController {
 
     await this.repassarParaN8n(payload);
     return { ok: true };
+  }
+
+  /**
+   * A Z-API não assina o payload do webhook, então a única verificação de
+   * origem possível é um secret compartilhado embutido na própria URL
+   * cadastrada no painel da Z-API (ex: /whatsapp/webhook?secret=xxx).
+   * WEBHOOK_SECRET é opcional por retrocompatibilidade: enquanto não for
+   * configurada, o comportamento atual (sem verificação) é preservado --
+   * configure a env var e atualize a URL na Z-API para ativar a checagem.
+   */
+  private verificarOrigem(secret: string | undefined): void {
+    const esperado = this.config.get<string>('webhook.secret');
+    if (!esperado) return;
+    if (secret !== esperado) {
+      throw new UnauthorizedException('Origem do webhook não verificada');
+    }
   }
 
   /** Retry único após pequeno atraso -- mesmo padrão de WhatsAppService.enviarTexto, pra não perder um lead por instabilidade passageira do n8n. */

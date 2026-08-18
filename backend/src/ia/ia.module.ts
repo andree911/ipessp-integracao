@@ -14,7 +14,13 @@ import { CursoConteudo } from './entities/curso-conteudo.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ResponsavelCache, TelefoneCpfCache, Aviso, CalendarioEvento, CursoConteudo]),
+    TypeOrmModule.forFeature([
+      ResponsavelCache,
+      TelefoneCpfCache,
+      Aviso,
+      CalendarioEvento,
+      CursoConteudo,
+    ]),
     SophiaModule,
     FinanceiroModule,
     EmailModule,

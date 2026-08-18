@@ -6,10 +6,13 @@ export const errStack = (e: unknown): string | undefined =>
 
 type AxiosLike = { response?: { status?: number; data?: unknown } };
 const asAxios = (e: unknown): AxiosLike | null =>
-  typeof e === 'object' && e !== null ? (e as AxiosLike) : null;
+  typeof e === 'object' && e !== null ? e : null;
 
 export const isAxios401 = (e: unknown): boolean =>
   asAxios(e)?.response?.status === 401;
+
+export const axiosStatus = (e: unknown): number | undefined =>
+  asAxios(e)?.response?.status;
 
 export const axiosDetail = (e: unknown): unknown =>
   asAxios(e)?.response?.data ?? asAxios(e)?.response?.status ?? errMsg(e);

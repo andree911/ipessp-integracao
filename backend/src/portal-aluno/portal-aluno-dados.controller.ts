@@ -15,6 +15,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { Request } from 'express';
 import { PortalAlunoDadosService } from './portal-aluno-dados.service';
 import { PortalAlunoGuard, PortalAlunoRequestUser } from './portal-aluno.guard';
+import { assinaturaValida } from '../common/file-signature.util';
 
 type RequestComPortalAluno = Request & { portalAluno: PortalAlunoRequestUser };
 
@@ -48,17 +49,26 @@ export class PortalAlunoDadosController {
   }
 
   @Get('notas')
-  notas(@Req() req: RequestComPortalAluno, @Query('matricula', ParseIntPipe) matricula: number) {
+  notas(
+    @Req() req: RequestComPortalAluno,
+    @Query('matricula', ParseIntPipe) matricula: number,
+  ) {
     return this.dados.minhasNotas(req.portalAluno.codigoSophia, matricula);
   }
 
   @Get('frequencia')
-  frequencia(@Req() req: RequestComPortalAluno, @Query('matricula', ParseIntPipe) matricula: number) {
+  frequencia(
+    @Req() req: RequestComPortalAluno,
+    @Query('matricula', ParseIntPipe) matricula: number,
+  ) {
     return this.dados.minhaFrequencia(req.portalAluno.codigoSophia, matricula);
   }
 
   @Get('horario')
-  horario(@Req() req: RequestComPortalAluno, @Query('matricula', ParseIntPipe) matricula: number) {
+  horario(
+    @Req() req: RequestComPortalAluno,
+    @Query('matricula', ParseIntPipe) matricula: number,
+  ) {
     return this.dados.meuHorario(req.portalAluno.codigoSophia, matricula);
   }
 
@@ -70,10 +80,17 @@ export class PortalAlunoDadosController {
     @UploadedFile() file?: Express.Multer.File,
   ) {
     if (!file) throw new BadRequestException('Envie um arquivo.');
-    if (!TIPOS_PERMITIDOS.includes(file.mimetype)) {
-      throw new BadRequestException('Arquivo inválido. Envie PDF, imagem (JPG/PNG) ou Word (.doc/.docx).');
+    if (!assinaturaValida(file.buffer, TIPOS_PERMITIDOS)) {
+      throw new BadRequestException(
+        'Arquivo inválido. Envie PDF, imagem (JPG/PNG) ou Word (.doc/.docx).',
+      );
     }
-    if (!descricao) throw new BadRequestException('Informe a descrição do documento.');
-    return this.dados.enviarDocumento(req.portalAluno.codigoSophia, descricao, file);
+    if (!descricao)
+      throw new BadRequestException('Informe a descrição do documento.');
+    return this.dados.enviarDocumento(
+      req.portalAluno.codigoSophia,
+      descricao,
+      file,
+    );
   }
 }

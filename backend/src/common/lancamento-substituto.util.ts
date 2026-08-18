@@ -42,7 +42,9 @@ export function encontrarSubstitutosPagos(
     if (!l.recebido || l.recebido <= 0) return false;
     const vencLive = parseDateBR(l.dataVencimento.substring(0, 10));
     if (isNaN(vencLive.getTime())) return false;
-    const dias = Math.abs((vencLive.getTime() - vencLocal.getTime()) / 86_400_000);
+    const dias = Math.abs(
+      (vencLive.getTime() - vencLocal.getTime()) / 86_400_000,
+    );
     const diffValor = Math.abs(Number(l.valorPrevisto) - local.valorPrevisto);
     return dias <= JANELA_DIAS && diffValor <= JANELA_VALOR;
   });

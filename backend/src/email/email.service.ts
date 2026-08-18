@@ -31,7 +31,7 @@ export class EmailService implements OnModuleInit {
     opts?: { from?: string; cc?: string },
   ): Promise<void> {
     const from = opts?.from || this.config.get<string>('email.from');
-    const attachments = (inline ?? []).map(a => ({
+    const attachments = (inline ?? []).map((a) => ({
       filename: a.nome,
       content: a.buffer,
       contentType: 'image/png',
@@ -45,7 +45,9 @@ export class EmailService implements OnModuleInit {
       html,
       attachments,
     });
-    this.logger.log(`Email enviado → ${para}${opts?.cc ? ` (cc: ${opts.cc})` : ''} | ${assunto}`);
+    this.logger.log(
+      `Email enviado → ${para}${opts?.cc ? ` (cc: ${opts.cc})` : ''} | ${assunto}`,
+    );
   }
 
   async enviarComAnexo(
@@ -60,7 +62,13 @@ export class EmailService implements OnModuleInit {
       to: para,
       subject: assunto,
       html,
-      attachments: [{ filename: anexo.nome, content: anexo.buffer, contentType: anexo.tipo }],
+      attachments: [
+        {
+          filename: anexo.nome,
+          content: anexo.buffer,
+          contentType: anexo.tipo,
+        },
+      ],
     });
     this.logger.log(`Email com anexo enviado → ${para} | ${assunto}`);
   }

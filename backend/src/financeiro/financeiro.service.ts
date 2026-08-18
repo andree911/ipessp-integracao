@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { ClienteCache } from './entities/cliente-cache.entity';
@@ -47,6 +47,8 @@ export interface ResumoCancelamento {
 
 @Injectable()
 export class FinanceiroService {
+  private readonly logger = new Logger(FinanceiroService.name);
+
   constructor(
     @InjectRepository(ClienteCache)
     private readonly clienteRepo: Repository<ClienteCache>,
@@ -56,8 +58,12 @@ export class FinanceiroService {
 
   /** Diagnóstico: codigoSophia de todo cliente já sincronizado no cache local. */
   async getCodigosSophiaCache(): Promise<Set<number>> {
-    const clientes = await this.clienteRepo.find({ select: { codigoSophia: true } });
-    return new Set(clientes.map((c) => c.codigoSophia).filter((c): c is number => c != null));
+    const clientes = await this.clienteRepo.find({
+      select: { codigoSophia: true },
+    });
+    return new Set(
+      clientes.map((c) => c.codigoSophia).filter((c): c is number => c != null),
+    );
   }
 
   async getByCpf(cpf: string): Promise<FinanceiroCliente> {
@@ -68,31 +74,49 @@ export class FinanceiroService {
         'Nenhum aluno encontrado para o CPF informado. Verifique se o CPF do responsável financeiro está cadastrado.',
       );
     }
+    return this.montarFinanceiroCliente(clientes);
+  }
+
+  /** Mesma lógica de getByCpf, mas buscando pelo codigoSophia do aluno (usado pelo Portal do Aluno, que já tem esse código pela sessão logada). */
+  async getByCodigoSophia(codigoSophia: number): Promise<FinanceiroCliente> {
+    const clientes = await this.clienteRepo.find({ where: { codigoSophia } });
+    if (clientes.length === 0) {
+      throw new NotFoundException(
+        'Nenhum registro financeiro encontrado para este aluno.',
+      );
+    }
+    return this.montarFinanceiroCliente(clientes);
+  }
+
+  /**
+   * Monta o retorno agregado de getByCpf/getByCodigoSophia: uma única query
+   * em lote pra todos os lançamentos dos clientes informados (em vez de uma
+   * query por cliente dentro de um loop), e ignora lançamentos com data de
+   * vencimento inválida em vez de derrubar a requisição inteira.
+   */
+  private async montarFinanceiroCliente(
+    clientes: ClienteCache[],
+  ): Promise<FinanceiroCliente> {
+    const clienteIds = clientes.map((c) => c.id);
+    const lancamentos = await this.lancamentoRepo.find({
+      where: { codigoCliente: In(clienteIds), recebido: false },
+    });
 
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
 
+    const lancamentosPorCliente = new Map<number, LancamentoCache[]>();
+    for (const l of lancamentos) {
+      const lista = lancamentosPorCliente.get(l.codigoCliente) ?? [];
+      lista.push(l);
+      lancamentosPorCliente.set(l.codigoCliente, lista);
+    }
+
     const pendencias: PendenciaFinanceira[] = [];
     for (const cliente of clientes) {
-      const lancamentos = await this.lancamentoRepo.find({
-        where: { codigoCliente: cliente.id, recebido: false },
-      });
-      for (const l of lancamentos) {
-        const venc = parseDateBR(l.dataVencimento);
-        venc.setHours(0, 0, 0, 0);
-        const diffDias = Math.round((hoje.getTime() - venc.getTime()) / 86_400_000);
-        pendencias.push({
-          codigo: l.id,
-          descricao: l.descricao ?? 'Mensalidade',
-          vencimento: venc.toISOString().substring(0, 10),
-          valor: Number(l.valorPrevisto),
-          diasAtraso: diffDias > 0 ? diffDias : 0,
-          linhaDigitavel: l.linhaDigitavel ?? undefined,
-          urlBoleto: l.urlBoleto ?? undefined,
-          codigoPix: l.codigoPix ?? undefined,
-          codigoBoleto: l.codigoBoleto ?? undefined,
-          competencia: l.competencia ?? undefined,
-        });
+      for (const l of lancamentosPorCliente.get(cliente.id) ?? []) {
+        const pendencia = this.montarPendencia(l, hoje);
+        if (pendencia) pendencias.push(pendencia);
       }
     }
 
@@ -106,47 +130,30 @@ export class FinanceiroService {
     };
   }
 
-  /** Mesma lógica de getByCpf, mas buscando pelo codigoSophia do aluno (usado pelo Portal do Aluno, que já tem esse código pela sessão logada). */
-  async getByCodigoSophia(codigoSophia: number): Promise<FinanceiroCliente> {
-    const clientes = await this.clienteRepo.find({ where: { codigoSophia } });
-    if (clientes.length === 0) {
-      throw new NotFoundException('Nenhum registro financeiro encontrado para este aluno.');
+  private montarPendencia(
+    l: LancamentoCache,
+    hoje: Date,
+  ): PendenciaFinanceira | undefined {
+    const venc = parseDateBR(l.dataVencimento);
+    if (Number.isNaN(venc.getTime())) {
+      this.logger.warn(
+        `Lançamento ${l.id}: data de vencimento inválida ("${l.dataVencimento}") — ignorado.`,
+      );
+      return undefined;
     }
-
-    const hoje = new Date();
-    hoje.setHours(0, 0, 0, 0);
-
-    const pendencias: PendenciaFinanceira[] = [];
-    for (const cliente of clientes) {
-      const lancamentos = await this.lancamentoRepo.find({
-        where: { codigoCliente: cliente.id, recebido: false },
-      });
-      for (const l of lancamentos) {
-        const venc = parseDateBR(l.dataVencimento);
-        venc.setHours(0, 0, 0, 0);
-        const diffDias = Math.round((hoje.getTime() - venc.getTime()) / 86_400_000);
-        pendencias.push({
-          codigo: l.id,
-          descricao: l.descricao ?? 'Mensalidade',
-          vencimento: venc.toISOString().substring(0, 10),
-          valor: Number(l.valorPrevisto),
-          diasAtraso: diffDias > 0 ? diffDias : 0,
-          linhaDigitavel: l.linhaDigitavel ?? undefined,
-          urlBoleto: l.urlBoleto ?? undefined,
-          codigoPix: l.codigoPix ?? undefined,
-          codigoBoleto: l.codigoBoleto ?? undefined,
-          competencia: l.competencia ?? undefined,
-        });
-      }
-    }
-
-    const primeiro = clientes[0];
+    venc.setHours(0, 0, 0, 0);
+    const diffDias = Math.round((hoje.getTime() - venc.getTime()) / 86_400_000);
     return {
-      nomeAluno: primeiro.nomeAluno,
-      nomeResponsavel: primeiro.nomeResponsavel ?? primeiro.nomeAluno,
-      emailResponsavel: primeiro.emailResponsavel,
-      ra: primeiro.ra ?? String(primeiro.codigoSophia ?? primeiro.id),
-      pendencias,
+      codigo: l.id,
+      descricao: l.descricao ?? 'Mensalidade',
+      vencimento: venc.toISOString().substring(0, 10),
+      valor: l.valorPrevisto,
+      diasAtraso: diffDias > 0 ? diffDias : 0,
+      linhaDigitavel: l.linhaDigitavel ?? undefined,
+      urlBoleto: l.urlBoleto ?? undefined,
+      codigoPix: l.codigoPix ?? undefined,
+      codigoBoleto: l.codigoBoleto ?? undefined,
+      competencia: l.competencia ?? undefined,
     };
   }
 
@@ -154,11 +161,16 @@ export class FinanceiroService {
    * Confirma que o boleto pertence a um cliente com esse CPF e devolve o
    * código do aluno no Sophia (necessário pra baixar o PDF via API).
    */
-  async getBoletoInfo(cpf: string, codigoBoleto: number): Promise<{ codigoAluno: number }> {
+  async getBoletoInfo(
+    cpf: string,
+    codigoBoleto: number,
+  ): Promise<{ codigoAluno: number }> {
     const cpfLimpo = cpf.replace(/\D/g, '');
     const clientes = await this.clienteRepo.find({ where: { cpf: cpfLimpo } });
     if (clientes.length === 0) {
-      throw new NotFoundException('Nenhum aluno encontrado para o CPF informado.');
+      throw new NotFoundException(
+        'Nenhum aluno encontrado para o CPF informado.',
+      );
     }
 
     const clienteIds = clientes.map((c) => c.id);
@@ -190,7 +202,12 @@ export class FinanceiroService {
       .take(20)
       .getMany();
 
-    return clientes.map((c) => ({ id: c.id, nomeAluno: c.nomeAluno, ra: c.ra, cpf: c.cpf }));
+    return clientes.map((c) => ({
+      id: c.id,
+      nomeAluno: c.nomeAluno,
+      ra: c.ra,
+      cpf: c.cpf,
+    }));
   }
 
   /**
@@ -217,7 +234,7 @@ export class FinanceiroService {
     let parcelasEmAtraso = 0;
 
     for (const l of lancamentos) {
-      const valor = Number(l.valorPrevisto);
+      const valor = l.valorPrevisto;
       somaValor += valor;
 
       const venc = parseDateBR(l.dataVencimento);
@@ -229,7 +246,8 @@ export class FinanceiroService {
     }
 
     const parcelasEmAberto = lancamentos.length;
-    const valorParcela = parcelasEmAberto > 0 ? somaValor / parcelasEmAberto : 0;
+    const valorParcela =
+      parcelasEmAberto > 0 ? somaValor / parcelasEmAberto : 0;
     const arredondar = (v: number) => Math.round(v * 100) / 100;
 
     return {
@@ -275,12 +293,14 @@ export class FinanceiroService {
 
   async upsertCliente(dados: Partial<ClienteCache>): Promise<ClienteCache> {
     const existing = dados.codigoSophia
-      ? await this.clienteRepo.findOne({ where: { codigoSophia: dados.codigoSophia } })
+      ? await this.clienteRepo.findOne({
+          where: { codigoSophia: dados.codigoSophia },
+        })
       : null;
 
     if (existing) {
       await this.clienteRepo.update(existing.id, dados);
-      return { ...existing, ...dados } as ClienteCache;
+      return { ...existing, ...dados };
     }
 
     return this.clienteRepo.save(this.clienteRepo.create(dados));
@@ -288,13 +308,19 @@ export class FinanceiroService {
 
   async upsertLancamento(dados: Partial<LancamentoCache>): Promise<void> {
     if (dados.codigoSophia && dados.codigoCliente) {
-      await this.lancamentoRepo.upsert(dados as LancamentoCache, ['codigoSophia', 'codigoCliente']);
+      await this.lancamentoRepo.upsert(dados, [
+        'codigoSophia',
+        'codigoCliente',
+      ]);
     } else {
       await this.lancamentoRepo.save(this.lancamentoRepo.create(dados));
     }
   }
 
-  async marcarRecebido(codigoSophia: number, codigoCliente: number): Promise<void> {
+  async marcarRecebido(
+    codigoSophia: number,
+    codigoCliente: number,
+  ): Promise<void> {
     await this.lancamentoRepo.update(
       { codigoSophia, codigoCliente },
       { recebido: true },
@@ -302,16 +328,25 @@ export class FinanceiroService {
   }
 
   /** Usado pela reconciliação de órfãos no ImportacaoService -- lançamentos em aberto de um único cliente. */
-  async getLancamentosAbertosDoCliente(codigoCliente: number): Promise<LancamentoCache[]> {
-    return this.lancamentoRepo.find({ where: { codigoCliente, recebido: false } });
+  async getLancamentosAbertosDoCliente(
+    codigoCliente: number,
+  ): Promise<LancamentoCache[]> {
+    return this.lancamentoRepo.find({
+      where: { codigoCliente, recebido: false },
+    });
   }
 
-  async stats(): Promise<{ clientes: number; lancamentosPendentes: number; lancamentosTotal: number }> {
-    const [clientes, lancamentosPendentes, lancamentosTotal] = await Promise.all([
-      this.clienteRepo.count(),
-      this.lancamentoRepo.count({ where: { recebido: false } }),
-      this.lancamentoRepo.count(),
-    ]);
+  async stats(): Promise<{
+    clientes: number;
+    lancamentosPendentes: number;
+    lancamentosTotal: number;
+  }> {
+    const [clientes, lancamentosPendentes, lancamentosTotal] =
+      await Promise.all([
+        this.clienteRepo.count(),
+        this.lancamentoRepo.count({ where: { recebido: false } }),
+        this.lancamentoRepo.count(),
+      ]);
     return { clientes, lancamentosPendentes, lancamentosTotal };
   }
 }

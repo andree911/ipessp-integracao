@@ -46,11 +46,16 @@ export class PortalAlunoDadosService {
   // string e ler notas/frequência/horário de outro aluno (o token só prova
   // quem é o aluno, nunca qual matrícula ele pode consultar) — ver
   // financeiro/curso acima, que já usavam só o codigoSophia do token.
-  private async verificarMatriculaPertenceAoAluno(codigoSophia: number, idMatricula: number): Promise<void> {
+  private async verificarMatriculaPertenceAoAluno(
+    codigoSophia: number,
+    idMatricula: number,
+  ): Promise<void> {
     const matriculas = await this.sophia.getMatriculasAluno(codigoSophia);
     const pertence = matriculas.some((m) => m.codigoMatricula === idMatricula);
     if (!pertence) {
-      throw new ForbiddenException('Matrícula não pertence ao aluno autenticado.');
+      throw new ForbiddenException(
+        'Matrícula não pertence ao aluno autenticado.',
+      );
     }
   }
 
@@ -59,10 +64,23 @@ export class PortalAlunoDadosService {
   // pública. Mesmo padrão usado em CandidaturasService.
   // {id} assumido como o mesmo codigoSophia do aluno logado — não dá pra
   // confirmar isso só pelo swagger, revisar no primeiro teste real.
-  async enviarDocumento(codigoSophia: number, descricao: string, file: Express.Multer.File) {
+  async enviarDocumento(
+    codigoSophia: number,
+    descricao: string,
+    file: Express.Multer.File,
+  ) {
     const path = `documentos/${Date.now()}_${file.originalname.replace(/\s/g, '_')}`;
-    const url = await this.storage.upload('portal-aluno', path, file.buffer, file.mimetype);
+    const url = await this.storage.upload(
+      'portal-aluno',
+      path,
+      file.buffer,
+      file.mimetype,
+    );
     const extensao = (file.originalname.split('.').pop() ?? '').toLowerCase();
-    return this.sophia.postDocumentoCliente(codigoSophia, { descricao, url, extensao });
+    return this.sophia.postDocumentoCliente(codigoSophia, {
+      descricao,
+      url,
+      extensao,
+    });
   }
 }

@@ -1,4 +1,12 @@
-import { BadRequestException, Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { IaBearerGuard } from './ia.guard';
 import { IaService } from './ia.service';
@@ -19,15 +27,23 @@ export class IaController {
   }
 
   @Get('boleto')
-  getBoleto(@Query('cpf') cpf: string, @Query('codigoBoleto') codigoBoleto: string) {
+  getBoleto(
+    @Query('cpf') cpf: string,
+    @Query('codigoBoleto') codigoBoleto: string,
+  ) {
     if (!cpf) throw new BadRequestException('Parâmetro cpf é obrigatório');
-    if (!codigoBoleto) throw new BadRequestException('Parâmetro codigoBoleto é obrigatório');
+    if (!codigoBoleto)
+      throw new BadRequestException('Parâmetro codigoBoleto é obrigatório');
     return this.iaService.getBoletoPdf(cpf, Number(codigoBoleto));
   }
 
   @Post('boleto/enviar')
   enviarBoleto(@Body() dto: EnviarBoletoDto) {
-    return this.iaService.enviarBoletoWhatsapp(dto.cpf, dto.codigoBoleto, dto.telefone);
+    return this.iaService.enviarBoletoWhatsapp(
+      dto.cpf,
+      dto.codigoBoleto,
+      dto.telefone,
+    );
   }
 
   @Get('avisos')
@@ -47,7 +63,8 @@ export class IaController {
 
   @Get('cpf-por-telefone')
   getCpfPorTelefone(@Query('telefone') telefone: string) {
-    if (!telefone) throw new BadRequestException('Parâmetro telefone é obrigatório');
+    if (!telefone)
+      throw new BadRequestException('Parâmetro telefone é obrigatório');
     return this.iaService.getCpfPorTelefone(telefone);
   }
 
@@ -65,7 +82,8 @@ export class IaController {
 
   @Get('secretaria/professor/alunos')
   getAlunosPorLista(@Query('idLista') idLista: string) {
-    if (!idLista) throw new BadRequestException('Parâmetro idLista é obrigatório');
+    if (!idLista)
+      throw new BadRequestException('Parâmetro idLista é obrigatório');
     return this.iaService.getAlunosPorLista(Number(idLista));
   }
 
@@ -81,16 +99,13 @@ export class IaController {
 
   @Get('turma-detalhada')
   getTurmaDetalhada(@Query('codigo') codigo: string) {
-    if (!codigo) throw new BadRequestException('Parâmetro codigo é obrigatório');
+    if (!codigo)
+      throw new BadRequestException('Parâmetro codigo é obrigatório');
     return this.iaService.getTurmaDetalhada(Number(codigo));
   }
 
   @Post('encaminhar-humano')
   encaminharHumano(@Body() dto: EncaminharHumanoDto) {
-    return this.iaService.encaminharHumano(
-      dto.setor,
-      dto.telefone,
-      dto.resumo,
-    );
+    return this.iaService.encaminharHumano(dto.setor, dto.telefone, dto.resumo);
   }
 }

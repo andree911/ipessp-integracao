@@ -5,6 +5,7 @@ import { SyncController } from './sync.controller';
 import { SophiaModule } from '../sophia/sophia.module';
 import { FinanceiroModule } from '../financeiro/financeiro.module';
 import { ResponsavelCache } from '../ia/entities/responsavel-cache.entity';
+import { AdminApiKeyGuard } from '../admin/guards/admin-api-key.guard';
 
 @Module({
   imports: [
@@ -13,7 +14,7 @@ import { ResponsavelCache } from '../ia/entities/responsavel-cache.entity';
     FinanceiroModule,
   ],
   controllers: [SyncController],
-  providers: [SyncService],
+  providers: [SyncService, AdminApiKeyGuard],
   exports: [SyncService],
 })
 export class SyncModule {}

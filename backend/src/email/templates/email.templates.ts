@@ -1,4 +1,11 @@
-type IconeNome = 'telefone' | 'email' | 'site' | 'facebook' | 'instagram' | 'youtube' | 'linkedin';
+type IconeNome =
+  | 'telefone'
+  | 'email'
+  | 'site'
+  | 'facebook'
+  | 'instagram'
+  | 'youtube'
+  | 'linkedin';
 
 /**
  * Identidade da escola (logo, contatos, redes sociais) usada no cabeçalho e
@@ -78,7 +85,10 @@ function assetsBase(data: IconContatoData): string {
 }
 
 function iconUrl(data: IconContatoData, nome: IconeNome): string {
-  return data.iconesUrls?.[nome] ?? `${assetsBase(data)}/images/icons/icon-${nome}.png`;
+  return (
+    data.iconesUrls?.[nome] ??
+    `${assetsBase(data)}/images/icons/icon-${nome}.png`
+  );
 }
 
 // ─── 1. Cabeçalho: logo + contatos ───────────────────────────────────────────
@@ -86,7 +96,11 @@ function iconUrl(data: IconContatoData, nome: IconeNome): string {
 function cabecalho(data: MarcaEmailData): string {
   const tel = (data.telefoneEscola ?? '').replace(/\D/g, '');
 
-  const contatoLinha = (icone: 'telefone' | 'email' | 'site', texto: string, url: string): string => `
+  const contatoLinha = (
+    icone: 'telefone' | 'email' | 'site',
+    texto: string,
+    url: string,
+  ): string => `
   <tr>
     <td width="24" align="center" valign="middle" style="width:24px;min-width:24px;padding:3px 0;">
       <img src="${iconUrl(data, icone)}" width="18" height="18" alt="" style="width:18px;height:18px;display:block;border:0;">
@@ -99,17 +113,28 @@ function cabecalho(data: MarcaEmailData): string {
   </tr>`;
 
   const linhas: string[] = [];
-  if (data.telefoneEscola) linhas.push(contatoLinha('telefone', data.telefoneEscola, `tel:+55${tel}`));
-  if (data.emailEscola)    linhas.push(contatoLinha('email',    data.emailEscola,    `mailto:${data.emailEscola}`));
-  if (data.siteUrl)        linhas.push(contatoLinha('site',     data.siteUrl.replace(/^https?:\/\/(www\.)?/, ''), data.siteUrl));
+  if (data.telefoneEscola)
+    linhas.push(contatoLinha('telefone', data.telefoneEscola, `tel:+55${tel}`));
+  if (data.emailEscola)
+    linhas.push(
+      contatoLinha('email', data.emailEscola, `mailto:${data.emailEscola}`),
+    );
+  if (data.siteUrl)
+    linhas.push(
+      contatoLinha(
+        'site',
+        data.siteUrl.replace(/^https?:\/\/(www\.)?/, ''),
+        data.siteUrl,
+      ),
+    );
 
   const logoHtml = data.logoUrl
-    ? (data.siteUrl
-        ? `<a href="${data.siteUrl}" target="_blank" style="text-decoration:none;border:0;display:inline-block;line-height:0;"><img src="${data.logoUrl}" alt="${data.nomeEscola}" height="48" border="0" style="height:48px;width:auto;display:block;border:0;outline:0;border-radius:10px;"></a>`
-        : `<img src="${data.logoUrl}" alt="${data.nomeEscola}" height="48" border="0" style="height:48px;width:auto;display:block;border:0;outline:0;border-radius:10px;">`)
-    : (data.siteUrl
-        ? `<a href="${data.siteUrl}" target="_blank" style="text-decoration:none;"><span style="font-size:22px;font-weight:bold;color:#ffffff;font-family:Arial,sans-serif;">${data.nomeEscola}</span></a>`
-        : `<span style="font-size:22px;font-weight:bold;color:#ffffff;font-family:Arial,sans-serif;">${data.nomeEscola}</span>`);
+    ? data.siteUrl
+      ? `<a href="${data.siteUrl}" target="_blank" style="text-decoration:none;border:0;display:inline-block;line-height:0;"><img src="${data.logoUrl}" alt="${data.nomeEscola}" height="48" border="0" style="height:48px;width:auto;display:block;border:0;outline:0;border-radius:10px;"></a>`
+      : `<img src="${data.logoUrl}" alt="${data.nomeEscola}" height="48" border="0" style="height:48px;width:auto;display:block;border:0;outline:0;border-radius:10px;">`
+    : data.siteUrl
+      ? `<a href="${data.siteUrl}" target="_blank" style="text-decoration:none;"><span style="font-size:22px;font-weight:bold;color:#ffffff;font-family:Arial,sans-serif;">${data.nomeEscola}</span></a>`
+      : `<span style="font-size:22px;font-weight:bold;color:#ffffff;font-family:Arial,sans-serif;">${data.nomeEscola}</span>`;
 
   return `
   <tr>
@@ -117,12 +142,16 @@ function cabecalho(data: MarcaEmailData): string {
       <table width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
           <td valign="middle" class="hdr-logo" style="width:1%;">${logoHtml}</td>
-          ${linhas.length > 0 ? `
+          ${
+            linhas.length > 0
+              ? `
           <td align="right" valign="middle" class="hdr-info" style="padding-left:20px;">
             <table cellpadding="0" cellspacing="0" border="0" align="right">
               ${linhas.join('')}
             </table>
-          </td>` : ''}
+          </td>`
+              : ''
+          }
         </tr>
       </table>
     </td>
@@ -149,38 +178,57 @@ function cartaoResumo(data: EmailData, opcoes?: CartaoResumoOpcoes): string {
   const lbl = (txt: string, mt = '0'): string =>
     `<span class="dm-t3" style="display:block;font-size:10px;color:#888;font-weight:bold;text-transform:uppercase;letter-spacing:0.8px;font-family:Arial,sans-serif;margin-top:${mt};margin-bottom:2px;">${txt}</span>`;
 
-  const linhasMeta = temMeta ? `
+  const linhasMeta = temMeta
+    ? `
     <tr>
       <td class="dm-bdr" style="padding:14px 20px;border-bottom:1px solid #e8e8e8;">
         <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
           <td valign="top">
-            ${temRA ? `
+            ${
+              temRA
+                ? `
               ${lbl('C&#243;digo do Aluno / RA')}
               <span class="dm-t1" style="font-size:14px;color:#222;font-weight:bold;font-family:Arial,sans-serif;">${data.codigoMatricula}</span>
-            ` : ''}
-            ${data.curso ? `
+            `
+                : ''
+            }
+            ${
+              data.curso
+                ? `
               ${lbl('Curso', temRA ? '8px' : '0')}
               <span class="dm-t2" style="font-size:13px;color:#444;font-family:Arial,sans-serif;">${data.curso}</span>
-            ` : ''}
-            ${data.competencia && !temRA && !data.curso ? `
+            `
+                : ''
+            }
+            ${
+              data.competencia && !temRA && !data.curso
+                ? `
               ${lbl('Compet&#234;ncia')}
               <span class="dm-t2" style="font-size:13px;color:#444;font-family:Arial,sans-serif;">${data.competencia}</span>
-            ` : ''}
+            `
+                : ''
+            }
           </td>
-          ${data.competencia && (temRA || data.curso) ? `
+          ${
+            data.competencia && (temRA || data.curso)
+              ? `
           <td valign="top" align="center" style="padding:0 12px;">
             ${lbl('Refer&#234;ncia')}
             <span class="dm-t2" style="font-size:13px;color:#444;font-family:Arial,sans-serif;">${data.competencia}</span>
-          </td>` : ''}
+          </td>`
+              : ''
+          }
           <td valign="top" align="right">
             ${lbl('Vencimento')}
             <span class="dm-t1" style="font-size:15px;color:#222;font-weight:bold;font-family:Arial,sans-serif;">${data.vencimento}</span>
           </td>
         </tr></table>
       </td>
-    </tr>` : '';
+    </tr>`
+    : '';
 
-  const linhaAluno = mostrarAluno ? `
+  const linhaAluno = mostrarAluno
+    ? `
     <tr>
       <td class="dm-bdr" style="padding:14px 20px;border-bottom:1px solid #e8e8e8;">
         <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
@@ -188,28 +236,37 @@ function cartaoResumo(data: EmailData, opcoes?: CartaoResumoOpcoes): string {
             ${lbl('Aluno')}
             <span class="dm-t1" style="font-size:14px;color:#222;font-family:Arial,sans-serif;">${data.nomeAluno}</span>
           </td>
-          ${!temMeta ? `
+          ${
+            !temMeta
+              ? `
           <td align="right">
             ${lbl('Vencimento')}
             <span class="dm-t1" style="font-size:15px;color:#222;font-weight:bold;font-family:Arial,sans-serif;">${data.vencimento}</span>
-          </td>` : ''}
+          </td>`
+              : ''
+          }
         </tr></table>
       </td>
-    </tr>` : (!temMeta ? `
+    </tr>`
+    : !temMeta
+      ? `
     <tr>
       <td class="dm-bdr" style="padding:14px 20px;border-bottom:1px solid #e8e8e8;text-align:center;">
         ${lbl('Vencimento')}
         <span class="dm-t1" style="font-size:15px;color:#222;font-weight:bold;font-family:Arial,sans-serif;">${data.vencimento}</span>
       </td>
-    </tr>` : '');
+    </tr>`
+      : '';
 
-  const linhaDescricao = data.descricao ? `
+  const linhaDescricao = data.descricao
+    ? `
     <tr>
       <td class="dm-bdr" style="padding:14px 20px;border-bottom:1px solid #e8e8e8;">
         ${lbl('Descri&#231;&#227;o')}
         <span class="dm-t2" style="font-size:13px;color:#444;font-family:Arial,sans-serif;">${data.descricao}</span>
       </td>
-    </tr>` : '';
+    </tr>`
+    : '';
 
   const linhaTotal = `
     <tr>
@@ -419,7 +476,11 @@ function avisoSeguranca(data: EmailData): string {
 
 // ─── 9. Botão CTA principal ───────────────────────────────────────────────────
 
-function botaoPrincipal(url: string, texto: string = 'VEJA COMO ACESSAR SUA FATURA', margemInferior: string = '8px'): string {
+function botaoPrincipal(
+  url: string,
+  texto: string = 'VEJA COMO ACESSAR SUA FATURA',
+  margemInferior: string = '8px',
+): string {
   return `
   <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 ${margemInferior};">
     <tr>
@@ -448,7 +509,11 @@ function botaoPrincipal(url: string, texto: string = 'VEJA COMO ACESSAR SUA FATU
  * usado pelos templates de conteúdo livre (`baseConteudoLivre`), que não têm
  * um único CTA fixo como "VEJA COMO ACESSAR SUA FATURA".
  */
-export function botaoCta(texto: string, url: string, cor: string = COR): string {
+export function botaoCta(
+  texto: string,
+  url: string,
+  cor: string = COR,
+): string {
   return `
   <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 8px;">
     <tr>
@@ -483,16 +548,26 @@ interface RedesSociaisData extends IconContatoData {
 
 function redesSociais(data: RedesSociaisData): string {
   const redes: Array<{ icone: IconeNome; nome: string; url: string }> = [];
-  if (data.facebookUrl)  redes.push({ icone: 'facebook',  nome: 'Facebook',  url: data.facebookUrl });
-  if (data.instagramUrl) redes.push({ icone: 'instagram', nome: 'Instagram', url: data.instagramUrl });
-  if (data.youtubeUrl)   redes.push({ icone: 'youtube',   nome: 'YouTube',   url: data.youtubeUrl });
-  if (data.linkedinUrl)  redes.push({ icone: 'linkedin',  nome: 'LinkedIn',  url: data.linkedinUrl });
+  if (data.facebookUrl)
+    redes.push({ icone: 'facebook', nome: 'Facebook', url: data.facebookUrl });
+  if (data.instagramUrl)
+    redes.push({
+      icone: 'instagram',
+      nome: 'Instagram',
+      url: data.instagramUrl,
+    });
+  if (data.youtubeUrl)
+    redes.push({ icone: 'youtube', nome: 'YouTube', url: data.youtubeUrl });
+  if (data.linkedinUrl)
+    redes.push({ icone: 'linkedin', nome: 'LinkedIn', url: data.linkedinUrl });
   if (redes.length === 0) return '';
 
   return `
   <table cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 8px;">
     <tr>
-      ${redes.map(({ icone, nome, url }) => `
+      ${redes
+        .map(
+          ({ icone, nome, url }) => `
       <td style="padding:0 10px;text-align:center;">
         <a href="${url}" target="_blank" style="text-decoration:none;">
           <table cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;">
@@ -504,7 +579,9 @@ function redesSociais(data: RedesSociaisData): string {
           </table>
         </a>
         <p style="margin:6px 0 0;font-size:9px;color:rgba(255,255,255,0.7);font-family:Arial,sans-serif;">${nome}</p>
-      </td>`).join('')}
+      </td>`,
+        )
+        .join('')}
     </tr>
   </table>`;
 }
@@ -513,18 +590,20 @@ function rodape(data: MarcaEmailData): string {
   const ano = new Date().getFullYear();
   const tel = (data.telefoneEscola ?? '').replace(/\D/g, '');
   const infos: string[] = [];
-  if (data.cnpj)     infos.push(`CNPJ: ${data.cnpj}`);
+  if (data.cnpj) infos.push(`CNPJ: ${data.cnpj}`);
   if (data.endereco) infos.push(data.endereco);
 
   const logoRodape = data.logoUrl
     ? `<div style="margin:0 auto 20px;text-align:center;line-height:0;">
-         ${data.siteUrl
-           ? `<a href="${data.siteUrl}" target="_blank" style="text-decoration:none;border:0;display:inline-block;line-height:0;"><img src="${data.logoUrl}" alt="${data.nomeEscola}" height="40" border="0" style="height:40px;width:auto;display:block;border:0;outline:0;border-radius:10px;"></a>`
-           : `<img src="${data.logoUrl}" alt="${data.nomeEscola}" height="40" border="0" style="height:40px;width:auto;display:block;margin:0 auto;border:0;outline:0;border-radius:10px;">`}
+         ${
+           data.siteUrl
+             ? `<a href="${data.siteUrl}" target="_blank" style="text-decoration:none;border:0;display:inline-block;line-height:0;"><img src="${data.logoUrl}" alt="${data.nomeEscola}" height="40" border="0" style="height:40px;width:auto;display:block;border:0;outline:0;border-radius:10px;"></a>`
+             : `<img src="${data.logoUrl}" alt="${data.nomeEscola}" height="40" border="0" style="height:40px;width:auto;display:block;margin:0 auto;border:0;outline:0;border-radius:10px;">`
+         }
        </div>`
-    : (data.siteUrl
-        ? `<a href="${data.siteUrl}" target="_blank" style="text-decoration:none;"><p style="margin:0 0 16px;font-size:20px;font-weight:bold;color:#ffffff;font-family:Arial,sans-serif;">${data.nomeEscola}</p></a>`
-        : `<p style="margin:0 0 16px;font-size:20px;font-weight:bold;color:#ffffff;font-family:Arial,sans-serif;">${data.nomeEscola}</p>`);
+    : data.siteUrl
+      ? `<a href="${data.siteUrl}" target="_blank" style="text-decoration:none;"><p style="margin:0 0 16px;font-size:20px;font-weight:bold;color:#ffffff;font-family:Arial,sans-serif;">${data.nomeEscola}</p></a>`
+      : `<p style="margin:0 0 16px;font-size:20px;font-weight:bold;color:#ffffff;font-family:Arial,sans-serif;">${data.nomeEscola}</p>`;
 
   return `
   <tr>
@@ -590,8 +669,20 @@ const divisoria = `
     <tr><td style="border-top:1px solid #e8e8e8;font-size:0;line-height:0;">&nbsp;</td></tr>
   </table>`;
 
-function base(subject: string, introTitulo: string, descParagrafo: string, nota: string, data: EmailData, preheader = '', opcoes?: BaseOpcoes): string {
-  const comoAcessarUrl = opcoes?.linkBotaoPrincipal ?? data.linkComoAcessar ?? data.linkPortalAluno ?? '#';
+function base(
+  subject: string,
+  introTitulo: string,
+  descParagrafo: string,
+  nota: string,
+  data: EmailData,
+  preheader = '',
+  opcoes?: BaseOpcoes,
+): string {
+  const comoAcessarUrl =
+    opcoes?.linkBotaoPrincipal ??
+    data.linkComoAcessar ??
+    data.linkPortalAluno ??
+    '#';
   const ocultarPagamento = opcoes?.ocultarPagamento ?? false;
   const temHero = !!opcoes?.heroImagemUrl;
 
@@ -635,7 +726,7 @@ ${preheader ? `<div style="display:none;font-size:1px;color:#f0f2f5;line-height:
       ${cabecalho(data)}
 
       <!-- Imagem de destaque em largura total (opcional) -->
-      ${temHero ? heroFullBleed(opcoes!.heroImagemUrl!, opcoes!.heroImagemAlt ?? '') : ''}
+      ${temHero ? heroFullBleed(opcoes?.heroImagemUrl ?? '', opcoes?.heroImagemAlt ?? '') : ''}
 
       <!-- 2–9. Corpo -->
       <tr>
@@ -649,7 +740,10 @@ ${preheader ? `<div style="display:none;font-size:1px;color:#f0f2f5;line-height:
           <!-- 3. Card de resumo -->
           ${cartaoResumo(data, opcoes?.resumoOpcoes)}
 
-          ${ocultarPagamento ? '' : `
+          ${
+            ocultarPagamento
+              ? ''
+              : `
           <!-- 4. Intro de pagamento -->
           ${introsPagamento()}
 
@@ -661,22 +755,27 @@ ${preheader ? `<div style="display:none;font-size:1px;color:#f0f2f5;line-height:
 
           <!-- 7. Dois CTAs lado a lado -->
           ${doisCtas(data)}
-          `}
+          `
+          }
 
-          ${opcoes?.botaoAntesSeguranca ? `
+          ${
+            opcoes?.botaoAntesSeguranca
+              ? `
           ${divisoria}
           <!-- 9. Botão CTA principal -->
           ${botaoPrincipal(comoAcessarUrl, opcoes?.textoBotaoPrincipal, '22px')}
           ${divisoria}
           <!-- 8. Aviso de segurança -->
           ${avisoSeguranca(data)}
-          ` : `
+          `
+              : `
           <!-- 8. Aviso de segurança -->
           ${avisoSeguranca(data)}
 
           <!-- 9. Botão CTA principal -->
           ${botaoPrincipal(comoAcessarUrl, opcoes?.textoBotaoPrincipal)}
-          `}
+          `
+          }
 
           <!-- Nota de rodapé do corpo -->
           ${nota}
@@ -701,7 +800,12 @@ ${preheader ? `<div style="display:none;font-size:1px;color:#f0f2f5;line-height:
  * emails não-transacionais (boas-vindas de lead, follow-up, CTA de
  * campanha etc.), que só precisam de texto + botão.
  */
-export function baseConteudoLivre(subject: string, data: MarcaEmailData, corpoHtml: string, preheader = ''): string {
+export function baseConteudoLivre(
+  subject: string,
+  data: MarcaEmailData,
+  corpoHtml: string,
+  preheader = '',
+): string {
   return `<!DOCTYPE html>
 <html lang="pt-BR" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
@@ -766,7 +870,8 @@ export interface ConfirmacaoMatriculaData extends RedesSociaisData {
 }
 
 export function emailConfirmacaoMatricula(d: ConfirmacaoMatriculaData): string {
-  const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const fmt = (v: number) =>
+    v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   const primeiroNome = d.nomeAluno.split(' ')[0];
 
   return `<!DOCTYPE html>
@@ -843,20 +948,32 @@ export function emailConfirmacaoMatricula(d: ConfirmacaoMatriculaData): string {
             O link é seguro e expira em 30 dias.
           </p>
 
-          ${d.emailEscola || d.telefoneEscola ? `
+          ${
+            d.emailEscola || d.telefoneEscola
+              ? `
           <p style="margin:20px 0 8px;font-size:13px;color:#555;">Dúvidas? Entre em contato conosco:</p>
           <table cellpadding="0" cellspacing="0" border="0">
-            ${d.telefoneEscola ? `
+            ${
+              d.telefoneEscola
+                ? `
             <tr>
               <td width="22" valign="middle" style="padding:3px 0;"><img src="${iconUrl(d, 'telefone')}" width="16" height="16" alt="" style="width:16px;height:16px;display:block;border:0;"></td>
               <td valign="middle" style="padding:3px 0 3px 6px;font-size:13px;color:#555;"><strong>${d.telefoneEscola}</strong></td>
-            </tr>` : ''}
-            ${d.emailEscola ? `
+            </tr>`
+                : ''
+            }
+            ${
+              d.emailEscola
+                ? `
             <tr>
               <td width="22" valign="middle" style="padding:3px 0;"><img src="${iconUrl(d, 'email')}" width="16" height="16" alt="" style="width:16px;height:16px;display:block;border:0;"></td>
               <td valign="middle" style="padding:3px 0 3px 6px;font-size:13px;"><a href="mailto:${d.emailEscola}" style="color:${COR};text-decoration:none;">${d.emailEscola}</a></td>
-            </tr>` : ''}
-          </table>` : ''}
+            </tr>`
+                : ''
+            }
+          </table>`
+              : ''
+          }
         </td>
       </tr>
 
@@ -885,9 +1002,13 @@ const SUBJECTS_LEMBRETE: Record<number, string> = {
   1: 'IPESSP - Sua Mensalidade Vence Amanhã',
 };
 
-export function templateLembrete(data: EmailData): { subject: string; html: string } {
-  const subject = SUBJECTS_LEMBRETE[data.diasRestantes ?? 0]
-    ?? `IPESSP - Sua Mensalidade Vence em ${data.diasRestantes} Dias`;
+export function templateLembrete(data: EmailData): {
+  subject: string;
+  html: string;
+} {
+  const subject =
+    SUBJECTS_LEMBRETE[data.diasRestantes ?? 0] ??
+    `IPESSP - Sua Mensalidade Vence em ${data.diasRestantes} Dias`;
   const preheader = `Pague até ${data.vencimento} via PIX ou boleto e evite juros e multas.`;
 
   const desc = `Voc&#234; est&#225; recebendo o aviso de que o boleto do(a) aluno(a)
@@ -901,10 +1022,23 @@ export function templateLembrete(data: EmailData): { subject: string; html: stri
     O sistema pode levar at&#233; 2 dias &#250;teis para processar a compensa&#231;&#227;o.
   </p>`;
 
-  return { subject, html: base(subject, 'Sua mensalidade do IPESSP chegou.', desc, nota, data, preheader) };
+  return {
+    subject,
+    html: base(
+      subject,
+      'Sua mensalidade do IPESSP chegou.',
+      desc,
+      nota,
+      data,
+      preheader,
+    ),
+  };
 }
 
-export function templateVencimentoHoje(data: EmailData): { subject: string; html: string } {
+export function templateVencimentoHoje(data: EmailData): {
+  subject: string;
+  html: string;
+} {
   const subject = 'IPESSP - Vencimento da sua parcela';
   const preheader = `Pague até o final de hoje, ${data.vencimento}, e evite juros. PIX e boleto disponíveis.`;
 
@@ -917,16 +1051,26 @@ export function templateVencimentoHoje(data: EmailData): { subject: string; html
     * Se j&#225; realizou o pagamento hoje, desconsidere este aviso.
   </p>`;
 
-  return { subject, html: base(subject, 'Sua mensalidade do IPESSP vence hoje.', desc, nota, data, preheader) };
+  return {
+    subject,
+    html: base(
+      subject,
+      'Sua mensalidade do IPESSP vence hoje.',
+      desc,
+      nota,
+      data,
+      preheader,
+    ),
+  };
 }
 
 const SUBJECTS_COBRANCA: Record<number, string> = {
-  1:  'IPESSP - Parcela em Aberto',
-  2:  'IPESSP - Lembrete importante sobre sua mensalidade',
-  3:  'IPESSP - Regularização pendente - 3 dias de atraso',
-  7:  'IPESSP - Aviso de Mensalidade em Atraso',
-  8:  'IPESSP - Boleto em atraso',
-  9:  'IPESSP - Parcela em Atraso',
+  1: 'IPESSP - Parcela em Aberto',
+  2: 'IPESSP - Lembrete importante sobre sua mensalidade',
+  3: 'IPESSP - Regularização pendente - 3 dias de atraso',
+  7: 'IPESSP - Aviso de Mensalidade em Atraso',
+  8: 'IPESSP - Boleto em atraso',
+  9: 'IPESSP - Parcela em Atraso',
   10: 'IPESSP - Aviso de pendência financeira - 10 dias em atraso',
   12: 'IPESSP - PARCELA EM ATRASO',
   15: 'IPESSP - AVISO DE INADIMPLÊNCIA',
@@ -935,9 +1079,13 @@ const SUBJECTS_COBRANCA: Record<number, string> = {
   30: 'Regularização Urgente – Débito em Aberto há 30 dias',
 };
 
-export function templateCobranca(data: EmailData): { subject: string; html: string } {
-  const subject = SUBJECTS_COBRANCA[data.diasAtraso ?? 0]
-    ?? `IPESSP - Mensalidade em atraso — ${data.diasAtraso} dia${data.diasAtraso === 1 ? '' : 's'}`;
+export function templateCobranca(data: EmailData): {
+  subject: string;
+  html: string;
+} {
+  const subject =
+    SUBJECTS_COBRANCA[data.diasAtraso ?? 0] ??
+    `IPESSP - Mensalidade em atraso — ${data.diasAtraso} dia${data.diasAtraso === 1 ? '' : 's'}`;
   const preheader = `Venceu em ${data.vencimento}. Regularize agora para evitar maiores encargos. Estamos à disposição.`;
 
   const desc = `Identificamos que o boleto do(a) aluno(a) <strong>${data.nomeAluno}</strong>
@@ -951,7 +1099,17 @@ export function templateCobranca(data: EmailData): { subject: string; html: stri
     Estamos &#224; disposi&#231;&#227;o para encontrar a melhor solu&#231;&#227;o.
   </p>`;
 
-  return { subject, html: base(subject, 'Cobran&#231;a em aberto.', desc, nota, data, preheader) };
+  return {
+    subject,
+    html: base(
+      subject,
+      'Cobran&#231;a em aberto.',
+      desc,
+      nota,
+      data,
+      preheader,
+    ),
+  };
 }
 
 // ─── Aviso formal (antes do vencimento, em paralelo ao lembrete) ─────────────
@@ -962,19 +1120,23 @@ export function templateCobranca(data: EmailData): { subject: string; html: stri
 
 const SUBJECTS_AVISO: Record<number, string> = {
   10: 'IPESSP - Aviso: sua mensalidade vence em 10 dias',
-  9:  'IPESSP - Aviso: sua mensalidade vence em 9 dias',
-  8:  'IPESSP - Aviso: sua mensalidade vence em 8 dias',
-  7:  'IPESSP - Aviso Importante: vencimento em 7 dias',
-  6:  'IPESSP - Aviso: sua mensalidade vence em 6 dias',
-  4:  'IPESSP - Aviso: sua mensalidade vence em 4 dias',
-  3:  'IPESSP - Aviso Importante: vencimento em 3 dias',
-  2:  'IPESSP - Aviso: sua mensalidade vence em 2 dias',
-  1:  'IPESSP - Aviso Importante: vencimento amanhã',
+  9: 'IPESSP - Aviso: sua mensalidade vence em 9 dias',
+  8: 'IPESSP - Aviso: sua mensalidade vence em 8 dias',
+  7: 'IPESSP - Aviso Importante: vencimento em 7 dias',
+  6: 'IPESSP - Aviso: sua mensalidade vence em 6 dias',
+  4: 'IPESSP - Aviso: sua mensalidade vence em 4 dias',
+  3: 'IPESSP - Aviso Importante: vencimento em 3 dias',
+  2: 'IPESSP - Aviso: sua mensalidade vence em 2 dias',
+  1: 'IPESSP - Aviso Importante: vencimento amanhã',
 };
 
-export function templateAviso(data: EmailData): { subject: string; html: string } {
-  const subject = SUBJECTS_AVISO[data.diasRestantes ?? 0]
-    ?? `IPESSP - Aviso: sua mensalidade vence em ${data.diasRestantes} dias`;
+export function templateAviso(data: EmailData): {
+  subject: string;
+  html: string;
+} {
+  const subject =
+    SUBJECTS_AVISO[data.diasRestantes ?? 0] ??
+    `IPESSP - Aviso: sua mensalidade vence em ${data.diasRestantes} dias`;
   const preheader = `Vence em ${data.vencimento}. Regularize e evite restrições no acesso aos serviços.`;
 
   const desc = `Este &#233; um aviso importante: o boleto do(a) aluno(a) <strong>${data.nomeAluno}</strong>
@@ -999,13 +1161,26 @@ export function templateAviso(data: EmailData): { subject: string; html: string 
 
   return {
     subject,
-    html: base(subject, 'Aviso importante sobre sua mensalidade.', desc, nota, data, preheader, {
-      ocultarPagamento: true,
-      resumoOpcoes: { mostrarAluno: false, mostrarRA: false, labelTotal: 'Valor da mensalidade' },
-      heroImagemUrl: data.avisoImagemUrl ?? `${assetsBase(data)}/images/hero-aviso.jpg`,
-      heroImagemAlt: 'Retrato de estudante do IPESSP',
-      botaoAntesSeguranca: true,
-    }),
+    html: base(
+      subject,
+      'Aviso importante sobre sua mensalidade.',
+      desc,
+      nota,
+      data,
+      preheader,
+      {
+        ocultarPagamento: true,
+        resumoOpcoes: {
+          mostrarAluno: false,
+          mostrarRA: false,
+          labelTotal: 'Valor da mensalidade',
+        },
+        heroImagemUrl:
+          data.avisoImagemUrl ?? `${assetsBase(data)}/images/hero-aviso.jpg`,
+        heroImagemAlt: 'Retrato de estudante do IPESSP',
+        botaoAntesSeguranca: true,
+      },
+    ),
   };
 }
 
@@ -1014,8 +1189,12 @@ export function templateAviso(data: EmailData): { subject: string; html: string 
 // passo a passo. Dias de disparo a definir (provavelmente ap&#243;s os marcos
 // j&#225; cobertos pelo templateCobranca).
 
-export function templateRenegociacaoOferta(data: EmailData): { subject: string; html: string } {
-  const subject = 'IPESSP - Condições especiais para regularizar sua mensalidade';
+export function templateRenegociacaoOferta(data: EmailData): {
+  subject: string;
+  html: string;
+} {
+  const subject =
+    'IPESSP - Condições especiais para regularizar sua mensalidade';
   const preheader = `Descontos e parcelamento facilitado para regularizar o quanto antes.`;
 
   const desc = `Sabemos que &#224;s vezes as coisas n&#227;o saem como planejado.
@@ -1062,15 +1241,31 @@ export function templateRenegociacaoOferta(data: EmailData): { subject: string; 
 
   return {
     subject,
-    html: base(subject, 'Ainda d&#225; tempo de regularizar com condi&#231;&#245;es especiais.', desc + beneficios, nota, data, preheader, {
-      ocultarPagamento: true,
-      resumoOpcoes: { mostrarAluno: false, mostrarRA: false, labelTotal: 'Valor em aberto' },
-      heroImagemUrl: data.renegociacaoOfertaImagemUrl ?? `${assetsBase(data)}/images/hero-renegociacao-oferta.jpg`,
-      heroImagemAlt: 'Dois estudantes do IPESSP conversando',
-      botaoAntesSeguranca: true,
-      textoBotaoPrincipal: 'CLIQUE AQUI PARA NEGOCIAR SEUS DÉBITOS',
-      linkBotaoPrincipal: telWhatsappFinanceiro ? `https://wa.me/55${telWhatsappFinanceiro}` : undefined,
-    }),
+    html: base(
+      subject,
+      'Ainda d&#225; tempo de regularizar com condi&#231;&#245;es especiais.',
+      desc + beneficios,
+      nota,
+      data,
+      preheader,
+      {
+        ocultarPagamento: true,
+        resumoOpcoes: {
+          mostrarAluno: false,
+          mostrarRA: false,
+          labelTotal: 'Valor em aberto',
+        },
+        heroImagemUrl:
+          data.renegociacaoOfertaImagemUrl ??
+          `${assetsBase(data)}/images/hero-renegociacao-oferta.jpg`,
+        heroImagemAlt: 'Dois estudantes do IPESSP conversando',
+        botaoAntesSeguranca: true,
+        textoBotaoPrincipal: 'CLIQUE AQUI PARA NEGOCIAR SEUS DÉBITOS',
+        linkBotaoPrincipal: telWhatsappFinanceiro
+          ? `https://wa.me/55${telWhatsappFinanceiro}`
+          : undefined,
+      },
+    ),
   };
 }
 
@@ -1078,7 +1273,10 @@ export function templateRenegociacaoOferta(data: EmailData): { subject: string; 
 // Segundo contato, mais curto e direto, pra quem n&#227;o respondeu &#224; oferta
 // detalhada acima. Dias de disparo a definir.
 
-export function templateRenegociacaoLembrete(data: EmailData): { subject: string; html: string } {
+export function templateRenegociacaoLembrete(data: EmailData): {
+  subject: string;
+  html: string;
+} {
   const subject = 'IPESSP - Já conferiu a solução para o seu atraso?';
   const preheader = `Condições facilitadas pra regularizar sua mensalidade. Fale com a gente.`;
 
@@ -1087,7 +1285,9 @@ export function templateRenegociacaoLembrete(data: EmailData): { subject: string
     preparamos condi&#231;&#245;es facilitadas de pagamento.`;
 
   const telWhatsapp = (data.telefoneEscola ?? '').replace(/\D/g, '');
-  const emailDisplay = data.emailEscola ? data.emailEscola.replace(/^.*<(.+)>.*$/, '$1') : '';
+  const emailDisplay = data.emailEscola
+    ? data.emailEscola.replace(/^.*<(.+)>.*$/, '$1')
+    : '';
   const nota = `<p style="margin:12px 0 0;font-size:12px;color:#999;line-height:1.7;font-family:Arial,sans-serif;">
     Se voc&#234; j&#225; regularizou sua situa&#231;&#227;o, desconsidere esta mensagem.
     Precisa de ajuda? Fale com o setor financeiro${telWhatsapp ? ` pelo <a href="https://wa.me/55${telWhatsapp}" target="_blank" style="color:${COR};font-weight:bold;text-decoration:none;">WhatsApp</a>` : ''}${emailDisplay ? ` ou pelo e-mail <a href="mailto:${emailDisplay}" style="color:${COR};font-weight:bold;text-decoration:none;">${emailDisplay}</a>` : ''}.
@@ -1095,15 +1295,31 @@ export function templateRenegociacaoLembrete(data: EmailData): { subject: string
 
   return {
     subject,
-    html: base(subject, 'J&#225; conferiu a solu&#231;&#227;o para o seu atraso?', desc, nota, data, preheader, {
-      ocultarPagamento: true,
-      resumoOpcoes: { mostrarAluno: false, mostrarRA: false, labelTotal: 'Valor em aberto' },
-      heroImagemUrl: data.renegociacaoLembreteImagemUrl ?? `${assetsBase(data)}/images/hero-renegociacao-lembrete.jpg`,
-      heroImagemAlt: 'Retrato de estudante do IPESSP',
-      botaoAntesSeguranca: true,
-      textoBotaoPrincipal: 'CLIQUE AQUI PARA NEGOCIAR SEUS DÉBITOS',
-      linkBotaoPrincipal: telWhatsapp ? `https://wa.me/55${telWhatsapp}` : undefined,
-    }),
+    html: base(
+      subject,
+      'J&#225; conferiu a solu&#231;&#227;o para o seu atraso?',
+      desc,
+      nota,
+      data,
+      preheader,
+      {
+        ocultarPagamento: true,
+        resumoOpcoes: {
+          mostrarAluno: false,
+          mostrarRA: false,
+          labelTotal: 'Valor em aberto',
+        },
+        heroImagemUrl:
+          data.renegociacaoLembreteImagemUrl ??
+          `${assetsBase(data)}/images/hero-renegociacao-lembrete.jpg`,
+        heroImagemAlt: 'Retrato de estudante do IPESSP',
+        botaoAntesSeguranca: true,
+        textoBotaoPrincipal: 'CLIQUE AQUI PARA NEGOCIAR SEUS DÉBITOS',
+        linkBotaoPrincipal: telWhatsapp
+          ? `https://wa.me/55${telWhatsapp}`
+          : undefined,
+      },
+    ),
   };
 }
 
@@ -1126,12 +1342,17 @@ export interface CancelamentoEmailData extends MarcaEmailData {
   saldoDevedor: number;
 }
 
-const fmtMoeda = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const fmtMoeda = (v: number) =>
+  v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-const SUBJECT_CANCELAMENTO_ACADEMICO = 'Confirmação de Cancelamento Acadêmico - IPESSP';
+const SUBJECT_CANCELAMENTO_ACADEMICO =
+  'Confirmação de Cancelamento Acadêmico - IPESSP';
 
 /** Disparado ao marcar o check "Acadêmico" — sempre o mesmo texto, sem menção a valores (isso é papel do financeiro). */
-export function templateCancelamentoAcademico(d: CancelamentoEmailData): { subject: string; html: string } {
+export function templateCancelamentoAcademico(d: CancelamentoEmailData): {
+  subject: string;
+  html: string;
+} {
   const primeiroNome = d.nomeAluno.split(' ')[0];
 
   const corpo = `
@@ -1160,7 +1381,8 @@ export function templateCancelamentoAcademico(d: CancelamentoEmailData): { subje
   };
 }
 
-const SUBJECT_CANCELAMENTO_REEMBOLSO = 'Cancelamento Confirmado - Dados para Reembolso - IPESSP';
+const SUBJECT_CANCELAMENTO_REEMBOLSO =
+  'Cancelamento Confirmado - Dados para Reembolso - IPESSP';
 
 /**
  * Disparado ao marcar o check "Reembolso" — cenário à parte de Financeiro,
@@ -1168,7 +1390,10 @@ const SUBJECT_CANCELAMENTO_REEMBOLSO = 'Cancelamento Confirmado - Dados para Ree
  * (só fica disponível na tela quando não há multa/parcela/saldo devedor
  * registrados). Pede os dados bancários pro processamento do reembolso.
  */
-export function templateCancelamentoReembolso(d: CancelamentoEmailData): { subject: string; html: string } {
+export function templateCancelamentoReembolso(d: CancelamentoEmailData): {
+  subject: string;
+  html: string;
+} {
   const primeiroNome = d.nomeAluno.split(' ')[0];
 
   const corpo = `
@@ -1210,7 +1435,8 @@ export function templateCancelamentoReembolso(d: CancelamentoEmailData): { subje
 }
 
 /** Título do email de cancelamento financeiro (sem multa). */
-const SUBJECT_CANCELAMENTO = 'Confirmação de trancamento de matrícula - Setor Financeiro IPESSP';
+const SUBJECT_CANCELAMENTO =
+  'Confirmação de trancamento de matrícula - Setor Financeiro IPESSP';
 
 /** Título dos 2 casos com multa (com/sem inadimplência) — ambos sempre cobram multa rescisória. */
 const SUBJECT_MULTA_RESCISORIA = 'Multa Rescisória Pendente';
@@ -1221,7 +1447,10 @@ const SUBJECT_MULTA_RESCISORIA = 'Multa Rescisória Pendente';
  * <= 0), só multa (valorMulta > 0 e sem parcela em atraso), ou multa +
  * inadimplência (valorMulta > 0 e parcelasEmAtraso > 0).
  */
-export function templateCancelamentoFinanceiro(d: CancelamentoEmailData): { subject: string; html: string } {
+export function templateCancelamentoFinanceiro(d: CancelamentoEmailData): {
+  subject: string;
+  html: string;
+} {
   if (d.valorMulta <= 0) {
     const primeiroNomeSemPendencia = d.nomeAluno.split(' ')[0];
     const corpo = `
@@ -1237,7 +1466,10 @@ export function templateCancelamentoFinanceiro(d: CancelamentoEmailData): { subj
         Permanecemos &#224; disposi&#231;&#227;o para quaisquer esclarecimentos.
       </p>`;
 
-    return { subject: SUBJECT_CANCELAMENTO, html: baseConteudoLivre(SUBJECT_CANCELAMENTO, d, corpo) };
+    return {
+      subject: SUBJECT_CANCELAMENTO,
+      html: baseConteudoLivre(SUBJECT_CANCELAMENTO, d, corpo),
+    };
   }
 
   const primeiroNome = d.nomeAluno.split(' ')[0];
@@ -1245,12 +1477,14 @@ export function templateCancelamentoFinanceiro(d: CancelamentoEmailData): { subj
 
   const saudacao = `<p style="margin:0 0 18px;font-size:17px;font-weight:bold;color:${COR};text-transform:uppercase;font-family:Arial,sans-serif;">Prezado(a) ${primeiroNome},</p>`;
 
-  const paragrafoInadimplencia = temInadimplencia ? `
+  const paragrafoInadimplencia = temInadimplencia
+    ? `
     <p style="margin:0 0 18px;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
       Al&#233;m disso, informamos que h&#225; um saldo devedor referente a
       <strong>${d.parcelasEmAtraso} parcela${d.parcelasEmAtraso === 1 ? '' : 's'} em atraso</strong>,
       totalizando <strong style="color:${COR};">${fmtMoeda(d.saldoDevedor)}</strong>, que tamb&#233;m dever&#225; ser quitado.
-    </p>` : '';
+    </p>`
+    : '';
 
   const corpo = `
     <p style="margin:0 0 18px;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
@@ -1328,11 +1562,13 @@ export function emailRelatorioMatricula(d: RelatorioMatriculaData): string {
   const totalPlano = fmt(d.numeroParcelas * d.valorParcela);
 
   const blocoResponsavel = d.nomeResponsavel
-    ? secao('Responsável Financeiro',
+    ? secao(
+        'Responsável Financeiro',
         linha('Nome', d.nomeResponsavel) +
-        linha('CPF', d.cpfResponsavel ?? '') +
-        linha('E-mail', d.emailResponsavel ?? '') +
-        linha('Telefone', d.telefoneResponsavel ?? ''))
+          linha('CPF', d.cpfResponsavel ?? '') +
+          linha('E-mail', d.emailResponsavel ?? '') +
+          linha('Telefone', d.telefoneResponsavel ?? ''),
+      )
     : '';
 
   return `<!DOCTYPE html>
@@ -1373,27 +1609,33 @@ export function emailRelatorioMatricula(d: RelatorioMatriculaData): string {
         <td colspan="2" style="padding:8px 20px 24px;">
           <table width="100%" cellpadding="0" cellspacing="0" border="0">
 
-            ${secao('Dados do Aluno',
+            ${secao(
+              'Dados do Aluno',
               linha('Nome', d.nomeAluno) +
-              linha('CPF', d.cpfAluno) +
-              linha('E-mail', d.emailAluno ?? '') +
-              linha('Telefone', d.telefoneAluno ?? '') +
-              linha('Código Sophia', String(d.codigoAluno)))}
+                linha('CPF', d.cpfAluno) +
+                linha('E-mail', d.emailAluno ?? '') +
+                linha('Telefone', d.telefoneAluno ?? '') +
+                linha('Código Sophia', String(d.codigoAluno)),
+            )}
 
             ${blocoResponsavel}
 
-            ${secao('Curso / Matrícula',
+            ${secao(
+              'Curso / Matrícula',
               linha('Curso', d.curso) +
-              linha('Unidade', d.unidade) +
-              linha('Turno', d.turno) +
-              linha('Período Letivo', d.periodoLetivo))}
+                linha('Unidade', d.unidade) +
+                linha('Turno', d.turno) +
+                linha('Período Letivo', d.periodoLetivo),
+            )}
 
-            ${secao('Plano de Pagamento',
+            ${secao(
+              'Plano de Pagamento',
               linha('Nº de Parcelas', String(d.numeroParcelas)) +
-              linha('Valor por Parcela', fmt(d.valorParcela)) +
-              linha('1ª Parcela', d.dataPrimeiraParcela) +
-              linha('Desconto', d.desconto ?? '—') +
-              linha('Total do Plano', totalPlano))}
+                linha('Valor por Parcela', fmt(d.valorParcela)) +
+                linha('1ª Parcela', d.dataPrimeiraParcela) +
+                linha('Desconto', d.desconto ?? '—') +
+                linha('Total do Plano', totalPlano),
+            )}
 
           </table>
         </td>

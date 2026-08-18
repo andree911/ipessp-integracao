@@ -5,7 +5,7 @@
  * Cobre só o que o fluxo do bot usa de verdade:
  *  - expressões `={{ ... }}` (interpolação simples e valor bruto);
  *  - nós `code` (executados de verdade, direto do JSON do workflow);
- *  - nós `if` com os operadores string equals/exists/regex;
+ *  - nós `if` com os operadores string equals/notEquals/exists/regex;
  *  - nós `httpRequest` (mockados: registram a chamada, devolvem o que o cenário mandar);
  *  - nós `agent` (mockados: registram o system prompt já resolvido e as tools ligadas).
  *
@@ -81,12 +81,14 @@ function criarAcessorDeNos(saidas) {
 
 function avaliarCondicao(cond, ctx) {
   const esquerda = resolver(cond.leftValue, ctx);
+  const direita = resolver(cond.rightValue, ctx);
   const { operation } = cond.operator;
   if (operation === 'exists') return esquerda !== undefined && esquerda !== null && esquerda !== '';
-  if (operation === 'equals') return String(esquerda) === String(cond.rightValue);
+  if (operation === 'equals') return String(esquerda) === String(direita);
+  if (operation === 'notEquals') return String(esquerda) !== String(direita);
   if (operation === 'regex') {
     const flags = ctx.node.parameters.options?.ignoreCase ? 'i' : '';
-    return new RegExp(cond.rightValue, flags).test(String(esquerda ?? ''));
+    return new RegExp(direita, flags).test(String(esquerda ?? ''));
   }
   throw new Error(`operador não suportado no runtime de teste: ${operation}`);
 }

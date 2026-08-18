@@ -1,29 +1,32 @@
+# NOTA: o deploy atual roda via Docker numa VPS própria (ver Dockerfile e
+# docker-compose fora deste repo) com Caddy na frente. Este manifesto reflete
+# a mesma arquitetura (Postgres + MinIO) para o caso de precisar reativar um
+# deploy no Render -- se o Render não estiver mais em uso como plataforma,
+# este arquivo pode ser removido.
 services:
   - type: web
     name: integracao-service
-    runtime: node
+    runtime: docker
     region: ohio
     plan: starter
-    buildCommand: npm install && npm run build
-    startCommand: node dist/main
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     healthCheckPath: /health
-    disk:
-      name: sqlite-data
-      mountPath: /opt/render/project/src/data
-      sizeGB: 1
     envVars:
       - key: NODE_ENV
         value: production
       - key: CORS_ORIGINS
         value: https://www.ipessp.edu.br,https://ipessp.edu.br
-      - key: DATABASE_PATH
-        value: /opt/render/project/src/data/sync.db
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_SSL
+        value: "false"
       - key: SOPHIA_BASE_URL
         value: https://portal.sophia.com.br/SophiAWebAPI
       - key: SOPHIA_TENANT
-        value: "10059"
+        sync: false
       - key: SOPHIA_USUARIO
-        value: INTEGRACAO
+        sync: false
       - key: SOPHIA_SENHA
         sync: false
       - key: SYNC_CRON
@@ -31,6 +34,18 @@ services:
       - key: SYNC_LOOKBACK_DAYS
         value: "30"
       - key: WEBHOOK_SECRET
+        sync: false
+      - key: MINIO_ENDPOINT
+        sync: false
+      - key: MINIO_PORT
+        value: "9000"
+      - key: MINIO_USE_SSL
+        value: "false"
+      - key: MINIO_ACCESS_KEY
+        sync: false
+      - key: MINIO_SECRET_KEY
+        sync: false
+      - key: MINIO_PUBLIC_BASE_URL
         sync: false
       - key: SMTP_HOST
         value: smtp.office365.com
@@ -44,33 +59,55 @@ services:
         sync: false
       - key: SMTP_FROM
         value: "IPESSP <matricula.financeiro@ipessp.edu.br>"
+      - key: EMAIL_CANCELAMENTO_FROM
+        sync: false
+      - key: EMAIL_CANCELAMENTO_CC_PEDAGOGICO
+        sync: false
+      - key: EMAIL_CANCELAMENTO_CC_TRANCAMENTO
+        sync: false
+      - key: EMAIL_CANCELAMENTO_CC_FINANCEIRO
+        sync: false
+      - key: EMAIL_CC_COMERCIAL
+        sync: false
       - key: ESCOLA_NOME
         value: IPESSP
       - key: ESCOLA_TELEFONE
         value: "(11) 99839-3640"
+      - key: ESCOLA_EMAIL_NOTIFICACOES
+        value: matricula.financeiro@ipessp.edu.br
+      - key: ESCOLA_CNPJ
+        value: "05.699.346/0001-43"
+      - key: ESCOLA_ENDERECO
+        value: "São Paulo, SP"
+      - key: ESCOLA_SITE
+        value: https://www.ipessp.edu.br
+      - key: ESCOLA_INSTAGRAM
+        value: https://www.instagram.com/ipessp/
+      - key: ESCOLA_FACEBOOK
+        value: https://www.facebook.com/ipesspedu/
+      - key: ESCOLA_LINKEDIN
+        value: https://www.linkedin.com/company/ipessp---educa-o/
+      - key: ESCOLA_YOUTUBE
+        value: https://www.youtube.com/channel/UC7dgP6NBgM9L0m11UbhCyHg
       - key: EMAIL_DIAS_ANTES
         sync: false
-      - key: EMAIL_DIAS_APOS
-        sync: false
       - key: EMAIL_DIAS_AVISO
+        sync: false
+      - key: EMAIL_DIAS_APOS
         sync: false
       - key: EMAIL_DIAS_RENEGOCIACAO_OVERLAP
         sync: false
       - key: EMAIL_ASSETS_BASE_URL
         value: https://site-ipessp-frontend.vercel.app
+      - key: EMAIL_LOGO_URL
+        sync: false
+      - key: EMAIL_PORTAL_ALUNO_URL
+        sync: false
       - key: EMAIL_CRON_HABILITADO
         sync: false
-      - key: EMAIL_LOGO_URL
-        value: https://oylhowadealxvsmdhmzc.supabase.co/storage/v1/object/public/assets/logo.png
+      - key: EMAIL_SOMENTE_COM_CODIGO
+        sync: false
       - key: IA_BEARER_TOKEN
-        sync: false
-      - key: N8N_LEADS_WEBHOOK_URL
-        sync: false
-      - key: ESCOLA_EMAIL_NOTIFICACOES
-        value: matricula.financeiro@ipessp.edu.br
-      - key: SUPABASE_URL
-        value: https://oylhowadealxvsmdhmzc.supabase.co
-      - key: SUPABASE_SERVICE_KEY
         sync: false
       - key: JWT_SECRET
         sync: false
@@ -78,6 +115,8 @@ services:
         sync: false
       - key: SITE_URL
         value: https://www.ipessp.edu.br
+      - key: BACKEND_URL
+        sync: false
       - key: ZAPI_INSTANCE_ID
         sync: false
       - key: ZAPI_TOKEN
@@ -86,9 +125,19 @@ services:
         sync: false
       - key: ZAPI_TELEFONE_FINANCEIRO
         sync: false
+      - key: ZAPI_TELEFONE_SECRETARIA
+        sync: false
+      - key: ZAPI_TELEFONES_CONSULTORAS_MARKETING
+        sync: false
+      - key: ZAPI_MODO_TESTE
+        sync: false
+      - key: ZAPI_TELEFONE_TESTE
+        sync: false
       - key: WPP_CRON_HABILITADO
         sync: false
       - key: WPP_DIAS_ANTES
         sync: false
       - key: WPP_DIAS_APOS
+        sync: false
+      - key: N8N_WHATSAPP_WEBHOOK_URL
         sync: false

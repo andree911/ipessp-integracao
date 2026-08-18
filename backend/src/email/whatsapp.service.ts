@@ -47,7 +47,7 @@ export class WhatsAppService {
 
     try {
       await enviar();
-    } catch (err) {
+    } catch {
       // Retry único após um pequeno atraso: quem chama trata isso como
       // fire-and-forget (ex.: aviso de pagamento aprovado, notificar
       // consultora), sem esse retry uma instabilidade passageira da Z-API
@@ -142,11 +142,12 @@ export class WhatsAppService {
     }
   }
 
-  /** Envia uma imagem (ex.: QR code do PIX) em base64. Propaga erro — quem chama decide o fallback. */
+  /** Envia uma imagem (ex.: QR code do PIX, banner de cobrança) em base64. A Z-API exige o campo `image` como data URI -- base64 cru é rejeitado com "Base64/Url could not be read". Propaga erro — quem chama decide o fallback. */
   async enviarImagem(
     telefone: string,
     base64: string,
     caption?: string,
+    mimeType = 'image/png',
   ): Promise<void> {
     const instanceId = this.config.get<string>('zapi.instanceId');
     const token = this.config.get<string>('zapi.token');
@@ -158,12 +159,13 @@ export class WhatsAppService {
 
     const url = `https://api.z-api.io/instances/${instanceId}/token/${token}/send-image`;
     const phone = telefone.replace(/\D/g, '');
+    const dataUri = `data:${mimeType};base64,${base64}`;
 
     try {
       await firstValueFrom(
         this.http.post(
           url,
-          { phone, image: base64, caption },
+          { phone, image: dataUri, caption },
           { headers: { 'Client-Token': clientToken ?? '' } },
         ),
       );
@@ -217,17 +219,34 @@ export class WhatsAppService {
     url: string,
     fileName: string,
   ): Promise<void> {
-    let base64: string;
+    const base64 = await this.baixarComoBase64(url, 'PDF');
+    await this.enviarDocumento(telefone, base64, fileName, 'pdf');
+  }
+
+  /**
+   * Baixa uma imagem pública (ex.: banner de cobrança) e devolve em base64,
+   * pronta pra passar em enviarImagem. Pensado pra ser baixada UMA vez por
+   * rodada de job e reenviada a vários destinatários — não chamar isso uma
+   * vez por destinatário. Propaga erro — quem chama decide o fallback.
+   */
+  async baixarImagemBase64(url: string): Promise<string> {
+    return this.baixarComoBase64(url, 'imagem');
+  }
+
+  private async baixarComoBase64(
+    url: string,
+    descricao: string,
+  ): Promise<string> {
     try {
       const resposta = await firstValueFrom(
         this.http.get(url, { responseType: 'arraybuffer' }),
       );
-      base64 = Buffer.from(resposta.data as ArrayBuffer).toString('base64');
+      return Buffer.from(resposta.data as ArrayBuffer).toString('base64');
     } catch (err) {
-      this.logger.warn(`WhatsApp: falha ao baixar PDF de ${url} — ${detalheErro(err)}`);
+      this.logger.warn(
+        `WhatsApp: falha ao baixar ${descricao} de ${url} — ${detalheErro(err)}`,
+      );
       throw err;
     }
-
-    await this.enviarDocumento(telefone, base64, fileName, 'pdf');
   }
 }

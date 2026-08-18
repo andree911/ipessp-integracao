@@ -1,10 +1,13 @@
-import { Controller, Post, Get, HttpCode } from '@nestjs/common';
+import { Controller, Post, Get, HttpCode, UseGuards } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { ThrottlerGuard } from '@nestjs/throttler';
 import { SyncService } from './sync.service';
 import { ResponsavelCache } from '../ia/entities/responsavel-cache.entity';
+import { AdminApiKeyGuard } from '../admin/guards/admin-api-key.guard';
 
 @Controller('sync')
+@UseGuards(ThrottlerGuard, AdminApiKeyGuard)
 export class SyncController {
   constructor(
     private readonly syncService: SyncService,

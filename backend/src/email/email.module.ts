@@ -15,9 +15,20 @@ import { FinanceiroModule } from '../financeiro/financeiro.module';
 import { AdminApiKeyGuard } from '../admin/guards/admin-api-key.guard';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([EmailLog, LancamentoCache, ClienteCache]), HttpModule, SophiaModule, FinanceiroModule],
+  imports: [
+    TypeOrmModule.forFeature([EmailLog, LancamentoCache, ClienteCache]),
+    HttpModule,
+    SophiaModule,
+    FinanceiroModule,
+  ],
   controllers: [EmailController, WhatsAppWebhookController],
-  providers: [EmailService, EmailJobService, WhatsAppService, WhatsAppJobService, AdminApiKeyGuard],
+  providers: [
+    EmailService,
+    EmailJobService,
+    WhatsAppService,
+    WhatsAppJobService,
+    AdminApiKeyGuard,
+  ],
   exports: [EmailService, EmailJobService, WhatsAppService],
 })
 export class EmailModule {}

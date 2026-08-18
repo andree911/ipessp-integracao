@@ -4,7 +4,12 @@ import { ConfigService } from '@nestjs/config';
 import { Cron } from '@nestjs/schedule';
 import { firstValueFrom } from 'rxjs';
 import { AxiosRequestConfig } from 'axios';
-import { errMsg, isAxios401, axiosDetail } from '../common/err.util';
+import {
+  errMsg,
+  isAxios401,
+  axiosDetail,
+  axiosStatus,
+} from '../common/err.util';
 import {
   AlunoApiModel,
   AlunoDetalhadoApiModel,
@@ -20,6 +25,8 @@ import {
   ResponsavelAlunoApiModel,
 } from './types/sophia.types';
 
+const SEARCH_ALUNO_MAX_PAGINAS = 200;
+
 @Injectable()
 export class SophiaService implements OnModuleInit {
   private readonly logger = new Logger(SophiaService.name);
@@ -33,17 +40,28 @@ export class SophiaService implements OnModuleInit {
     private readonly http: HttpService,
     private readonly config: ConfigService,
   ) {
-    this.baseUrl = this.config.get<string>('sophia.baseUrl')!;
-    this.usuario = this.config.get<string>('sophia.usuario')!;
-    this.senha = this.config.get<string>('sophia.senha')!;
+    this.baseUrl = this.exigirConfig('sophia.baseUrl');
+    this.usuario = this.exigirConfig('sophia.usuario');
+    this.senha = this.exigirConfig('sophia.senha');
     this.tenant = this.config.get<string>('sophia.tenant') ?? '';
+  }
+
+  /** Falha rápido e explícito na inicialização em vez de deixar a credencial faltando virar "undefined" na URL só na primeira chamada real. */
+  private exigirConfig(chave: string): string {
+    const valor = this.config.get<string>(chave);
+    if (!valor) {
+      throw new Error(`Configuração obrigatória ausente: ${chave}`);
+    }
+    return valor;
   }
 
   async onModuleInit() {
     try {
       await this.autenticar();
     } catch (err: unknown) {
-      this.logger.error(`SophiA: falha na autenticação inicial — ${errMsg(err)}`);
+      this.logger.error(
+        `SophiA: falha na autenticação inicial — ${errMsg(err)}`,
+      );
     }
   }
 
@@ -52,7 +70,9 @@ export class SophiaService implements OnModuleInit {
     try {
       await this.autenticar();
     } catch (err: unknown) {
-      this.logger.warn(`SophiA: falha no refresh periódico do token — ${errMsg(err)}`);
+      this.logger.warn(
+        `SophiA: falha no refresh periódico do token — ${errMsg(err)}`,
+      );
     }
   }
 
@@ -68,11 +88,16 @@ export class SophiaService implements OnModuleInit {
       : `${this.baseUrl}/api/v1/Autenticacao`;
 
     const { data } = await firstValueFrom(
-      this.http.post<string>(url, { usuario: this.usuario, senha: this.senha }, {
-        headers: { 'Content-Type': 'application/json', accept: 'text/plain' },
-      }),
+      this.http.post<string>(
+        url,
+        { usuario: this.usuario, senha: this.senha },
+        {
+          headers: { 'Content-Type': 'application/json', accept: 'text/plain' },
+        },
+      ),
     );
-    this.token = typeof data === 'string' ? data.replace(/"/g, '').trim() : data;
+    this.token =
+      typeof data === 'string' ? data.replace(/"/g, '').trim() : data;
     this.logger.log('SophiA: token obtido com sucesso');
   }
 
@@ -100,7 +125,10 @@ export class SophiaService implements OnModuleInit {
     }
   }
 
-  private async get<T>(url: string, params?: Record<string, unknown>): Promise<T> {
+  private async get<T>(
+    url: string,
+    params?: Record<string, unknown>,
+  ): Promise<T> {
     try {
       const { data } = await firstValueFrom(
         this.http.get<T>(url, { headers: this.headers(), params }),
@@ -119,7 +147,11 @@ export class SophiaService implements OnModuleInit {
     }
   }
 
-  async getAlunos(pagina = 1, tamanhoPagina = 100, nome?: string): Promise<AlunoApiModel[]> {
+  async getAlunos(
+    pagina = 1,
+    tamanhoPagina = 100,
+    nome?: string,
+  ): Promise<AlunoApiModel[]> {
     return this.get<AlunoApiModel[]>(`${this.apiBase}/Alunos`, {
       Pagina: pagina,
       TamanhoPagina: tamanhoPagina,
@@ -127,7 +159,9 @@ export class SophiaService implements OnModuleInit {
     });
   }
 
-  async getResponsaveisAluno(idAluno: number): Promise<ResponsavelAlunoApiModel[]> {
+  async getResponsaveisAluno(
+    idAluno: number,
+  ): Promise<ResponsavelAlunoApiModel[]> {
     return this.get<ResponsavelAlunoApiModel[]>(
       `${this.apiBase}/alunos/${idAluno}/responsaveis`,
     );
@@ -137,11 +171,12 @@ export class SophiaService implements OnModuleInit {
     const data = await this.get<MatriculasWrapperApiModel[]>(
       `${this.apiBase}/alunos/${idAluno}/Matriculas`,
     );
-    this.logger.log(`SophiA getMatriculasAluno raw: ${JSON.stringify(data)}`);
     return data.flatMap((w) => w.matriculas ?? []);
   }
 
-  async getLancamentosAluno(idAluno: number): Promise<LancamentoAlunoApiModel[]> {
+  async getLancamentosAluno(
+    idAluno: number,
+  ): Promise<LancamentoAlunoApiModel[]> {
     return this.get<LancamentoAlunoApiModel[]>(
       `${this.apiBase}/alunos/${idAluno}/Lancamentos`,
     );
@@ -152,51 +187,77 @@ export class SophiaService implements OnModuleInit {
   }
 
   async searchAlunoByEmail(email: string): Promise<AlunoApiModel | null> {
-    // Tenta filtrar por email direto; se não suportado, varre as páginas
+    // Tenta filtrar por email direto; se o filtro não for aceito (4xx), varre
+    // as páginas. Erros de rede/servidor (timeout, 5xx) sobem pro chamador em
+    // vez de disparar a varredura completa por engano.
     try {
       const result = await this.get<AlunoApiModel[]>(`${this.apiBase}/Alunos`, {
         Email: email,
         TamanhoPagina: 1,
       });
       if (result.length > 0) return result[0];
-    } catch { /* ignora e tenta varredura */ }
+    } catch (err: unknown) {
+      const status = axiosStatus(err);
+      if (status === undefined || status >= 500) throw err;
+    }
 
     let pagina = 1;
     const tamanhoPagina = 100;
-    while (true) {
+    while (pagina <= SEARCH_ALUNO_MAX_PAGINAS) {
       const page = await this.getAlunos(pagina, tamanhoPagina);
-      const found = page.find(a => a.email?.toLowerCase() === email.toLowerCase());
+      const found = page.find(
+        (a) => a.email?.toLowerCase() === email.toLowerCase(),
+      );
       if (found) return found;
-      if (page.length < tamanhoPagina) break;
+      if (page.length < tamanhoPagina) return null;
       pagina++;
     }
+    this.logger.warn(
+      `searchAlunoByEmail: varredura interrompida após ${SEARCH_ALUNO_MAX_PAGINAS} páginas sem encontrar "${email}".`,
+    );
     return null;
   }
 
   async getBoleto(idAluno: number, codigoBoleto: number): Promise<Buffer> {
     const url = `${this.apiBase}/alunos/${idAluno}/Boletos/${codigoBoleto}`;
     const { data } = await firstValueFrom(
-      this.http.get<string>(url, { headers: this.headers(), responseType: 'text' }),
+      this.http.get<string>(url, {
+        headers: this.headers(),
+        responseType: 'text',
+      }),
     );
-    const b64 = (data as string).replace(/^"|"$/g, '');
+    const b64 = data.replace(/^"|"$/g, '');
     return Buffer.from(b64, 'base64');
   }
 
-  async getColaboradores(params?: { Email?: string; Nome?: string; Pagina?: number; TamanhoPagina?: number }): Promise<ColaboradorApiModel[]> {
+  async getColaboradores(params?: {
+    Email?: string;
+    Nome?: string;
+    Pagina?: number;
+    TamanhoPagina?: number;
+  }): Promise<ColaboradorApiModel[]> {
     const p: Record<string, unknown> = {};
-    if (params?.Email)         p['Email']         = params.Email;
-    if (params?.Nome)          p['Nome']           = params.Nome;
-    if (params?.Pagina)        p['Pagina']         = params.Pagina;
-    if (params?.TamanhoPagina) p['TamanhoPagina']  = params.TamanhoPagina;
+    if (params?.Email) p['Email'] = params.Email;
+    if (params?.Nome) p['Nome'] = params.Nome;
+    if (params?.Pagina) p['Pagina'] = params.Pagina;
+    if (params?.TamanhoPagina) p['TamanhoPagina'] = params.TamanhoPagina;
     return this.get<ColaboradorApiModel[]>(`${this.apiBase}/Colaboradores`, p);
   }
 
-  async getListaChamadaProfessor(idProfessor: number, params?: Record<string, string>): Promise<ListaChamadaItem[]> {
-    return this.get<ListaChamadaItem[]>(`${this.apiBase}/ListaChamada/Professor/${idProfessor}`, params);
+  async getListaChamadaProfessor(
+    idProfessor: number,
+    params?: Record<string, string>,
+  ): Promise<ListaChamadaItem[]> {
+    return this.get<ListaChamadaItem[]>(
+      `${this.apiBase}/ListaChamada/Professor/${idProfessor}`,
+      params,
+    );
   }
 
   async getAlunosListaChamada(idLista: number): Promise<unknown[]> {
-    return this.get<unknown[]>(`${this.apiBase}/ListaChamada/Alunos/${idLista}`);
+    return this.get<unknown[]>(
+      `${this.apiBase}/ListaChamada/Alunos/${idLista}`,
+    );
   }
 
   async getAllAlunos(): Promise<AlunoApiModel[]> {
@@ -205,7 +266,9 @@ export class SophiaService implements OnModuleInit {
     const alunos = await this.getAlunos(1, 9999);
     this.logger.log(`SophiA: ${alunos.length} alunos carregados`);
     if (alunos.length > 5000) {
-      this.logger.warn(`Volume alto (${alunos.length} alunos) — monitorar uso de memória no sync`);
+      this.logger.warn(
+        `Volume alto (${alunos.length} alunos) — monitorar uso de memória no sync`,
+      );
     }
     return alunos;
   }
@@ -219,9 +282,16 @@ export class SophiaService implements OnModuleInit {
   // Sophia a cada tentativa de login do Portal do Aluno. O swagger descreve
   // "codigo"/"email" indo no header, mas o schema do body (AutenticacaoAlunoApiModel)
   // é quem manda: os três campos (email, codigo, senha) vão no corpo da requisição.
-  async validarLogin(params: { codigo?: string; email?: string; senha: string }): Promise<AutenticacaoAlunoApiModelRetorno> {
+  async validarLogin(params: {
+    codigo?: string;
+    email?: string;
+    senha: string;
+  }): Promise<AutenticacaoAlunoApiModelRetorno> {
     try {
-      return await this.post<AutenticacaoAlunoApiModelRetorno>(`${this.apiBase}/Alunos/ValidarLogin`, params);
+      return await this.post<AutenticacaoAlunoApiModelRetorno>(
+        `${this.apiBase}/Alunos/ValidarLogin`,
+        params,
+      );
     } catch (err: unknown) {
       const detail = axiosDetail(err);
       this.logger.warn(`SophiA validarLogin erro: ${JSON.stringify(detail)}`);
@@ -229,20 +299,38 @@ export class SophiaService implements OnModuleInit {
     }
   }
 
-  async getNotasAvaliacoes(idMatricula: number): Promise<NotasMatriculaApiModel> {
-    return this.get<NotasMatriculaApiModel>(`${this.apiBase}/alunos/Matriculas/${idMatricula}/NotasAvaliacoesCompleto`);
+  async getNotasAvaliacoes(
+    idMatricula: number,
+  ): Promise<NotasMatriculaApiModel> {
+    return this.get<NotasMatriculaApiModel>(
+      `${this.apiBase}/alunos/Matriculas/${idMatricula}/NotasAvaliacoesCompleto`,
+    );
   }
 
-  async getFrequenciaCompleta(idMatricula: number): Promise<MatriculaFrequenciaApiModel> {
-    return this.get<MatriculaFrequenciaApiModel>(`${this.apiBase}/alunos/Matriculas/${idMatricula}/FrequenciaCompleto`);
+  async getFrequenciaCompleta(
+    idMatricula: number,
+  ): Promise<MatriculaFrequenciaApiModel> {
+    return this.get<MatriculaFrequenciaApiModel>(
+      `${this.apiBase}/alunos/Matriculas/${idMatricula}/FrequenciaCompleto`,
+    );
   }
 
-  async getHorarioDetalhado(idMatricula: number): Promise<HorarioMatriculaApiModel> {
-    return this.get<HorarioMatriculaApiModel>(`${this.apiBase}/alunos/matriculas/${idMatricula}/QuadrosHorarios/Detalhados`);
+  async getHorarioDetalhado(
+    idMatricula: number,
+  ): Promise<HorarioMatriculaApiModel> {
+    return this.get<HorarioMatriculaApiModel>(
+      `${this.apiBase}/alunos/matriculas/${idMatricula}/QuadrosHorarios/Detalhados`,
+    );
   }
 
-  async postDocumentoCliente(idCliente: number, doc: { descricao: string; url: string; extensao: string }): Promise<unknown> {
-    return this.post<unknown>(`${this.apiBase}/clientes/${idCliente}/Documentos`, doc);
+  async postDocumentoCliente(
+    idCliente: number,
+    doc: { descricao: string; url: string; extensao: string },
+  ): Promise<unknown> {
+    return this.post<unknown>(
+      `${this.apiBase}/clientes/${idCliente}/Documentos`,
+      doc,
+    );
   }
 
   async getTurmaDetalhada(codigoTurma: number): Promise<unknown> {

@@ -18,6 +18,11 @@ import { StorageService } from '../common/storage.service';
     FinanceiroModule,
   ],
   controllers: [PortalAlunoAuthController, PortalAlunoDadosController],
-  providers: [PortalAlunoAuthService, PortalAlunoDadosService, PortalAlunoGuard, StorageService],
+  providers: [
+    PortalAlunoAuthService,
+    PortalAlunoDadosService,
+    PortalAlunoGuard,
+    StorageService,
+  ],
 })
 export class PortalAlunoModule {}

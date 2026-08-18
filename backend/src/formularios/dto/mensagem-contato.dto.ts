@@ -1,4 +1,11 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Matches,
+  MaxLength,
+} from 'class-validator';
 
 export class MensagemContatoDto {
   @IsNotEmpty()
@@ -12,7 +19,7 @@ export class MensagemContatoDto {
   @IsOptional()
   @IsString()
   @MaxLength(20)
-  @Matches(/^\+?[\d\s()\-]{10,20}$/, { message: 'Telefone inválido' })
+  @Matches(/^\+?[\d\s()-]{10,20}$/, { message: 'Telefone inválido' })
   telefone?: string;
 
   @IsOptional()

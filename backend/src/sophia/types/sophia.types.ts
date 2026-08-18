@@ -182,12 +182,12 @@ export interface LancamentoAlunoApiModel {
   codigo: number;
   numeroLancamento?: number;
   descricao?: string;
-  dataVencimento: string;        // ISO string
-  dataPagamento?: string;        // preenchido quando pago
-  recebido: number;              // 0 = em aberto, >0 = pago/recebido
-  valorPrevisto: number;         // valor a pagar
-  valorRecebido?: number;        // valor pago (quando recebido > 0)
-  linhaDigitavel?: string;       // linha digitável do boleto
+  dataVencimento: string; // ISO string
+  dataPagamento?: string; // preenchido quando pago
+  recebido: number; // 0 = em aberto, >0 = pago/recebido
+  valorPrevisto: number; // valor a pagar
+  valorRecebido?: number; // valor pago (quando recebido > 0)
+  linhaDigitavel?: string; // linha digitável do boleto
   codigoBoleto?: number;
   numeroBoleto?: number;
   boletoDisponivel?: boolean;

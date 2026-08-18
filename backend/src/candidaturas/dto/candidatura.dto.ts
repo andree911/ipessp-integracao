@@ -1,4 +1,19 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  IsEmail,
+  IsIn,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
+
+export const AREAS_CANDIDATURA = [
+  'monitoria',
+  'docencia',
+  'laboratorio',
+  'administrativo',
+  'outro',
+] as const;
 
 export class CandidaturaDto {
   @IsNotEmpty()
@@ -9,9 +24,7 @@ export class CandidaturaDto {
   @IsEmail()
   email: string;
 
-  @IsNotEmpty()
-  @IsString()
-  @MaxLength(200)
+  @IsIn(AREAS_CANDIDATURA)
   area: string;
 
   @IsOptional()

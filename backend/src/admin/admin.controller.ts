@@ -4,9 +4,8 @@ import {
   Controller,
   Get,
   HttpCode,
-  Param,
+  Logger,
   ParseIntPipe,
-  Patch,
   Post,
   Query,
   UseGuards,
@@ -18,11 +17,16 @@ import { FinanceiroService } from '../financeiro/financeiro.service';
 import { EmailJobService } from '../email/email-job.service';
 import { WhatsAppService } from '../email/whatsapp.service';
 import { SophiaService } from '../sophia/sophia.service';
+import { errMsg } from '../common/err.util';
+
+const HISTORICO_EMAIL_LIMIT_MAX = 200;
 
 @Controller('v1/admin')
 @UseGuards(ThrottlerGuard, AdminApiKeyGuard)
 @Throttle({ default: { limit: 30, ttl: 60000 } })
 export class AdminController {
+  private readonly logger = new Logger(AdminController.name);
+
   constructor(
     private readonly financeiroService: FinanceiroService,
     private readonly emailJobService: EmailJobService,
@@ -40,7 +44,7 @@ export class AdminController {
 
   @Get('financeiro/buscar')
   buscarCliente(@Query('cpf') cpf: string) {
-    if (!cpf) return { erro: 'Informe o parâmetro cpf' };
+    if (!cpf) throw new BadRequestException('Informe o parâmetro cpf');
     return this.financeiroService.getByCpf(cpf);
   }
 
@@ -61,16 +65,23 @@ export class AdminController {
   @Post('email/disparar')
   @HttpCode(202)
   emailDisparar() {
-    void this.emailJobService.runEmailJob('manual');
+    this.emailJobService.runEmailJob('manual').catch((err: unknown) => {
+      this.logger.error(
+        `Job de emails (disparo manual via admin) falhou: ${errMsg(err)}`,
+      );
+    });
     return { message: 'Job de emails iniciado manualmente' };
   }
 
   @Get('email/historico')
-  historicoEmail(@Query('page') page?: string, @Query('limit') limit?: string) {
-    return this.emailJobService.listarHistoricoEmail(
-      page ? Number(page) : undefined,
-      limit ? Number(limit) : undefined,
-    );
+  historicoEmail(
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+  ) {
+    const limitLimitado = limit
+      ? Math.min(limit, HISTORICO_EMAIL_LIMIT_MAX)
+      : undefined;
+    return this.emailJobService.listarHistoricoEmail(page, limitLimitado);
   }
 
   // ─── Cancelamento de curso ──────────────────────────────────────────────────
@@ -92,7 +103,8 @@ export class AdminController {
   emailCancelamento(
     @Body('ra') ra: string,
     @Body('tipo') tipo: 'academico' | 'financeiro' | 'reembolso',
-    @Body('dados') dados?: {
+    @Body('dados')
+    dados?: {
       numeroParcelasRestantes?: number;
       valorParcela?: number;
       somaValor?: number;
@@ -162,7 +174,11 @@ export class AdminController {
     const faltando = alunos.filter((a) => !codigosCache.has(a.codigo));
     const amostra = faltando.slice(0, limite);
 
-    const comCobrancaPendente: { codigo: number; nome: string; qtdPendente: number }[] = [];
+    const comCobrancaPendente: {
+      codigo: number;
+      nome: string;
+      qtdPendente: number;
+    }[] = [];
     let semCobranca = 0;
     let erros = 0;
 
@@ -171,7 +187,11 @@ export class AdminController {
         const lancamentos = await this.sophia.getLancamentosAluno(aluno.codigo);
         const pendentes = lancamentos.filter((l) => l.recebido <= 0);
         if (pendentes.length > 0) {
-          comCobrancaPendente.push({ codigo: aluno.codigo, nome: aluno.nome, qtdPendente: pendentes.length });
+          comCobrancaPendente.push({
+            codigo: aluno.codigo,
+            nome: aluno.nome,
+            qtdPendente: pendentes.length,
+          });
         } else {
           semCobranca++;
         }

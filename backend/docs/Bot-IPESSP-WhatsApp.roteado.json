@@ -28,6 +28,51 @@
           },
           "conditions": [
             {
+              "id": "f3d8a1c4-5e2b-4a99-9c1d-7b6e8f2a3d10",
+              "leftValue": "={{ $env.ZAPI_MODO_TESTE }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals",
+                "name": "filter.operator.notEquals"
+              }
+            },
+            {
+              "id": "b7c9e2f5-1a4d-4b88-8e3f-2c5a9d7b1e60",
+              "leftValue": "={{ $json.body.phone }}",
+              "rightValue": "={{ $env.ZAPI_TELEFONE_TESTE }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        104,
+        0
+      ],
+      "id": "c2f6a9d3-4b8e-4c11-9a2f-8d3e6b1c5f22",
+      "name": "Filtro Modo Teste"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
               "id": "acc6de8f-e2d0-4085-acfa-41d00cc7a1b3",
               "leftValue": "={{ $json.body.fromMe }}",
               "rightValue": "false",
@@ -1500,6 +1545,17 @@
   },
   "connections": {
     "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Filtro Modo Teste",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtro Modo Teste": {
       "main": [
         [
           {
