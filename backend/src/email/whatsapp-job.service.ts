@@ -136,14 +136,9 @@ export class WhatsAppJobService {
           title: '💳 Pagar agora pelo WhatsApp',
         });
       }
-      // Item de lista, não botão nativo de URL: a Z-API aceita
-      // send-button-actions, mas confirmado na prática que o WhatsApp não
-      // entrega botão de URL nessa conta (não verificada como Business
-      // API) -- send-option-list é o mecanismo que comprovadamente entrega.
-      const siteUrl = this.config.get<string>('email.siteUrl');
-      if (siteUrl && !opcoes.some((o) => o.id === 'site')) {
-        opcoes.push({ id: 'site', title: '🌐 Visitar nosso site' });
-      }
+      // O link do site não entra mais na lista de opções -- vira um botão
+      // nativo de URL (send-button-actions) mandado separado, depois da
+      // cobrança -- ver enviarBotaoSite/enviar().
       return '';
     };
     const quickReply = (a: string, b: string) => {
@@ -1036,6 +1031,33 @@ export class WhatsAppJobService {
         );
         await this.enviarTextoComOpcoes(telefone, texto, opcoes);
       }
+    }
+
+    await this.enviarBotaoSite(telefone);
+  }
+
+  /**
+   * Botão nativo de URL pro site institucional, mandado como mensagem
+   * separada depois da cobrança (WhatsApp não entrega imagem/lista + botão
+   * de URL na mesma mensagem). Best-effort: histórico de não entregar em
+   * conta não verificada como Business API (ver enviarBotaoUrl) -- falha
+   * aqui não derruba o envio da cobrança, que já foi mandada antes.
+   */
+  private async enviarBotaoSite(telefone: string): Promise<void> {
+    const siteUrl = this.config.get<string>('email.siteUrl');
+    if (!siteUrl) return;
+
+    try {
+      await this.whatsapp.enviarBotaoUrl(
+        telefone,
+        'Quer conhecer mais sobre a IPESSP?',
+        siteUrl,
+        '🌐 Visitar nosso site',
+      );
+    } catch (err: unknown) {
+      this.logger.warn(
+        `Botão do site falhou para ${telefone} — ${errMsg(err)}`,
+      );
     }
   }
 

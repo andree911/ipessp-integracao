@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
+import sharp from 'sharp';
 
 /** Prioriza o corpo da resposta da Z-API (onde vem o motivo real) sobre o "Request failed with status code X" genérico do axios. */
 function detalheErro(err: unknown): string {
@@ -12,6 +13,13 @@ function detalheErro(err: unknown): string {
   }
   return axiosErr?.message ?? String(err);
 }
+
+// Teto de altura/largura pros banners de cobrança antes de recortar -- acima
+// disso o WhatsApp mostra a imagem "esticada" verticalmente no preview do
+// chat, antes mesmo de abrir (a Z-API manda a imagem como veio, sem o
+// recorte que o app oficial aplica em fotos de câmera). 4:5 é o teto de
+// retrato mais comum em apps de chat/social sem ficar desproporcional.
+const RAZAO_MAX_ALTURA_LARGURA = 1.25;
 
 @Injectable()
 export class WhatsAppService {
@@ -108,6 +116,52 @@ export class WhatsAppService {
     } catch (err) {
       this.logger.warn(
         `WhatsApp: falha ao enviar lista para ${phone} — ${detalheErro(err)}`,
+      );
+      throw err;
+    }
+  }
+
+  /**
+   * Envia um botão nativo de URL (send-button-actions) -- diferente de
+   * enviarListaOpcoes, que abre uma lista dentro do próprio WhatsApp, esse
+   * botão leva direto pro link ao tocar. Histórico: já foi testado antes e
+   * não chegou em conta não verificada como Business API (ver comentário em
+   * enviarListaOpcoes) -- por isso quem chama trata isso como best-effort
+   * (loga e segue, não derruba o fluxo principal). Propaga erro pra quem
+   * chama decidir.
+   */
+  async enviarBotaoUrl(
+    telefone: string,
+    mensagem: string,
+    url: string,
+    label: string,
+  ): Promise<void> {
+    const instanceId = this.config.get<string>('zapi.instanceId');
+    const token = this.config.get<string>('zapi.token');
+    const clientToken = this.config.get<string>('zapi.clientToken');
+
+    if (!instanceId || !token) {
+      throw new Error('Z-API não configurada — botão não pode ser enviado');
+    }
+
+    const apiUrl = `https://api.z-api.io/instances/${instanceId}/token/${token}/send-button-actions`;
+    const phone = telefone.replace(/\D/g, '');
+
+    try {
+      await firstValueFrom(
+        this.http.post(
+          apiUrl,
+          {
+            phone,
+            message: mensagem,
+            buttonActions: [{ id: '1', type: 'URL', url, label }],
+          },
+          { headers: { 'Client-Token': clientToken ?? '' } },
+        ),
+      );
+    } catch (err) {
+      this.logger.warn(
+        `WhatsApp: falha ao enviar botão de URL para ${phone} — ${detalheErro(err)}`,
       );
       throw err;
     }
@@ -230,7 +284,42 @@ export class WhatsAppService {
    * vez por destinatário. Propaga erro — quem chama decide o fallback.
    */
   async baixarImagemBase64(url: string): Promise<string> {
-    return this.baixarComoBase64(url, 'imagem');
+    const base64 = await this.baixarComoBase64(url, 'imagem');
+    return this.normalizarProporcao(base64);
+  }
+
+  /**
+   * Recorta (centralizado, mantendo a largura) qualquer banner mais alto que
+   * RAZAO_MAX_ALTURA_LARGURA -- ver constante no topo do arquivo. Recorte
+   * centralizado porque não há como saber qual parte do banner é a
+   * "importante"; falha ao processar não derruba o envio, manda a imagem
+   * original mesmo fora de proporção.
+   */
+  private async normalizarProporcao(base64: string): Promise<string> {
+    try {
+      const buffer = Buffer.from(base64, 'base64');
+      const meta = await sharp(buffer).metadata();
+      if (!meta.width || !meta.height) return base64;
+
+      const razaoAtual = meta.height / meta.width;
+      if (razaoAtual <= RAZAO_MAX_ALTURA_LARGURA) return base64;
+
+      const alturaAlvo = Math.round(meta.width * RAZAO_MAX_ALTURA_LARGURA);
+      const recortado = await sharp(buffer)
+        .extract({
+          left: 0,
+          top: Math.round((meta.height - alturaAlvo) / 2),
+          width: meta.width,
+          height: alturaAlvo,
+        })
+        .toBuffer();
+      return recortado.toString('base64');
+    } catch (err) {
+      this.logger.warn(
+        `Falha ao normalizar proporção da imagem, enviando original — ${detalheErro(err)}`,
+      );
+      return base64;
+    }
   }
 
   private async baixarComoBase64(
