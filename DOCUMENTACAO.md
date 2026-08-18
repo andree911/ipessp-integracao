@@ -72,8 +72,8 @@ As credenciais de acesso SSH e os arquivos `.env` de produção ficam sob respon
 
 ## 3. Módulos Desenvolvidos
 
-### Site Institucional (portal)
-Site público em Next.js com as páginas institucionais do IPESSP (cursos, graduação, pós-graduação, corpo docente, clínica-escola, laboratórios, biblioteca virtual, revista científica, polo São José dos Campos, entre outras) e os formulários que alimentam o backend de integração: pré-matrícula, fale conosco, ouvidoria, solicitação de eventos e candidaturas (trabalhe conosco, com upload de currículo). Inclui também um **portal do aluno** com login próprio (financeiro, curso, notas, frequência, horário e documentos) — assim como o chatbot, ele consome as rotas do SophiA através do backend, buscando notas, frequência, horário e dados da matrícula diretamente no ERP a cada acesso; o envio de documentos sobe o arquivo para o storage e registra o documento no cadastro do cliente na SophiA.
+### Portal do Aluno
+O site institucional (Next.js, ver Infraestrutura) não é o que está em produção hoje — mas o **portal do aluno** dentro dele é a parte funcionalmente relevante: login próprio, financeiro, curso, notas, frequência, horário e documentos. Assim como o chatbot, consome as rotas do SophiA através do backend — notas, frequência, horário e dados da matrícula são buscados diretamente no ERP a cada acesso; o envio de documentos sobe o arquivo para o storage e registra o documento no cadastro do cliente na SophiA.
 
 ### Backend de Integração (NestJS)
 Camada intermediária entre site, WhatsApp e ERP SophiA:
@@ -97,6 +97,9 @@ Não faz parte do código deste projeto, mas os leads captados pelo site e pelo 
 
 ### Comercial — desenvolvido no `ipessp-core`
 Controle de vendas/matrículas por consultora, cálculo de comissões, dashboard e comparativos mensais, com relatório em PDF por e-mail. Alimentado por uma planilha sincronizada automaticamente do SharePoint/OneDrive a cada 15 minutos (Microsoft Graph) — o upload manual da planilha também continua disponível como alternativa, com detecção automática de colunas (apoio de IA) para lidar com os formatos de arquivo que coexistem hoje.
+
+### Microsoft 365 / Teams — desenvolvido no `ipessp-core`
+Também fora do código deste projeto. Ponto único de integração com o Microsoft Graph (client-credentials, Azure AD): agendamento automático de aulas/reuniões no Teams vinculado às turmas, gestão de usuários e grupos do Microsoft 365 e consulta de sign-ins. A sincronização da planilha comercial via SharePoint (mesma integração Graph) está descrita no módulo Comercial, acima.
 
 ### Régua de Cobrança Automática (E-mail + WhatsApp)
 Rotina automatizada de lembretes e avisos de vencimento, com cron configurável:
