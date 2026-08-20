@@ -84,6 +84,17 @@ export class AdminController {
     return this.emailJobService.listarHistoricoEmail(page, limitLimitado);
   }
 
+  @Get('whatsapp/historico')
+  historicoWhatsApp(
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+  ) {
+    const limitLimitado = limit
+      ? Math.min(limit, HISTORICO_EMAIL_LIMIT_MAX)
+      : undefined;
+    return this.emailJobService.listarHistoricoWhatsApp(page, limitLimitado);
+  }
+
   // ─── Cancelamento de curso ──────────────────────────────────────────────────
 
   @Get('cancelamento/buscar-aluno')

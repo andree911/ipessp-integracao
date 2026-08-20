@@ -382,6 +382,26 @@ export class EmailJobService {
     return { items, total, page, limit };
   }
 
+  /** Histórico de mensagens de cobrança enviadas por WhatsApp — mesma tabela do e-mail, filtrada pelo prefixo 'wpp_'. */
+  async listarHistoricoWhatsApp(
+    page = 1,
+    limit = 50,
+  ): Promise<{
+    items: EmailLog[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
+    const [items, total] = await this.emailLogRepo
+      .createQueryBuilder('log')
+      .where("log.tipo LIKE 'wpp\\_%'")
+      .orderBy('log.enviadoEm', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+    return { items, total, page, limit };
+  }
+
   @Cron('0 7,19 * * *', { name: 'email_job', timeZone: 'America/Sao_Paulo' })
   async runEmailJobCron(): Promise<void> {
     return this.runEmailJob('cron');
