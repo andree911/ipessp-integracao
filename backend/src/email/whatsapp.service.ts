@@ -121,52 +121,6 @@ export class WhatsAppService {
     }
   }
 
-  /**
-   * Envia um botão nativo de URL (send-button-actions) -- diferente de
-   * enviarListaOpcoes, que abre uma lista dentro do próprio WhatsApp, esse
-   * botão leva direto pro link ao tocar. Histórico: já foi testado antes e
-   * não chegou em conta não verificada como Business API (ver comentário em
-   * enviarListaOpcoes) -- por isso quem chama trata isso como best-effort
-   * (loga e segue, não derruba o fluxo principal). Propaga erro pra quem
-   * chama decidir.
-   */
-  async enviarBotaoUrl(
-    telefone: string,
-    mensagem: string,
-    url: string,
-    label: string,
-  ): Promise<void> {
-    const instanceId = this.config.get<string>('zapi.instanceId');
-    const token = this.config.get<string>('zapi.token');
-    const clientToken = this.config.get<string>('zapi.clientToken');
-
-    if (!instanceId || !token) {
-      throw new Error('Z-API não configurada — botão não pode ser enviado');
-    }
-
-    const apiUrl = `https://api.z-api.io/instances/${instanceId}/token/${token}/send-button-actions`;
-    const phone = telefone.replace(/\D/g, '');
-
-    try {
-      await firstValueFrom(
-        this.http.post(
-          apiUrl,
-          {
-            phone,
-            message: mensagem,
-            buttonActions: [{ id: '1', type: 'URL', url, label }],
-          },
-          { headers: { 'Client-Token': clientToken ?? '' } },
-        ),
-      );
-    } catch (err) {
-      this.logger.warn(
-        `WhatsApp: falha ao enviar botão de URL para ${phone} — ${detalheErro(err)}`,
-      );
-      throw err;
-    }
-  }
-
   /** Consulta se a sessão do WhatsApp está de fato pareada na Z-API (independe de qualquer envio). */
   async verificarConexao(): Promise<{
     connected: boolean;

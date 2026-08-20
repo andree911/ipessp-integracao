@@ -1037,26 +1037,26 @@ export class WhatsAppJobService {
   }
 
   /**
-   * Botão nativo de URL pro site institucional, mandado como mensagem
-   * separada depois da cobrança (WhatsApp não entrega imagem/lista + botão
-   * de URL na mesma mensagem). Best-effort: histórico de não entregar em
-   * conta não verificada como Business API (ver enviarBotaoUrl) -- falha
-   * aqui não derruba o envio da cobrança, que já foi mandada antes.
+   * Link pro site institucional, mandado como mensagem separada depois da
+   * cobrança (WhatsApp não entrega imagem/lista + botão de URL na mesma
+   * mensagem). Texto simples em vez do botão nativo de URL
+   * (send-button-actions) -- esse nunca chegou a entregar em conta não
+   * verificada como Business API; texto com link sempre entrega, é o mesmo
+   * mecanismo já usado no resto do envio. Best-effort: falha aqui não
+   * derruba o envio da cobrança, que já foi mandada antes.
    */
   private async enviarBotaoSite(telefone: string): Promise<void> {
     const siteUrl = this.config.get<string>('email.siteUrl');
     if (!siteUrl) return;
 
     try {
-      await this.whatsapp.enviarBotaoUrl(
+      await this.whatsapp.enviarTexto(
         telefone,
-        'Quer conhecer mais sobre a IPESSP?',
-        siteUrl,
-        '🌐 Visitar nosso site',
+        `Quer conhecer mais sobre a IPESSP?\n${siteUrl}`,
       );
     } catch (err: unknown) {
       this.logger.warn(
-        `Botão do site falhou para ${telefone} — ${errMsg(err)}`,
+        `Mensagem do site falhou para ${telefone} — ${errMsg(err)}`,
       );
     }
   }
