@@ -1,27 +1,21 @@
 {
-  "updatedAt": "2026-07-31T19:59:31.973Z",
-  "createdAt": "2026-07-31T19:59:31.973Z",
-  "id": "tdfbDlNUscEPSm6n",
-  "name": "Bot IPESSP WhatsApp Core",
-  "description": null,
-  "active": false,
-  "isArchived": false,
+  "name": "Bot IPESSP WhatsApp",
   "nodes": [
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "91b8cdcd-7d20-4220-948e-0e227cec1feb",
+        "path": "930c3dd4-8cd0-4d66-a615-e2a959fedaf8",
         "options": {}
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        -2064,
-        1040
+        0,
+        0
       ],
-      "id": "38363721-8ff7-4e75-a857-5a374a94e279",
+      "id": "8d51b63a-3864-473b-8386-2e77c53ab492",
       "name": "Webhook",
-      "webhookId": "91b8cdcd-7d20-4220-948e-0e227cec1feb"
+      "webhookId": "930c3dd4-8cd0-4d66-a615-e2a959fedaf8"
     },
     {
       "parameters": {
@@ -62,10 +56,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        -1960,
-        1040
+        104,
+        0
       ],
-      "id": "a1e4f8b2-9c3d-4a67-b1e5-6f8d2c9a4e11",
+      "id": "c2f6a9d3-4b8e-4c11-9a2f-8d3e6b1c5f22",
       "name": "Filtro Modo Teste"
     },
     {
@@ -97,10 +91,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        -1856,
-        1040
+        208,
+        0
       ],
-      "id": "7b1cf9e8-0e6f-431d-bcbb-524fa19b8346",
+      "id": "5295bbf2-ed64-4e33-b671-bbfcf1c5eb74",
       "name": "If"
     },
     {
@@ -130,10 +124,10 @@
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.4,
       "position": [
-        -1488,
-        1152
+        576,
+        112
       ],
-      "id": "919553cd-433f-4de5-8cce-f3ef44b9b92a",
+      "id": "2e9a0279-64e1-433d-b6d8-4c8b0265e765",
       "name": "Consultar Financeiro"
     },
     {
@@ -143,10 +137,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1472,
-        944
+        592,
+        -96
       ],
-      "id": "dcc77373-5d8f-4b12-b7a1-4bcbaf31340f",
+      "id": "c7a8b9d0-1111-4444-8888-000000000010",
       "name": "Corrigir Formatação WhatsApp"
     },
     {
@@ -174,10 +168,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        -1296,
-        944
+        768,
+        -96
       ],
-      "id": "ea31de8c-aa7f-420f-81eb-47b8482bfd0e",
+      "id": "12ad979e-126f-48c9-9ba1-681ae611ce17",
       "name": "Enviar Resposta WhatsApp"
     },
     {
@@ -205,10 +199,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        -1104,
-        944
+        960,
+        -96
       ],
-      "id": "49fd4907-4260-4bb4-b38d-dc1bebb45c58",
+      "id": "c1d2e3f4-2222-2222-2222-000000000003",
       "name": "Registrar Interação Bot",
       "onError": "continueRegularOutput"
     },
@@ -240,10 +234,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        -1760,
-        832
+        304,
+        -208
       ],
-      "id": "dd15bd1e-a7ff-4978-b141-d3da227eaa2e",
+      "id": "4d8c4981-d2a4-4708-aece-5f8f97909284",
       "name": "If1"
     },
     {
@@ -271,10 +265,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        -1312,
-        768
+        752,
+        -272
       ],
-      "id": "a77eb9d6-a6dc-4d2f-8efd-23e69b838a3e",
+      "id": "bf3daa82-2ef0-42a1-8f3f-8bd9f6e4f688",
       "name": "Responder Mídia Não Suportada"
     },
     {
@@ -303,10 +297,10 @@
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.4,
       "position": [
-        -1200,
-        1440
+        864,
+        400
       ],
-      "id": "76de744b-3feb-40f8-adc4-13575b232c67",
+      "id": "dd93ad17-74ca-48ed-9d0e-70f7dd616e71",
       "name": "Registrar Lead CRM"
     },
     {
@@ -321,10 +315,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
       "typeVersion": 1.3,
       "position": [
-        -1776,
-        1152
+        288,
+        112
       ],
-      "id": "3a4f6c25-bb66-4325-a6bc-00b7af4480dc",
+      "id": "66c10349-ce56-4338-932c-0ff9a69d87dc",
       "name": "Anthropic Chat Model",
       "credentials": {
         "anthropicApi": {
@@ -362,10 +356,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        -1664,
-        544
+        400,
+        -496
       ],
-      "id": "2505d789-7f17-44d0-a49b-55c515a828c5",
+      "id": "0142f6c9-6f74-4cd3-a8d4-92ad1beec7cc",
       "name": "If2"
     },
     {
@@ -393,10 +387,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        -1552,
-        768
+        512,
+        -272
       ],
-      "id": "72a9d8e5-6547-448b-b3c6-52d919b836d7",
+      "id": "15705528-818b-4218-a921-946f1764aef8",
       "name": "Enviar Menu Inicial"
     },
     {
@@ -427,10 +421,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        -1280,
-        608
+        784,
+        -432
       ],
-      "id": "88604526-e86b-4363-b43c-1d015a98adf5",
+      "id": "5d5933cc-9e1f-4e48-be41-774711af500d",
       "name": "If3"
     },
     {
@@ -440,10 +434,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1056,
-        496
+        1008,
+        -544
       ],
-      "id": "5700ee54-19bf-47be-87af-b5624dcc21b7",
+      "id": "53bbe2c1-a480-4336-bc5e-c41388de4ca9",
       "name": "Mapear Seleção do Menu"
     },
     {
@@ -472,10 +466,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        -1456,
-        448
+        608,
+        -592
       ],
-      "id": "e36fb763-687f-41de-8cea-f3b8e7d3ccc4",
+      "id": "b25e373b-72d9-4915-93f2-24d92af55757",
       "name": "Buscar CPF por Telefone",
       "onError": "continueRegularOutput"
     },
@@ -486,10 +480,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1248,
-        448
+        816,
+        -592
       ],
-      "id": "d66e5f61-d1e1-48ac-8135-0f88ddf43509",
+      "id": "a32d0ca6-3f5e-45be-96fb-227928b4e666",
       "name": "Injetar CPF no Contexto"
     },
     {
@@ -518,10 +512,10 @@
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.4,
       "position": [
-        -1104,
-        1392
+        960,
+        352
       ],
-      "id": "938bd905-dfa3-49d5-a34b-2819ab275b95",
+      "id": "b56d9a10-4f2c-4eb6-ab34-91a597e9fe7a",
       "name": "Salvar CPF do Telefone"
     },
     {
@@ -546,10 +540,10 @@
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.4,
       "position": [
-        -1104,
-        1536
+        960,
+        496
       ],
-      "id": "24c1c41c-6a6e-459c-b958-c4246a96b7ee",
+      "id": "0265ede2-8d01-4067-a909-994474a35ac0",
       "name": "Abrir Chamado TI"
     },
     {
@@ -579,10 +573,10 @@
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.4,
       "position": [
-        -1008,
-        1632
+        1056,
+        592
       ],
-      "id": "99f58e66-b3b9-45b2-972f-6d441517f042",
+      "id": "5c5a574a-782e-4406-b0e7-17659206dd06",
       "name": "Consultar Chamados TI"
     },
     {
@@ -612,10 +606,10 @@
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.4,
       "position": [
-        -912,
-        1536
+        1152,
+        496
       ],
-      "id": "23898d8c-0f80-41e4-9a79-94d26e1f6277",
+      "id": "a72c4c3a-b59c-4b2e-87fd-372a0affbb5d",
       "name": "Consultar Secretaria"
     },
     {
@@ -645,10 +639,10 @@
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.4,
       "position": [
-        -912,
-        1728
+        1152,
+        688
       ],
-      "id": "aa8c3c8d-fdd4-473b-b56b-3a0251e45c86",
+      "id": "f23b2ff4-07b2-45e4-9c9e-c60932f641aa",
       "name": "Consultar Professor"
     },
     {
@@ -678,10 +672,10 @@
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.4,
       "position": [
-        -816,
-        1664
+        1248,
+        624
       ],
-      "id": "88632be4-1643-4afa-b11d-ba8a7afaa1a2",
+      "id": "79c261d9-2391-4ada-8708-0499ab7f9fd5",
       "name": "Listar Alunos da Disciplina"
     },
     {
@@ -710,10 +704,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        -864,
-        496
+        1200,
+        -544
       ],
-      "id": "c29b8075-392a-46c1-9dcb-8eaf9b8eb787",
+      "id": "b25e373b-72d9-4915-93f2-24d92af55758",
       "name": "Buscar CPF por Telefone (Menu)",
       "onError": "continueRegularOutput"
     },
@@ -724,10 +718,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -672,
-        496
+        1400,
+        -544
       ],
-      "id": "b4849f19-21fc-4a18-a2eb-091476074c76",
+      "id": "a32d0ca6-3f5e-45be-96fb-227928b4e667",
       "name": "Injetar CPF no Menu"
     },
     {
@@ -748,10 +742,10 @@
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.4,
       "position": [
-        -624,
-        1440
+        1440,
+        400
       ],
-      "id": "cfa3cf65-e3c3-46cf-a670-4ece7a97ed51",
+      "id": "d4e5f6a7-3333-3333-3333-000000000001",
       "name": "Consultar Cursos"
     },
     {
@@ -780,10 +774,10 @@
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.4,
       "position": [
-        -528,
-        1536
+        1536,
+        496
       ],
-      "id": "8bd151fd-f264-4beb-aecb-1ba61de024f7",
+      "id": "d4e5f6a7-3333-3333-3333-000000000002",
       "name": "Enviar Boleto PDF"
     },
     {
@@ -793,10 +787,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1040,
-        448
+        1024,
+        -592
       ],
-      "id": "617716a3-0af8-427e-a88c-e6d04889ca3f",
+      "id": "b3ee3f29-2c6b-4755-81bd-623bbee31927",
       "name": "Classificar por Regra"
     },
     {
@@ -827,10 +821,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        -832,
-        448
+        1232,
+        -592
       ],
-      "id": "94de615e-2fbc-4e90-a1c1-b888cb880e13",
+      "id": "c6b12996-2e8f-4283-a2f9-347eb7350032",
       "name": "If4"
     },
     {
@@ -844,10 +838,10 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        -624,
-        544
+        1440,
+        -496
       ],
-      "id": "27c01ac6-4182-49a3-9f02-c4fdcc7c04e4",
+      "id": "4d3b879c-4543-47ea-93f8-dc38a8df5008",
       "name": "Classificador de Intenção (IA)"
     },
     {
@@ -857,11 +851,24 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -416,
-        544
+        1648,
+        -496
       ],
-      "id": "72783e1f-fb09-4466-9c85-b25bbfd26d31",
+      "id": "edfba8a8-d5ff-41b9-88e9-6db47dc70e02",
       "name": "Interpretar Categoria IA"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nconst tipo = item.cpfInfo?.tipo || null;\nlet categoria = item.categoria || null;\n\n// Guarda centralizada: roda depois que a categoria foi definida por QUALQUER\n// caminho (regex direto, sticky-cache, ou classificador de IA) -- nunca\n// deixa 'professor' passar sem confirmar tipo === 'professor' no cache, e\n// nunca deixa professor cair no financeiro. As duas checagens já moraram\n// espalhadas entre este nó e \"Classificar por Regra\" ao mesmo tempo; um bug\n// real (pego pela suíte de testes) veio de uma delas ficar só na metade\n// antiga quando este nó foi criado. Agora moram só aqui, as duas.\nif (categoria === 'professor' && tipo !== 'professor') categoria = null;\nif (categoria === 'financeiro' && tipo === 'professor') categoria = null;\n\n// Único ponto que grava a categoria resolvida na sessão do telefone -- roda\n// DEPOIS da guarda acima, pra nunca gravar uma categoria que a guarda acabou\n// de invalidar no mesmo turno (isso já deixava o cache achando que a\n// conversa \"ainda era sobre financeiro\" mesmo com um professor barrado ali).\n// Só grava quando sobra uma categoria válida: \"outro\"/null não apaga a\n// memória de qual era o último assunto real, pra sobreviver a uma mensagem\n// ambígua no meio da conversa.\nconst staticData = $getWorkflowStaticData('global');\nconst phone = item.body.phone;\nstaticData.sessoes = staticData.sessoes || {};\nstaticData.sessoes[phone] = staticData.sessoes[phone] || {};\nconst sessao = staticData.sessoes[phone];\n\n// Snapshot de ANTES desta escrita: \"Carregar Sessão do Telefone\" (próximo nó)\n// precisa saber qual era a categoria no INÍCIO deste turno, não a que a\n// gente acabou de gravar agora embaixo -- senão toda conversa pareceria \"em\n// andamento\" já na primeira mensagem, porque leria o próprio valor que este\n// nó escreveu um instante antes, no mesmo turno.\nconst categoriaAntesDesteTurno = sessao.categoria || null;\nconst categoriaAntesDesteTurnoTs = sessao.categoriaTs || null;\n\nif (categoria) {\n  sessao.categoria = categoria;\n  sessao.categoriaTs = Date.now();\n}\n\nreturn [{ json: { ...item, categoria, categoriaAntesDesteTurno, categoriaAntesDesteTurnoTs } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1856,
+        -650
+      ],
+      "id": "b1e5b1a0-0003-4a11-9a11-aplicarguarda1",
+      "name": "Aplicar Guarda de Categoria"
     },
     {
       "parameters": {
@@ -892,10 +899,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        -208,
-        240
+        1856,
+        -800
       ],
-      "id": "bb48c2ef-8f99-44e9-b2a2-943c10d98cb1",
+      "id": "d31b05bf-854c-411a-b6e4-008f292a4d46",
       "name": "Roteador: Financeiro"
     },
     {
@@ -927,10 +934,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        0,
-        352
+        2064,
+        -700
       ],
-      "id": "4a164213-31b3-42ff-bd81-b8ba380f583a",
+      "id": "d8796516-427a-4536-92e4-48b73c231ab4",
       "name": "Roteador: Secretaria"
     },
     {
@@ -962,10 +969,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        208,
-        448
+        2272,
+        -600
       ],
-      "id": "ed005b9c-ea39-4f1c-8478-f7148b27be67",
+      "id": "089b592d-3056-4206-84f7-a60ad30ae2ae",
       "name": "Roteador: TI"
     },
     {
@@ -997,10 +1004,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        416,
-        544
+        2480,
+        -500
       ],
-      "id": "9854ed98-2434-4edc-b7fc-57bbf915bba6",
+      "id": "fd9fa4dd-86a2-47ff-976d-90a8bf0dbcc0",
       "name": "Roteador: Avisos"
     },
     {
@@ -1032,10 +1039,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        624,
-        640
+        2688,
+        -400
       ],
-      "id": "90c22895-2046-470a-a1df-b916f6bb71ba",
+      "id": "f8d0c633-1014-4098-bc26-4170208076ca",
       "name": "Roteador: Calendário"
     },
     {
@@ -1067,10 +1074,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        832,
-        752
+        2896,
+        -300
       ],
-      "id": "c9a8e68c-1de9-4a1a-bf43-98963c3c2734",
+      "id": "076dbd2a-a1a2-4845-b612-33b2fdead0bc",
       "name": "Roteador: Leads"
     },
     {
@@ -1102,10 +1109,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        1040,
-        848
+        3104,
+        -200
       ],
-      "id": "fc2ac921-39a8-4c77-9ac3-807297293528",
+      "id": "baabaa75-d4a8-4389-bfcf-42e722c532fe",
       "name": "Roteador: Professor"
     },
     {
@@ -1119,10 +1126,10 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        0,
-        160
+        2064,
+        -880
       ],
-      "id": "904ac8af-d246-443b-b11a-88e7a8f1ea9f",
+      "id": "5b566366-a9e9-4c2c-bf09-10316c7199e6",
       "name": "Agent Financeiro"
     },
     {
@@ -1136,10 +1143,10 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        208,
-        272
+        2272,
+        -780
       ],
-      "id": "85139136-9e50-436f-8b5e-3ee0c61677ef",
+      "id": "b7d45b90-28c3-426f-a4b2-26d841b1b853",
       "name": "Agent Secretaria"
     },
     {
@@ -1153,10 +1160,10 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        416,
-        368
+        2480,
+        -680
       ],
-      "id": "f6c25712-6716-4884-a55d-265ed9c34be6",
+      "id": "c996a144-06d6-4949-b672-2172f2a5ce70",
       "name": "Agent TI"
     },
     {
@@ -1171,10 +1178,10 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        1040,
-        672
+        3104,
+        -380
       ],
-      "id": "92171fb5-a99b-4d30-aa2e-8fd584e038fa",
+      "id": "02a94921-530b-47af-8090-6eee204eb783",
       "name": "Agent Leads"
     },
     {
@@ -1188,10 +1195,10 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        1248,
-        768
+        3312,
+        -280
       ],
-      "id": "89b70911-f32a-49ab-84c4-3c98135d1cd6",
+      "id": "271988c2-f0cb-455c-8d00-08d922fa94fe",
       "name": "Agent Professor"
     },
     {
@@ -1203,10 +1210,10 @@
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.4,
       "position": [
-        0,
-        0
+        2064,
+        -1040
       ],
-      "id": "b2aeb0f2-953d-41e0-bd0a-93a975157e00",
+      "id": "1de5cb1a-ec32-4b85-8199-3df2c38e4c14",
       "name": "Memory Financeiro"
     },
     {
@@ -1218,10 +1225,10 @@
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.4,
       "position": [
-        208,
-        112
+        2272,
+        -940
       ],
-      "id": "c929b96d-1f36-4726-99e3-d661409c3441",
+      "id": "5a4e5c64-2c3c-4e6b-a6ff-8d15e9628242",
       "name": "Memory Secretaria"
     },
     {
@@ -1233,10 +1240,10 @@
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.4,
       "position": [
-        416,
-        208
+        2480,
+        -840
       ],
-      "id": "1967a551-144d-45c5-b432-c10cb500783c",
+      "id": "3630bb3b-4769-419a-a93a-c1332d94a46c",
       "name": "Memory TI"
     },
     {
@@ -1248,10 +1255,10 @@
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.4,
       "position": [
-        1040,
-        512
+        3104,
+        -540
       ],
-      "id": "7a7f954a-3150-4994-a7ba-5622362bd2fa",
+      "id": "aedf7e95-4de0-4a1c-b5aa-70ac86557efe",
       "name": "Memory Leads"
     },
     {
@@ -1263,10 +1270,10 @@
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.4,
       "position": [
-        1248,
-        608
+        3312,
+        -440
       ],
-      "id": "a5ad22a6-0e05-4274-a6a3-0b5e376e7ef5",
+      "id": "29d1c970-a1fe-405d-80b9-1d0a79ed88c0",
       "name": "Memory Professor"
     },
     {
@@ -1286,10 +1293,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        624,
-        480
+        2688,
+        -560
       ],
-      "id": "657f9296-c154-45d7-b940-50f9dc90d61d",
+      "id": "b1f081ef-e3d2-4e51-b042-7aea353654b3",
       "name": "Buscar Avisos",
       "onError": "continueRegularOutput"
     },
@@ -1300,10 +1307,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        832,
-        480
+        2896,
+        -560
       ],
-      "id": "962da674-c0d6-4f43-811c-299e4c66fe3c",
+      "id": "8eaccd98-0e4f-490f-9c3c-29346582034e",
       "name": "Formatar Avisos"
     },
     {
@@ -1323,10 +1330,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        832,
-        592
+        2896,
+        -460
       ],
-      "id": "0a6d3df2-2ac5-40da-ad97-fe42ed41b144",
+      "id": "a54b3173-8332-45ce-b0d9-515ab0718766",
       "name": "Buscar Calendário",
       "onError": "continueRegularOutput"
     },
@@ -1337,10 +1344,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1040,
-        592
+        3104,
+        -460
       ],
-      "id": "0131a54b-121b-4152-83e8-2ef1e8f11c3b",
+      "id": "1175efed-8f89-4f83-8d98-16c3d27722e8",
       "name": "Formatar Calendário"
     },
     {
@@ -1365,153 +1372,11 @@
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.4,
       "position": [
-        -1232,
-        2144
+        832,
+        1100
       ],
-      "id": "f709695f-36fb-483d-9f85-db6a6e9d0b1a",
+      "id": "aaa3b0ab-ad12-4c4a-a3e1-272f3dbe10fa",
       "name": "Enviar Informativo do Curso"
-    },
-    {
-      "parameters": {
-        "toolDescription": "Cadastra um novo aluno no sistema (upsert por CPF). Use quando o usuário quiser se matricular e ainda não tiver cadastro. Colete nome completo, CPF, telefone e email antes de chamar. Se o CPF já existir, apenas retorna os dados sem criar duplicata.",
-        "method": "POST",
-        "url": "={{ $env.IPESSP_CORE_URL }}/ia/prospectivo",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "x-admin-key",
-              "value": "={{ $env.CORE_API_KEY }}"
-            },
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n  \"nome\": \"={{ $fromAI('nome', 'Nome completo do aluno') }}\",\n  \"cpf\": \"={{ $fromAI('cpf', 'CPF do aluno, somente números') }}\",\n  \"telefone\": \"={{ $('Webhook').item.json.body.phone }}\",\n  \"email\": \"={{ $fromAI('email', 'Email do aluno, se informado, senão string vazia') }}\"\n}",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequestTool",
-      "typeVersion": 4.4,
-      "position": [
-        1344,
-        784
-      ],
-      "id": "aa001122-3344-5566-7788-99aabbcc0001",
-      "name": "Cadastrar Aluno"
-    },
-    {
-      "parameters": {
-        "toolDescription": "Realiza a matrícula do aluno em um curso. Use SOMENTE após ter cadastrado o aluno com a tool Cadastrar Aluno. Busca o curso pelo nome ou ID e cria a matrícula. O financeiro e documentação são finalizados pela secretaria posteriormente.",
-        "method": "POST",
-        "url": "={{ $env.IPESSP_CORE_URL }}/ia/matricula",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "x-admin-key",
-              "value": "={{ $env.CORE_API_KEY }}"
-            },
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n  \"cpf\": \"={{ $fromAI('cpf', 'CPF do aluno, somente números') }}\",\n  \"cursoNome\": \"={{ $fromAI('cursoNome', 'Nome do curso de interesse informado pelo aluno') }}\"\n}",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequestTool",
-      "typeVersion": 4.4,
-      "position": [
-        1440,
-        880
-      ],
-      "id": "aa001122-3344-5566-7788-99aabbcc0002",
-      "name": "Realizar Matrícula"
-    },
-    {
-      "parameters": {
-        "toolDescription": "Gera o boleto bancário (linha digitável, QR Code PIX e link) para uma cobrança que ainda não tem código de barras. Use quando Consultar Financeiro retornar boletoPendente: true em alguma pendência. Passe o id da cobrança como cobrancaId.",
-        "method": "POST",
-        "url": "={{ $env.IPESSP_CORE_URL }}/ia/gerar-boleto",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "x-admin-key",
-              "value": "={{ $env.CORE_API_KEY }}"
-            },
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n  \"cobrancaId\": {{ $fromAI('cobrancaId', 'ID numérico da cobrança retornado por Consultar Financeiro', 'number') }}\n}",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequestTool",
-      "typeVersion": 4.4,
-      "position": [
-        1440,
-        976
-      ],
-      "id": "aa001122-3344-5566-7788-99aabbcc0003",
-      "name": "Gerar Boleto"
-    },
-    {
-      "parameters": {
-        "toolDescription": "Verifica internamente se o usuário atual já tem um lead em aberto no CRM. Devolve só { existeLeadAberto: true/false } -- sem nome, curso ou status. Use no início do atendimento só pra seu controle interno; o resultado nunca deve ser mencionado, sugerido ou usado pra contextualizar a conversa com o usuário, de nenhuma forma.",
-        "url": "={{ $env.IPESSP_CORE_URL }}/crm/leads/verificar",
-        "sendQuery": true,
-        "queryParameters": {
-          "parameters": [
-            {
-              "name": "telefone",
-              "value": "={{ $('Webhook').item.json.body.phone }}"
-            }
-          ]
-        },
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "x-admin-key",
-              "value": "={{ $env.CORE_API_KEY }}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequestTool",
-      "typeVersion": 4.4,
-      "position": [
-        864,
-        496
-      ],
-      "id": "b1e5b1a0-0001-4a11-9a11-verificarlead01",
-      "name": "Verificar Lead CRM"
-    },
-    {
-      "parameters": {
-        "jsCode": "const item = $input.first().json;\nconst tipo = item.cpfInfo?.tipo || null;\nlet categoria = item.categoria || null;\n\n// Guarda centralizada: roda depois que a categoria foi definida por QUALQUER\n// caminho (regex direto, sticky-cache, ou classificador de IA) -- nunca\n// deixa 'professor' passar sem confirmar tipo === 'professor' no cache, e\n// nunca deixa professor cair no financeiro. As duas checagens já moraram\n// espalhadas entre este nó e \"Classificar por Regra\" ao mesmo tempo; um bug\n// real (pego pela suíte de testes) veio de uma delas ficar só na metade\n// antiga quando este nó foi criado. Agora moram só aqui, as duas.\nif (categoria === 'professor' && tipo !== 'professor') categoria = null;\nif (categoria === 'financeiro' && tipo === 'professor') categoria = null;\n\n// Único ponto que grava a categoria resolvida na sessão do telefone -- roda\n// DEPOIS da guarda acima, pra nunca gravar uma categoria que a guarda acabou\n// de invalidar no mesmo turno (isso já deixava o cache achando que a\n// conversa \"ainda era sobre financeiro\" mesmo com um professor barrado ali).\n// Só grava quando sobra uma categoria válida: \"outro\"/null não apaga a\n// memória de qual era o último assunto real, pra sobreviver a uma mensagem\n// ambígua no meio da conversa.\nconst staticData = $getWorkflowStaticData('global');\nconst phone = item.body.phone;\nstaticData.sessoes = staticData.sessoes || {};\nstaticData.sessoes[phone] = staticData.sessoes[phone] || {};\nconst sessao = staticData.sessoes[phone];\n\n// Snapshot de ANTES desta escrita: \"Carregar Sessão do Telefone\" (próximo nó)\n// precisa saber qual era a categoria no INÍCIO deste turno, não a que a\n// gente acabou de gravar agora embaixo -- senão toda conversa pareceria \"em\n// andamento\" já na primeira mensagem, porque leria o próprio valor que este\n// nó escreveu um instante antes, no mesmo turno.\nconst categoriaAntesDesteTurno = sessao.categoria || null;\nconst categoriaAntesDesteTurnoTs = sessao.categoriaTs || null;\n\nif (categoria) {\n  sessao.categoria = categoria;\n  sessao.categoriaTs = Date.now();\n}\n\nreturn [{ json: { ...item, categoria, categoriaAntesDesteTurno, categoriaAntesDesteTurnoTs } }];"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1750,
-        -650
-      ],
-      "id": "b1e5b1a0-0003-4a11-9a11-aplicarguarda1",
-      "name": "Aplicar Guarda de Categoria"
     },
     {
       "parameters": {
@@ -1535,10 +1400,10 @@
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.4,
       "position": [
-        -1488,
-        1332
+        576,
+        292
       ],
-      "id": "c0809b4b-228d-4f9f-8839-c288e12f86de",
+      "id": "7d5d94f9-78aa-48c2-907d-1f5cfc382b39",
       "name": "Encaminhar para Humano (Financeiro)"
     },
     {
@@ -1563,10 +1428,10 @@
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.4,
       "position": [
-        -912,
-        1716
+        1152,
+        676
       ],
-      "id": "ac51c916-859c-4840-8c55-1ecd15103217",
+      "id": "244b7e5c-d2e6-4c12-9e94-6e6c3b6b5a6e",
       "name": "Encaminhar para Humano (Secretaria)"
     },
     {
@@ -1663,6 +1528,21 @@
       "name": "Montar Preâmbulo"
     }
   ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "body": {
+            "phone": "5511999999999",
+            "fromMe": false,
+            "text": {
+              "message": "Olá bom dia"
+            }
+          }
+        }
+      }
+    ]
+  },
   "connections": {
     "Webhook": {
       "main": [
@@ -1983,6 +1863,17 @@
         [
           {
             "node": "Aplicar Guarda de Categoria",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aplicar Guarda de Categoria": {
+      "main": [
+        [
+          {
+            "node": "Carregar Sessão do Telefone",
             "type": "main",
             "index": 0
           }
@@ -2316,61 +2207,6 @@
         ]
       ]
     },
-    "Cadastrar Aluno": {
-      "ai_tool": [
-        [
-          {
-            "node": "Agent Leads",
-            "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Realizar Matrícula": {
-      "ai_tool": [
-        [
-          {
-            "node": "Agent Leads",
-            "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Gerar Boleto": {
-      "ai_tool": [
-        [
-          {
-            "node": "Agent Financeiro",
-            "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Verificar Lead CRM": {
-      "ai_tool": [
-        [
-          {
-            "node": "Agent Leads",
-            "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Aplicar Guarda de Categoria": {
-      "main": [
-        [
-          {
-            "node": "Carregar Sessão do Telefone",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Encaminhar para Humano (Financeiro)": {
       "ai_tool": [
         [
@@ -2460,57 +2296,17 @@
       ]
     }
   },
+  "active": false,
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "staticData": null,
-  "meta": null,
-  "nodeGroups": [],
-  "pinData": {
-    "Webhook": [
-      {
-        "json": {
-          "body": {
-            "phone": "5511999999999",
-            "fromMe": false,
-            "text": {
-              "message": "Olá bom dia"
-            }
-          }
-        }
-      }
-    ]
+  "versionId": "96a8db99-fe0f-471c-a709-58fb78823c9f",
+  "meta": {
+    "templateCredsSetupCompleted": true
   },
-  "versionId": "7b1ed30d-5c38-43fa-a8b0-1eb44b5bd9cd",
-  "activeVersionId": null,
-  "versionCounter": 1,
-  "triggerCount": 0,
-  "sourceWorkflowId": null,
-  "tags": [],
-  "shared": [
-    {
-      "updatedAt": "2026-07-31T19:59:31.973Z",
-      "createdAt": "2026-07-31T19:59:31.973Z",
-      "role": "workflow:owner",
-      "workflowId": "tdfbDlNUscEPSm6n",
-      "projectId": "4Oi6ABLjKW2CV0QB",
-      "project": {
-        "updatedAt": "2026-07-24T18:39:52.353Z",
-        "createdAt": "2026-06-13T15:57:36.367Z",
-        "id": "4Oi6ABLjKW2CV0QB",
-        "name": "TI IPESSP <ti@ipessp.edu.br>",
-        "type": "personal",
-        "icon": null,
-        "description": null,
-        "customTelemetryTags": [],
-        "creatorId": "b0724f3f-a668-4262-ac69-3e2d78e00267"
-      }
-    }
-  ],
-  "versionMetadata": {
-    "name": null,
-    "description": null
-  }
+  "nodeGroups": [],
+  "id": "GWBxdNDxtAgrI8vk",
+  "tags": []
 }
