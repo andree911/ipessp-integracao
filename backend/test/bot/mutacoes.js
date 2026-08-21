@@ -17,7 +17,7 @@ const path = require('path');
 const { execFileSync } = require('child_process');
 
 const RAIZ = path.resolve(__dirname, '../..');
-const ORIG = path.join(RAIZ, 'docs/Bot-IPESSP-WhatsApp.roteado.json');
+const ORIG = path.join(RAIZ, 'n8n/Bot-IPESSP-WhatsApp.roteado.json');
 const TMP = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'bot-mut-')), 'mutante.json');
 
 const no = (wf, nome) => wf.nodes.find((n) => n.name === nome);

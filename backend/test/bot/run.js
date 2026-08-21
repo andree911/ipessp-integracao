@@ -27,7 +27,7 @@ const opcao = (nome) => {
 };
 
 const RAIZ = path.resolve(__dirname, '../..');
-const WORKFLOW = path.resolve(opcao('workflow') || path.join(RAIZ, 'docs/Bot-IPESSP-WhatsApp.roteado.json'));
+const WORKFLOW = path.resolve(opcao('workflow') || path.join(RAIZ, 'n8n/Bot-IPESSP-WhatsApp.roteado.json'));
 
 // A cópia do core mora em outro repositório; se estiver ao lado, a suíte também
 // checa se as duas continuam em sincronia (já saíram, e ninguém percebeu).

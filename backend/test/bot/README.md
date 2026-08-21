@@ -16,7 +16,7 @@ BOT_TEST_STACK=1 node test/bot/run.js     # stack trace nas falhas
 ```
 
 O código dos nós **não é copiado** pra cá: cada suíte lê o
-`docs/Bot-IPESSP-WhatsApp.roteado.json` e executa o `jsCode`/`systemMessage` que
+`n8n/Bot-IPESSP-WhatsApp.roteado.json` e executa o `jsCode`/`systemMessage` que
 está lá dentro. Editou o fluxo no n8n e reexportou por cima do JSON? A suíte
 testa a versão nova, sem passo intermediário.
 
