@@ -2,7 +2,7 @@
 
 # Site institucional IPESSP (frontend)
 
-Site institucional + formulários públicos do IPESSP (Instituto de Pesquisa e Educação em Saúde de São Paulo), incluindo o fluxo de solicitação de matrícula. Consome a API do backend NestJS do projeto irmão `integracao-sophia-n8n` (documentado em `../integracao-sophia-n8n/documentacao/BACKEND.md`) — nunca fala com o Sophia ou com o Mercado Pago diretamente.
+Site institucional + formulários públicos do IPESSP (Instituto de Pesquisa e Educação em Saúde de São Paulo), incluindo o fluxo de solicitação de matrícula. Consome a API do backend NestJS do projeto irmão `integracao-sophia-n8n` (documentado em `../integracao-sophia-n8n/backend/CONTEXT.md`) — nunca fala com o Sophia ou com o Mercado Pago diretamente.
 
 ---
 

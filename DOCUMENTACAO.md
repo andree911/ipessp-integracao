@@ -121,7 +121,7 @@ Rotina automatizada de lembretes e avisos de vencimento, com cron configurável:
 ### O que é a Z-API
 O WhatsApp (Meta) não oferece uma API pública própria para números comuns automatizarem envio/recebimento de mensagens — só a API Business oficial, que exige processo de verificação como empresa. A Z-API é um serviço terceirizado que faz essa ponte: mantém uma sessão de WhatsApp Web pareada com o número comercial do IPESSP e expõe isso como uma API HTTP comum, nos dois sentidos:
 - **Envio:** o backend faz chamadas REST à Z-API (`send-text`, `send-option-list`, `send-image`, `send-document` etc.) para mandar mensagens — usado pelo chatbot e pelas réguas de cobrança.
-- **Recebimento:** a Z-API é configurada com uma URL de webhook própria; toda mensagem recebida no número comercial é repassada via `POST` para essa URL. Hoje essa URL cai no fluxo do n8n, que roteia para o backend conforme o tipo de mensagem (cobrança vs. chatbot geral) — ver `backend/documentacao/BACKEND.md`, seção "Pendência: webhook da Z-API", para o detalhe de roteamento e o ajuste pendente na VPS.
+- **Recebimento:** a Z-API é configurada com uma URL de webhook própria; toda mensagem recebida no número comercial é repassada via `POST` para essa URL. Hoje essa URL cai no fluxo do n8n, que roteia para o backend conforme o tipo de mensagem (cobrança vs. chatbot geral) — ver `backend/CONTEXT.md`, seção "Pendência: webhook da Z-API", para o detalhe de roteamento e o ajuste pendente na VPS.
 
 As credenciais da instância (instance ID, token, client token) e a URL exata do webhook ficam só no `.env` de produção e no painel da própria Z-API — não são reproduzidas aqui.
 
