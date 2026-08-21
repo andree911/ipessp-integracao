@@ -11,9 +11,10 @@ export class ClienteCache {
   @PrimaryGeneratedColumn()
   id: number;
 
-  // Unicidade não é reforçada só pelo TypeORM (synchronize: false) -- ver
-  // documentacao/sql/clientes_cache_add_unique_codigo_sophia.sql pra aplicar
-  // a constraint de fato no banco.
+  // Índice único parcial "clientes_cache_codigoSophia_unique" aplicado
+  // manualmente no banco (synchronize: false) -- evita duplicata de
+  // clientes_cache."codigoSophia" numa corrida (TOCTOU) do find-then-save
+  // de FinanceiroService#upsertCliente.
   @Index({ unique: true, where: '"codigoSophia" IS NOT NULL' })
   @Column({ nullable: true, type: 'integer' })
   codigoSophia: number | null;
