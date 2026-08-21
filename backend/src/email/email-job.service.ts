@@ -2,7 +2,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 import { errMsg } from '../common/err.util';
 import * as QRCode from 'qrcode';
 import { FinanceiroService } from '../financeiro/financeiro.service';
@@ -66,6 +66,58 @@ const EMAIL_APOS_TIPO: Record<number, EmailTipo> = {
   25: 'cobranca_25',
   30: 'cobranca_30',
 };
+
+// Categoria simplificada usada no filtro do histórico (e-mail e WhatsApp
+// compartilham a mesma classificação antes/no dia/depois do vencimento —
+// espelha categoriaVencimento() do frontend, components/integracoes/integracoes-view.tsx).
+// lead_*/cancelamento_* ficam fora — não têm vencimento associado.
+export type HistoricoCategoria = 'antes' | 'no_dia' | 'depois';
+
+const TIPOS_POR_CATEGORIA: Record<HistoricoCategoria, EmailTipo[]> = {
+  antes: [
+    'lembrete', 'lembrete_7', 'lembrete_5', 'lembrete_3', 'lembrete_1',
+    'aviso', 'aviso_1', 'aviso_2', 'aviso_3', 'aviso_4', 'aviso_6', 'aviso_7', 'aviso_8', 'aviso_9', 'aviso_10',
+    'wpp_lembrete', 'wpp_antes_7', 'wpp_antes_5', 'wpp_antes_3', 'wpp_antes_1',
+  ],
+  no_dia: ['vencimento_hoje', 'wpp_vencimento_hoje'],
+  depois: [
+    'cobranca', 'cobranca_1', 'cobranca_2', 'cobranca_3', 'cobranca_7', 'cobranca_8', 'cobranca_9',
+    'cobranca_10', 'cobranca_12', 'cobranca_15', 'cobranca_20', 'cobranca_25', 'cobranca_30',
+    'renegociacao_oferta', 'renegociacao_lembrete',
+    'wpp_cobranca', 'wpp_apos_1', 'wpp_apos_2', 'wpp_apos_3', 'wpp_apos_7', 'wpp_apos_8',
+    'wpp_apos_9', 'wpp_apos_10', 'wpp_apos_12', 'wpp_apos_15', 'wpp_apos_20',
+  ],
+};
+
+export interface HistoricoFiltro {
+  busca?: string;
+  status?: 'enviado' | 'erro';
+  categoria?: HistoricoCategoria;
+  dataInicio?: string;
+  dataFim?: string;
+}
+
+// Aplica os filtros de busca/status/categoria/período comuns ao histórico
+// de e-mail e de WhatsApp, depois da cláusula base (qual canal) já ter
+// sido montada pelo chamador.
+function aplicarFiltrosHistorico(
+  qb: SelectQueryBuilder<EmailLog>,
+  filtro: HistoricoFiltro,
+): void {
+  if (filtro.busca?.trim()) {
+    qb.andWhere('(log.nome ILIKE :busca OR log.destinatario ILIKE :busca)', {
+      busca: `%${filtro.busca.trim()}%`,
+    });
+  }
+  if (filtro.status === 'enviado') qb.andWhere('log.enviado = true');
+  else if (filtro.status === 'erro') qb.andWhere('log.enviado = false');
+
+  if (filtro.categoria) {
+    qb.andWhere('log.tipo IN (:...tipos)', { tipos: TIPOS_POR_CATEGORIA[filtro.categoria] });
+  }
+  if (filtro.dataInicio) qb.andWhere('log.enviadoEm >= :dataInicio', { dataInicio: `${filtro.dataInicio} 00:00:00` });
+  if (filtro.dataFim) qb.andWhere('log.enviadoEm <= :dataFim', { dataFim: `${filtro.dataFim} 23:59:59` });
+}
 
 function templatePorTipo(
   tipo: EmailTipo,
@@ -366,15 +418,13 @@ export class EmailJobService {
   async listarHistoricoEmail(
     page = 1,
     limit = 50,
-  ): Promise<{
-    items: EmailLog[];
-    total: number;
-    page: number;
-    limit: number;
-  }> {
-    const [items, total] = await this.emailLogRepo
+    filtro: HistoricoFiltro = {},
+  ): Promise<{ items: EmailLog[]; total: number; page: number; limit: number }> {
+    const qb = this.emailLogRepo
       .createQueryBuilder('log')
-      .where("log.tipo NOT LIKE 'wpp\\_%'")
+      .where("log.tipo NOT LIKE 'wpp\\_%'");
+    aplicarFiltrosHistorico(qb, filtro);
+    const [items, total] = await qb
       .orderBy('log.enviadoEm', 'DESC')
       .skip((page - 1) * limit)
       .take(limit)
@@ -382,19 +432,17 @@ export class EmailJobService {
     return { items, total, page, limit };
   }
 
-  /** Histórico de mensagens de cobrança enviadas por WhatsApp — mesma tabela do e-mail, filtrada pelo prefixo 'wpp_'. */
+  /** Histórico de mensagens de WhatsApp enviadas — mesma tabela do e-mail, filtrando pelo prefixo "wpp_" do tipo. */
   async listarHistoricoWhatsApp(
     page = 1,
     limit = 50,
-  ): Promise<{
-    items: EmailLog[];
-    total: number;
-    page: number;
-    limit: number;
-  }> {
-    const [items, total] = await this.emailLogRepo
+    filtro: HistoricoFiltro = {},
+  ): Promise<{ items: EmailLog[]; total: number; page: number; limit: number }> {
+    const qb = this.emailLogRepo
       .createQueryBuilder('log')
-      .where("log.tipo LIKE 'wpp\\_%'")
+      .where("log.tipo LIKE 'wpp\\_%'");
+    aplicarFiltrosHistorico(qb, filtro);
+    const [items, total] = await qb
       .orderBy('log.enviadoEm', 'DESC')
       .skip((page - 1) * limit)
       .take(limit)

@@ -14,12 +14,34 @@ import { ConfigService } from '@nestjs/config';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { AdminApiKeyGuard } from './guards/admin-api-key.guard';
 import { FinanceiroService } from '../financeiro/financeiro.service';
-import { EmailJobService } from '../email/email-job.service';
+import { EmailJobService, HistoricoFiltro } from '../email/email-job.service';
 import { WhatsAppService } from '../email/whatsapp.service';
 import { SophiaService } from '../sophia/sophia.service';
 import { errMsg } from '../common/err.util';
 
 const HISTORICO_EMAIL_LIMIT_MAX = 200;
+
+// Valida os filtros crus da querystring antes de repassar ao service —
+// valor fora do enum esperado é ignorado (sem filtro) em vez de quebrar a
+// query no banco.
+function filtroHistorico(raw: {
+  busca?: string;
+  status?: string;
+  categoria?: string;
+  dataInicio?: string;
+  dataFim?: string;
+}): HistoricoFiltro {
+  return {
+    busca: raw.busca?.trim() || undefined,
+    status: raw.status === 'enviado' || raw.status === 'erro' ? raw.status : undefined,
+    categoria:
+      raw.categoria === 'antes' || raw.categoria === 'no_dia' || raw.categoria === 'depois'
+        ? raw.categoria
+        : undefined,
+    dataInicio: raw.dataInicio?.trim() || undefined,
+    dataFim: raw.dataFim?.trim() || undefined,
+  };
+}
 
 @Controller('v1/admin')
 @UseGuards(ThrottlerGuard, AdminApiKeyGuard)
@@ -77,22 +99,40 @@ export class AdminController {
   historicoEmail(
     @Query('page', new ParseIntPipe({ optional: true })) page?: number,
     @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+    @Query('busca') busca?: string,
+    @Query('status') status?: string,
+    @Query('categoria') categoria?: string,
+    @Query('dataInicio') dataInicio?: string,
+    @Query('dataFim') dataFim?: string,
   ) {
     const limitLimitado = limit
       ? Math.min(limit, HISTORICO_EMAIL_LIMIT_MAX)
       : undefined;
-    return this.emailJobService.listarHistoricoEmail(page, limitLimitado);
+    return this.emailJobService.listarHistoricoEmail(
+      page,
+      limitLimitado,
+      filtroHistorico({ busca, status, categoria, dataInicio, dataFim }),
+    );
   }
 
   @Get('whatsapp/historico')
   historicoWhatsApp(
     @Query('page', new ParseIntPipe({ optional: true })) page?: number,
     @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+    @Query('busca') busca?: string,
+    @Query('status') status?: string,
+    @Query('categoria') categoria?: string,
+    @Query('dataInicio') dataInicio?: string,
+    @Query('dataFim') dataFim?: string,
   ) {
     const limitLimitado = limit
       ? Math.min(limit, HISTORICO_EMAIL_LIMIT_MAX)
       : undefined;
-    return this.emailJobService.listarHistoricoWhatsApp(page, limitLimitado);
+    return this.emailJobService.listarHistoricoWhatsApp(
+      page,
+      limitLimitado,
+      filtroHistorico({ busca, status, categoria, dataInicio, dataFim }),
+    );
   }
 
   // ─── Cancelamento de curso ──────────────────────────────────────────────────
