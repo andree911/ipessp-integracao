@@ -1,5 +1,4 @@
 export default () => ({
-  port: parseInt(process.env.PORT ?? '3000', 10),
   sophia: {
     baseUrl: process.env.SOPHIA_BASE_URL ?? '',
     usuario: process.env.SOPHIA_USUARIO ?? '',
@@ -12,10 +11,6 @@ export default () => ({
     // configurado -- default true preserva o comportamento anterior pra
     // quem ainda não setou a var.
     ssl: process.env.DATABASE_SSL !== 'false',
-  },
-  sync: {
-    cron: process.env.SYNC_CRON ?? '0 * * * *',
-    lookbackDays: parseInt(process.env.SYNC_LOOKBACK_DAYS ?? '30', 10),
   },
   webhook: {
     secret: process.env.WEBHOOK_SECRET ?? '',
@@ -30,7 +25,7 @@ export default () => ({
     useSsl: process.env.MINIO_USE_SSL === 'true',
     accessKey: process.env.MINIO_ACCESS_KEY ?? '',
     secretKey: process.env.MINIO_SECRET_KEY ?? '',
-    // Base pública servida pelo Caddy (rota /files/*), ex: https://srv1835634.hstgr.cloud/files
+    // Base pública servida pelo Traefik (rota /files/*), ex: https://srv1892430.hstgr.cloud/files
     publicBaseUrl: (process.env.MINIO_PUBLIC_BASE_URL ?? '').replace(/\/$/, ''),
   },
   email: {
@@ -139,7 +134,6 @@ export default () => ({
       (() => {
         throw new Error('JWT_SECRET env var is required');
       })(),
-    siteUrl: process.env.SITE_URL ?? 'http://localhost:3000',
   },
   admin: {
     apiKey: process.env.ADMIN_API_KEY ?? '',
