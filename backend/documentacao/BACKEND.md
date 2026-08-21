@@ -1,6 +1,6 @@
 # Backend — Integração Sophia × n8n (IPESSP)
 
-Backend NestJS que serve como camada intermediária entre o site institucional, o bot de atendimento WhatsApp (n8n), o ERP SophiA e o banco Supabase. Também compartilha o banco com o projeto `ipessp-corporativo`.
+Backend NestJS que serve como camada intermediária entre o frontend institucional deste projeto (Next.js, nunca publicado — o site institucional real, `ipessp.edu.br`, é outro projeto), o bot de atendimento WhatsApp (n8n), o ERP SophiA e o banco Supabase. Também compartilha o banco com o projeto `ipessp-corporativo`.
 
 IPESSP = Instituto de Pesquisa e Educação em Saúde de São Paulo.
 
@@ -24,7 +24,7 @@ IPESSP = Instituto de Pesquisa e Educação em Saúde de São Paulo.
 ## Arquitetura geral
 
 ```
-Site institucional
+Frontend Next.js deste projeto (não publicado)
   └── Formulários (contato, manifestação, evento, candidatura) → /v1/*
 
 WhatsApp (usuário) ──► Z-API ──► n8n Bot Flow (AI Agent + Tools)
@@ -325,16 +325,16 @@ própria (Hostinger). Roda via Docker Compose ao lado do n8n e do Caddy
 **Deploy de uma mudança nova:**
 ```bash
 # 1. Local: empacota o HEAD do repo (só arquivos versionados) e manda pro servidor
-git archive HEAD | ssh -i ~/.ssh/ipessp_vps root@179.197.237.177 \
+git archive HEAD | ssh -i ~/.ssh/id_ed25519_ipessp root@179.197.237.177 \
   "rm -rf /tmp/integracao-deploy && mkdir -p /tmp/integracao-deploy && tar -x -C /tmp/integracao-deploy"
 
 # 2. Servidor: sincroniza por cima da pasta viva SEM --delete
 #    (preserva node_modules, .env, data/*.db, .claude/ que não estão no git)
-ssh -i ~/.ssh/ipessp_vps root@179.197.237.177 \
+ssh -i ~/.ssh/id_ed25519_ipessp root@179.197.237.177 \
   "rsync -a /tmp/integracao-deploy/ /opt/ipessp/integracao-service/ && rm -rf /tmp/integracao-deploy"
 
 # 3. Servidor: rebuild + restart só do serviço afetado
-ssh -i ~/.ssh/ipessp_vps root@179.197.237.177 \
+ssh -i ~/.ssh/id_ed25519_ipessp root@179.197.237.177 \
   "cd /opt/ipessp && docker compose build integracao-service && docker compose up -d integracao-service"
 ```
 
@@ -343,3 +343,55 @@ ssh -i ~/.ssh/ipessp_vps root@179.197.237.177 \
   application successfully started" sem erro.
 - `curl -s -o /dev/null -w '%{http_code}\n' https://srv1835634.hstgr.cloud/health`
   deve devolver `200`.
+
+---
+
+## Pendência: webhook da Z-API não chega no backend (cobrança WhatsApp)
+
+**Status (2026-08-18): não aplicado — VPS fora do ar, aplicar assim que voltar.**
+
+Achado ao revisar a integração de cobrança por WhatsApp: o painel da Z-API está
+configurado com `https://srv1835634.hstgr.cloud/n8n/webhook/930c3dd4-8cd0-4d66-a615-e2a959fedaf8`
+(webhook do fluxo n8n "Bot IPESSP WhatsApp (Encaminhar Leads)"). Como o
+Caddyfile roteia **todo** `/n8n/*` pro container do n8n (ver diagrama acima),
+essa mensagem nunca chega no `WhatsAppWebhookController` (`POST
+/whatsapp/webhook`, criado no commit `47039c7`, 2026-08-14) — ou seja, hoje as
+respostas às opções de cobrança (`ja_paguei`/`ajuda`/`portal`/`pagar_whatsapp`)
+não são processadas pelo backend, só o repasse de lead continua funcionando
+(por acaso, já que o n8n recebe direto).
+
+O código do backend (`WhatsAppWebhookController` + `N8N_WHATSAPP_WEBHOOK_URL`)
+já está pronto e correto — o `repasse` pro n8n usa a rede interna do Docker
+(`http://n8n:5678/webhook/930c3dd4-...`), que não passa pelo Caddy, então dá
+pra fechar o fluxo sem loop só com uma exceção no Caddyfile. **Não precisa
+mudar nada no painel da Z-API.**
+
+```
+Z-API ──(externo, via Caddy)──► /n8n/webhook/930c3dd4-...
+                                         │
+                          Caddy: exceção pontual, redireciona pro backend
+                                         ▼
+                          integracao-service /whatsapp/webhook
+                          ├─ opção de cobrança → responde 100% aqui
+                          └─ resto (lead) ──(interno, sem Caddy)──► n8n:5678/webhook/930c3dd4-...
+```
+
+**Aplicar quando a VPS voltar** (`/opt/ipessp/Caddyfile`, ANTES do bloco
+existente `handle /n8n/* { reverse_proxy n8n:5678 }`):
+```caddyfile
+handle /n8n/webhook/930c3dd4-8cd0-4d66-a615-e2a959fedaf8 {
+    rewrite * /whatsapp/webhook{query}
+    reverse_proxy integracao-service:3000
+}
+```
+
+E confirmar/setar em `/opt/ipessp/integracao.env`:
+```bash
+N8N_WHATSAPP_WEBHOOK_URL=http://n8n:5678/webhook/930c3dd4-8cd0-4d66-a615-e2a959fedaf8
+WEBHOOK_SECRET=<algum-valor>   # se ainda vazio, a checagem de origem do webhook fica desligada
+```
+
+Depois de editar o Caddyfile: `docker compose exec caddy caddy reload
+--config /etc/caddy/Caddyfile` (ou `docker compose restart caddy`). Se
+`WEBHOOK_SECRET` for setado/alterado: `docker compose up -d
+integracao-service` pra recarregar o `.env`.

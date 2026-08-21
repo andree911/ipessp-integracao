@@ -1,13 +1,13 @@
-# Documentação Técnica: Integração Site Institucional, ERP SophiA e Chatbot IA — IPESSP
+# Documentação Técnica: Backend de Integração, ERP SophiA e Chatbot IA — IPESSP
 
-Este documento descreve a arquitetura, a infraestrutura e as rotinas de manutenção do sistema de integração desenvolvido para o IPESSP (Instituto de Pesquisa e Educação em Saúde de São Paulo): backend de integração com o ERP SophiA, chatbot de atendimento via WhatsApp, réguas automáticas de cobrança e o site institucional.
+Este documento descreve a arquitetura, a infraestrutura e as rotinas de manutenção do sistema de integração desenvolvido para o IPESSP (Instituto de Pesquisa e Educação em Saúde de São Paulo): backend de integração com o ERP SophiA, chatbot de atendimento via WhatsApp, réguas automáticas de cobrança e um frontend institucional (Next.js) desenvolvido mas nunca publicado em produção — o site institucional que está no ar hoje (`ipessp.edu.br`) é outro projeto, fora deste repositório.
 
 ---
 
 ## 1. Visão Geral da Arquitetura
 
 ```
-Site institucional (Next.js)
+Frontend Next.js deste projeto (não publicado)
   └── Formulários (contato, ouvidoria, evento, candidatura) ────┐
                                                                     │
 WhatsApp (aluno/professor) ──► Z-API ──► n8n (Bot de Atendimento)  │
@@ -33,7 +33,7 @@ WhatsApp (aluno/professor) ──► Z-API ──► n8n (Bot de Atendimento)  �
               leem o cache e notificam os alunos automaticamente
 ```
 
-**Resumo do fluxo:** o backend de integração funciona como camada intermediária entre o site institucional, o bot de atendimento via WhatsApp e o ERP acadêmico terceirizado (SophiA). Uma rotina de sincronização horária busca os dados de alunos e financeiro do SophiA e mantém um cache local, usado tanto pelo chatbot quanto pelas réguas automáticas de cobrança — evitando consultar o ERP em tempo real a cada interação.
+**Resumo do fluxo:** o backend de integração funciona como camada intermediária entre o frontend institucional, o bot de atendimento via WhatsApp e o ERP acadêmico terceirizado (SophiA). Uma rotina de sincronização horária busca os dados de alunos e financeiro do SophiA e mantém um cache local, usado tanto pelo chatbot quanto pelas réguas automáticas de cobrança — evitando consultar o ERP em tempo real a cada interação.
 
 ---
 
@@ -44,8 +44,8 @@ O backend roda em **Docker Compose**, atrás de um proxy reverso **Caddy** (TLS 
 
 O banco de dados **não está mais no Supabase** — os dados (cache do SophiA, formulários, chamados) migraram para o Postgres self-hosted da VPS, e o armazenamento de arquivos (currículos) migrou do Supabase Storage para o **MinIO** da VPS, mesma infraestrutura usada pelo restante do ecossistema.
 
-### Site institucional (frontend)
-Aplicação separada em **Next.js**, preparada para hospedagem na **Vercel**. Não chegou a ir ao ar como o site oficial em produção — o domínio institucional (`ipessp.edu.br`) roda por fora deste projeto — mas o código e as páginas (graduação, pós-graduação, cursos livres, corpo docente, blog, clínica-escola, laboratórios, trabalhe conosco, matrícula, fale conosco, ouvidoria, entre outras) estão prontos e documentados aqui.
+### Frontend Next.js (não publicado)
+Aplicação separada em **Next.js**, preparada para hospedagem na **Vercel** — **não é o site institucional que está no ar hoje.** O domínio real (`ipessp.edu.br`) é outro projeto, sem relação com este repositório; esta aplicação nunca chegou a ser publicada em produção, mas o código e as páginas (graduação, pós-graduação, cursos livres, corpo docente, blog, clínica-escola, laboratórios, trabalhe conosco, matrícula, fale conosco, ouvidoria, entre outras) estão prontos e documentados aqui.
 
 ### Deploy do backend
 O diretório do serviço na VPS **não é um clone git** — o processo empacota apenas os arquivos versionados do commit e sincroniza por cima da pasta em produção, preservando `.env`, `node_modules` e dados locais:
@@ -73,13 +73,13 @@ As credenciais de acesso SSH e os arquivos `.env` de produção ficam sob respon
 ## 3. Módulos Desenvolvidos
 
 ### Portal do Aluno
-O site institucional (Next.js, ver Infraestrutura) não é o que está em produção hoje — mas o **portal do aluno** dentro dele é a parte funcionalmente relevante: login próprio, financeiro, curso, notas, frequência, horário e documentos. Assim como o chatbot, consome as rotas do SophiA através do backend — notas, frequência, horário e dados da matrícula são buscados diretamente no ERP a cada acesso; o envio de documentos sobe o arquivo para o storage e registra o documento no cadastro do cliente na SophiA.
+O frontend Next.js deste projeto (ver Infraestrutura) nunca foi publicado — mas o **portal do aluno** dentro dele é a parte funcionalmente relevante: login próprio, financeiro, curso, notas, frequência, horário e documentos. Assim como o chatbot, consome as rotas do SophiA através do backend — notas, frequência, horário e dados da matrícula são buscados diretamente no ERP a cada acesso; o envio de documentos sobe o arquivo para o storage e registra o documento no cadastro do cliente na SophiA.
 
 ### Backend de Integração (NestJS)
 Camada intermediária entre site, WhatsApp e ERP SophiA:
 - **Integração com o ERP SophiA:** consulta de alunos, matrículas, financeiro, boletos, professores e turmas diretamente na API do ERP.
 - **Sincronização automática:** rotina horária que busca todos os alunos e seus lançamentos financeiros no SophiA e grava em um cache local, usado pelo chatbot e pela régua de cobrança sem sobrecarregar o ERP.
-- **Formulários institucionais:** recebe e processa os envios do site (contato, ouvidoria, eventos, candidaturas), com upload de arquivos (currículos) e notificação por e-mail à equipe responsável.
+- **Formulários institucionais:** recebe e processa envios de formulário (contato, ouvidoria, eventos, candidaturas) — endpoints prontos para o frontend deste projeto, com upload de arquivos (currículos) e notificação por e-mail à equipe responsável.
 - **Chamados de TI:** abertura e consulta de chamados de suporte técnico, inclusive pelo chatbot de WhatsApp.
 - **Suporte a Cancelamentos:** busca de aluno por nome/RA e resumo financeiro (parcelas em aberto, saldo devedor) a partir do cache local, além do disparo dos e-mails de confirmação de cancelamento (acadêmico, financeiro ou reembolso). Alimenta a tela de Cancelamentos do painel administrativo — o registro do cancelamento em si (e o cálculo de multa) não fica aqui, é feito em outro sistema do ecossistema.
 
@@ -117,6 +117,13 @@ Rotina automatizada de lembretes e avisos de vencimento, com cron configurável:
 | **Z-API**          | Envio e recebimento de mensagens do WhatsApp                          |
 | **n8n**            | Orquestração do chatbot de atendimento e automações                   |
 | **SMTP**           | Envio de e-mails transacionais e da régua de cobrança                 |
+
+### O que é a Z-API
+O WhatsApp (Meta) não oferece uma API pública própria para números comuns automatizarem envio/recebimento de mensagens — só a API Business oficial, que exige processo de verificação como empresa. A Z-API é um serviço terceirizado que faz essa ponte: mantém uma sessão de WhatsApp Web pareada com o número comercial do IPESSP e expõe isso como uma API HTTP comum, nos dois sentidos:
+- **Envio:** o backend faz chamadas REST à Z-API (`send-text`, `send-option-list`, `send-image`, `send-document` etc.) para mandar mensagens — usado pelo chatbot e pelas réguas de cobrança.
+- **Recebimento:** a Z-API é configurada com uma URL de webhook própria; toda mensagem recebida no número comercial é repassada via `POST` para essa URL. Hoje essa URL cai no fluxo do n8n, que roteia para o backend conforme o tipo de mensagem (cobrança vs. chatbot geral) — ver `backend/documentacao/BACKEND.md`, seção "Pendência: webhook da Z-API", para o detalhe de roteamento e o ajuste pendente na VPS.
+
+As credenciais da instância (instance ID, token, client token) e a URL exata do webhook ficam só no `.env` de produção e no painel da própria Z-API — não são reproduzidas aqui.
 
 ---
 
