@@ -727,13 +727,13 @@
     {
       "parameters": {
         "toolDescription": "Lista os cursos oferecidos pelo IPESSP (graduação, pós-graduação, cursos livres), incluindo id, descricao, duracao e precoMensalidade quando cadastrados. Esses três últimos podem vir null se ainda não foram preenchidos para aquele curso — nesse caso, NÃO invente o valor; diga que ainda não tem essa informação e ofereça registrar o lead. Use quando o usuário perguntar quais cursos existem ou pedir informações sobre um curso específico, antes de registrar um lead com o curso de interesse. IMPORTANTE: guarde o campo \"id\" do curso que a pessoa escolher — ele é usado internamente na hora de registrar o lead (campo cursoInteresseId da tool \"Registrar Lead CRM\"), mas nunca é mencionado ao usuário (mesma regra dos outros códigos internos).",
-        "url": "={{ $env.INTEGRACAO_API_URL }}/ia/cursos",
+        "url": "={{ $env.IPESSP_CORE_URL }}/ia/cursos",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "Authorization",
-              "value": "=Bearer {{ $env.IA_BEARER_TOKEN }}"
+              "name": "x-admin-key",
+              "value": "={{ $env.CORE_API_KEY }}"
             }
           ]
         },
