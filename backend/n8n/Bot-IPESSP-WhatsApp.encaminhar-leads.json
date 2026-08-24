@@ -118,7 +118,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ nome: $('If - Tem Texto').item.json.body.senderName, telefone: $('If - Tem Texto').item.json.body.phone, observacao: $('If - Tem Texto').item.json.body.text?.message ?? $('If - Tem Texto').item.json.body.listResponseMessage?.title ?? '', whatsappOptin: false, origem: 'chatbot' }) }}",
+        "jsonBody": "={{ JSON.stringify({ nome: $('If - Tem Texto').item.json.body.senderName || $('If - Tem Texto').item.json.body.phone || 'Contato via WhatsApp', telefone: $('If - Tem Texto').item.json.body.phone, observacao: $('If - Tem Texto').item.json.body.text?.message ?? $('If - Tem Texto').item.json.body.listResponseMessage?.title ?? '', whatsappOptin: false, origem: 'chatbot' }) }}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
