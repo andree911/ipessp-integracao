@@ -153,8 +153,8 @@ export class WhatsAppJobService {
     if (diffDias === 7) {
       return {
         texto: escolher([
-          `Oi, ${nome}! 👋\nPassando para lembrar que sua mensalidade com vencimento em *${venc}* já está disponível para pagamento.\nVocê pode pagar via PIX copia e cola ou pelo Portal do Aluno Sophia, onde também consegue emitir a 2ª via do boleto quando quiser.\nAproveite para se antecipar e evitar imprevistos de última hora! 😉${quickReply('Já paguei', 'Preciso de ajuda')}${cta()}`,
-          `Olá, ${nome}! 😊\nSua mensalidade vence em *${venc}* e já está liberada para pagamento. Você pode quitar via PIX copia e cola ou pelo Portal do Aluno Sophia, onde também dá pra emitir a 2ª via do boleto.\nAdiantar o pagamento evita correria de última hora!${quickReply('Já paguei', 'Preciso de ajuda')}${cta()}`,
+          `Oi, ${nome}! 👋\nPassando para lembrar que o pagamento da sua parcela com vencimento em *${venc}* já está disponível.\nVocê pode pagar via PIX copia e cola ou pelo Portal do Aluno Sophia, onde também consegue emitir a 2ª via do boleto quando quiser.\nAproveite para se antecipar e evitar imprevistos de última hora! 😉${quickReply('Já paguei', 'Preciso de ajuda')}${cta()}`,
+          `Olá, ${nome}! 😊\nO pagamento da sua parcela vence em *${venc}* e já está liberado. Você pode quitar via PIX copia e cola ou pelo Portal do Aluno Sophia, onde também dá pra emitir a 2ª via do boleto.\nAdiantar o pagamento evita correria de última hora!${quickReply('Já paguei', 'Preciso de ajuda')}${cta()}`,
         ]),
         opcoes,
       };
@@ -162,8 +162,8 @@ export class WhatsAppJobService {
     if (diffDias === 5) {
       return {
         texto: escolher([
-          `Olá, ${nome}!\nSua mensalidade vence em 5 dias (*${venc}*). Já está disponível para pagamento via PIX ou boleto, e também pelo Portal Sophia.\nQue tal já deixar essa pendência resolvida? Assim você garante que tudo fique em dia sem se preocupar depois. 🙂${quickReply('Já paguei', 'Preciso de ajuda')}${cta()}`,
-          `Oi, ${nome}, tudo certo?\nFaltam 5 dias para o vencimento da sua mensalidade (*${venc}*), que já pode ser paga via PIX, boleto ou pelo Portal Sophia.\nVale a pena resolver isso logo e ficar tranquilo(a) depois. 🙂${quickReply('Já paguei', 'Preciso de ajuda')}${cta()}`,
+          `Olá, ${nome}!\nO pagamento da sua parcela vence em 5 dias (*${venc}*). Já está disponível via PIX ou boleto, e também pelo Portal Sophia.\nQue tal já deixar essa pendência resolvida? Assim você garante que tudo fique em dia sem se preocupar depois. 🙂${quickReply('Já paguei', 'Preciso de ajuda')}${cta()}`,
+          `Oi, ${nome}, tudo certo?\nFaltam 5 dias para o vencimento do pagamento da sua parcela (*${venc}*), que já pode ser pago via PIX, boleto ou pelo Portal Sophia.\nVale a pena resolver isso logo e ficar tranquilo(a) depois. 🙂${quickReply('Já paguei', 'Preciso de ajuda')}${cta()}`,
         ]),
         opcoes,
       };
@@ -171,8 +171,8 @@ export class WhatsAppJobService {
     if (diffDias === 3) {
       return {
         texto: escolher([
-          `${nome}, tudo bem?\nSua mensalidade vence em apenas 3 dias (*${venc}*). Para evitar juros e encargos por atraso, recomendamos realizar o pagamento o quanto antes.\nO boleto também está disponível no Portal do Aluno Sophia, caso prefira pagar por lá.${quickReply('Já paguei', 'Preciso de ajuda')}${cta()}`,
-          `Oi, ${nome}!\nFaltam só 3 dias para o vencimento da sua mensalidade (*${venc}*). Pagando antes do prazo você evita juros e encargos.\nSe preferir, o boleto também está disponível no Portal do Aluno Sophia.${quickReply('Já paguei', 'Preciso de ajuda')}${cta()}`,
+          `${nome}, tudo bem?\nO pagamento da sua parcela vence em apenas 3 dias (*${venc}*). Para evitar juros e encargos por atraso, recomendamos realizar o pagamento o quanto antes.\nO boleto também está disponível no Portal do Aluno Sophia, caso prefira pagar por lá.${quickReply('Já paguei', 'Preciso de ajuda')}${cta()}`,
+          `Oi, ${nome}!\nFaltam só 3 dias para o vencimento do pagamento da sua parcela (*${venc}*). Pagando antes do prazo você evita juros e encargos.\nSe preferir, o boleto também está disponível no Portal do Aluno Sophia.${quickReply('Já paguei', 'Preciso de ajuda')}${cta()}`,
         ]),
         opcoes,
       };
@@ -180,8 +180,8 @@ export class WhatsAppJobService {
     if (diffDias === 1) {
       return {
         texto: escolher([
-          `Atenção, ${nome}! 🚨\nSua mensalidade vence amanhã (*${venc}*). Para evitar a incidência de juros, o ideal é regularizar ainda hoje.\nSe já efetuou o pagamento, pode desconsiderar esta mensagem. Qualquer dúvida, estamos por aqui!${quickReply('Já paguei', 'Quero negociar')}${cta()}`,
-          `${nome}, passando um aviso rápido: sua mensalidade vence amanhã (*${venc}*). 🚨\nO ideal é regularizar ainda hoje pra não pegar juros.\nJá pagou? Pode ignorar esta mensagem. Qualquer coisa, é só chamar!${quickReply('Já paguei', 'Quero negociar')}${cta()}`,
+          `Atenção, ${nome}! 🚨\nO pagamento da sua parcela vence amanhã (*${venc}*). Para evitar a incidência de juros, o ideal é regularizar ainda hoje.\nSe já efetuou o pagamento, pode desconsiderar esta mensagem. Qualquer dúvida, estamos por aqui!${quickReply('Já paguei', 'Quero negociar')}${cta()}`,
+          `${nome}, passando um aviso rápido: o pagamento da sua parcela vence amanhã (*${venc}*). 🚨\nO ideal é regularizar ainda hoje pra não pegar juros.\nJá pagou? Pode ignorar esta mensagem. Qualquer coisa, é só chamar!${quickReply('Já paguei', 'Quero negociar')}${cta()}`,
         ]),
         opcoes,
       };
@@ -191,8 +191,8 @@ export class WhatsAppJobService {
     if (diffDias === 0) {
       return {
         texto: escolher([
-          `${nome}! 📅\nO vencimento da sua mensalidade é hoje (*${venc}*). Este é o último dia para realizar o pagamento sem acréscimo de juros e encargos.\nVocê também pode pagar diretamente pelo Portal do Aluno Sophia, de forma rápida e segura.${quickReply('Já paguei', 'Preciso de ajuda')}${cta()}`,
-          `Oi, ${nome}! 📅\nHoje (*${venc}*) é o último dia para pagar sua mensalidade sem juros nem encargos.\nDá pra resolver rapidinho pelo Portal do Aluno Sophia também.${quickReply('Já paguei', 'Preciso de ajuda')}${cta()}`,
+          `${nome}! 📅\nO vencimento do pagamento da sua parcela é hoje (*${venc}*). Este é o último dia para realizar o pagamento sem acréscimo de juros e encargos.\nVocê também pode pagar diretamente pelo Portal do Aluno Sophia, de forma rápida e segura.${quickReply('Já paguei', 'Preciso de ajuda')}${cta()}`,
+          `Oi, ${nome}! 📅\nHoje (*${venc}*) é o último dia para pagar sua parcela sem juros nem encargos.\nDá pra resolver rapidinho pelo Portal do Aluno Sophia também.${quickReply('Já paguei', 'Preciso de ajuda')}${cta()}`,
         ]),
         opcoes,
       };
@@ -204,8 +204,8 @@ export class WhatsAppJobService {
     if (atraso === 1) {
       return {
         texto: escolher([
-          `Oi, ${nome}.\nNotamos que sua mensalidade com vencimento em *${venc}* não foi identificada em nosso sistema até o momento.\nPara evitar o acréscimo de juros e encargos, pedimos que regularize o quanto antes.\nSe já efetuou o pagamento, pode desconsiderar esta mensagem. 🙂${quickReply('Já paguei', 'Quero negociar')}${cta()}`,
-          `${nome}, tudo bem?\nAté agora não identificamos o pagamento da sua mensalidade que venceu em *${venc}*.\nPedimos que regularize o quanto antes pra evitar juros e encargos.\nJá pagou? Pode desconsiderar este aviso. 🙂${quickReply('Já paguei', 'Quero negociar')}${cta()}`,
+          `Oi, ${nome}.\nNotamos que o pagamento da sua parcela com vencimento em *${venc}* não foi identificado em nosso sistema até o momento.\nPara evitar o acréscimo de juros e encargos, pedimos que regularize o quanto antes.\nSe já efetuou o pagamento, pode desconsiderar esta mensagem. 🙂${quickReply('Já paguei', 'Quero negociar')}${cta()}`,
+          `${nome}, tudo bem?\nAté agora não identificamos o pagamento da sua parcela que venceu em *${venc}*.\nPedimos que regularize o quanto antes pra evitar juros e encargos.\nJá pagou? Pode desconsiderar este aviso. 🙂${quickReply('Já paguei', 'Quero negociar')}${cta()}`,
         ]),
         opcoes,
       };
@@ -213,8 +213,8 @@ export class WhatsAppJobService {
     if (atraso === 2) {
       return {
         texto: escolher([
-          `Olá, ${nome}.\nSua mensalidade com vencimento em *${venc}* segue em aberto há 2 dias.\nPara evitar maiores encargos, recomendamos a regularização o quanto antes.\nVocê também pode acessar o Portal Sophia para consultar e pagar diretamente por lá.${quickReply('Já paguei', 'Preciso de ajuda')}${cta()}`,
-          `${nome}, oi.\nJá se passaram 2 dias desde o vencimento da sua mensalidade (*${venc}*), que segue em aberto.\nRegularizar logo evita o acúmulo de encargos.\nVocê pode consultar e pagar direto pelo Portal Sophia.${quickReply('Já paguei', 'Preciso de ajuda')}${cta()}`,
+          `Olá, ${nome}.\nO pagamento da sua parcela com vencimento em *${venc}* segue em aberto há 2 dias.\nPara evitar maiores encargos, recomendamos a regularização o quanto antes.\nVocê também pode acessar o Portal Sophia para consultar e pagar diretamente por lá.${quickReply('Já paguei', 'Preciso de ajuda')}${cta()}`,
+          `${nome}, oi.\nJá se passaram 2 dias desde o vencimento do pagamento da sua parcela (*${venc}*), que segue em aberto.\nRegularizar logo evita o acúmulo de encargos.\nVocê pode consultar e pagar direto pelo Portal Sophia.${quickReply('Já paguei', 'Preciso de ajuda')}${cta()}`,
         ]),
         opcoes,
       };
@@ -222,8 +222,8 @@ export class WhatsAppJobService {
     if (atraso === 3) {
       return {
         texto: escolher([
-          `${nome}, tudo bem?\nIdentificamos que sua mensalidade está em aberto há 3 dias. Pedimos, por gentileza, que regularize o pagamento para evitar juros adicionais.\nSe precisar de ajuda ou já pagou, é só nos avisar por aqui!${quickReply('Já paguei', 'Falar com o financeiro')}${cta()}`,
-          `Oi, ${nome}.\nSua mensalidade (*${venc}*) está em aberto há 3 dias. Pedimos que regularize assim que possível pra não acumular juros.\nPrecisa de ajuda ou já pagou? É só nos avisar!${quickReply('Já paguei', 'Falar com o financeiro')}${cta()}`,
+          `${nome}, tudo bem?\nIdentificamos que o pagamento da sua parcela está em aberto há 3 dias. Pedimos, por gentileza, que regularize o pagamento para evitar juros adicionais.\nSe precisar de ajuda ou já pagou, é só nos avisar por aqui!${quickReply('Já paguei', 'Falar com o financeiro')}${cta()}`,
+          `Oi, ${nome}.\nO pagamento da sua parcela (*${venc}*) está em aberto há 3 dias. Pedimos que regularize assim que possível pra não acumular juros.\nPrecisa de ajuda ou já pagou? É só nos avisar!${quickReply('Já paguei', 'Falar com o financeiro')}${cta()}`,
         ]),
         opcoes,
       };
@@ -231,8 +231,8 @@ export class WhatsAppJobService {
     if (atraso === 7) {
       return {
         texto: escolher([
-          `Olá, ${nome}.\nSua mensalidade encontra-se em aberto há 7 dias. Reforçamos a importância da regularização para evitar o acréscimo de encargos e possíveis restrições acadêmicas.\nVocê pode consultar e pagar também pelo Portal Sophia.${quickReply('Já paguei', 'Preciso de ajuda')}${cta()}`,
-          `${nome}, tudo bem?\nJá são 7 dias com a mensalidade em aberto. É importante regularizar logo pra evitar mais encargos e possíveis restrições acadêmicas.\nO Portal Sophia também está disponível pra consulta e pagamento.${quickReply('Já paguei', 'Preciso de ajuda')}${cta()}`,
+          `Olá, ${nome}.\nO pagamento da sua parcela encontra-se em aberto há 7 dias. Reforçamos a importância da regularização para evitar o acréscimo de encargos e possíveis restrições acadêmicas.\nVocê pode consultar e pagar também pelo Portal Sophia.${quickReply('Já paguei', 'Preciso de ajuda')}${cta()}`,
+          `${nome}, tudo bem?\nJá são 7 dias com o pagamento da parcela em aberto. É importante regularizar logo pra evitar mais encargos e possíveis restrições acadêmicas.\nO Portal Sophia também está disponível pra consulta e pagamento.${quickReply('Já paguei', 'Preciso de ajuda')}${cta()}`,
         ]),
         opcoes,
       };
@@ -240,8 +240,8 @@ export class WhatsAppJobService {
     if (atraso === 8) {
       return {
         texto: escolher([
-          `Oi, ${nome}.\nSua mensalidade segue pendente há 8 dias. Para evitar transtornos, pedimos que a regularização seja feita o quanto antes.\nEstamos à disposição para ajudar com o que for preciso!${quickReply('Já paguei', 'Preciso de ajuda')}${cta()}`,
-          `${nome}, passando aqui de novo.\nSua mensalidade continua pendente há 8 dias. Pra evitar transtorno, regularize assim que puder.\nQualquer coisa, estamos à disposição!${quickReply('Já paguei', 'Preciso de ajuda')}${cta()}`,
+          `Oi, ${nome}.\nO pagamento da sua parcela segue pendente há 8 dias. Para evitar transtornos, pedimos que a regularização seja feita o quanto antes.\nEstamos à disposição para ajudar com o que for preciso!${quickReply('Já paguei', 'Preciso de ajuda')}${cta()}`,
+          `${nome}, passando aqui de novo.\nO pagamento da sua parcela continua pendente há 8 dias. Pra evitar transtorno, regularize assim que puder.\nQualquer coisa, estamos à disposição!${quickReply('Já paguei', 'Preciso de ajuda')}${cta()}`,
         ]),
         opcoes,
       };
@@ -249,8 +249,8 @@ export class WhatsAppJobService {
     if (atraso === 9) {
       return {
         texto: escolher([
-          `${nome}, sua mensalidade está em aberto há 9 dias.\nPara evitar o aumento dos juros e encargos contratuais, solicitamos a regularização com urgência.\nCaso já tenha pago, pode desconsiderar esta mensagem.${quickReply('Já paguei', 'Quero negociar')}${cta()}`,
-          `Oi, ${nome}.\nJá faz 9 dias que sua mensalidade está em aberto. Pedimos regularização urgente pra não aumentar juros e encargos.\nSe já pagou, desconsidere este aviso.${quickReply('Já paguei', 'Quero negociar')}${cta()}`,
+          `${nome}, o pagamento da sua parcela está em aberto há 9 dias.\nPara evitar o aumento dos juros e encargos contratuais, solicitamos a regularização com urgência.\nCaso já tenha pago, pode desconsiderar esta mensagem.${quickReply('Já paguei', 'Quero negociar')}${cta()}`,
+          `Oi, ${nome}.\nJá faz 9 dias que o pagamento da sua parcela está em aberto. Pedimos regularização urgente pra não aumentar juros e encargos.\nSe já pagou, desconsidere este aviso.${quickReply('Já paguei', 'Quero negociar')}${cta()}`,
         ]),
         opcoes,
       };
@@ -258,8 +258,8 @@ export class WhatsAppJobService {
     if (atraso === 10) {
       return {
         texto: escolher([
-          `Atenção, ${nome}. 📌\nSua mensalidade está em atraso há 10 dias. A continuidade do débito pode gerar restrições acadêmicas, como bloqueio de acesso a notas e boletos.\nPedimos a regularização o quanto antes para evitar maiores transtornos.${quickReply('Já paguei', 'Quero negociar')}${cta()}`,
-          `${nome}, um alerta importante. 📌\nJá são 10 dias de atraso na sua mensalidade. Isso pode gerar restrições acadêmicas, como bloqueio de notas e boletos.\nRegularize o quanto antes pra evitar mais transtorno.${quickReply('Já paguei', 'Quero negociar')}${cta()}`,
+          `Atenção, ${nome}. 📌\nO pagamento da sua parcela está em atraso há 10 dias. A continuidade do débito pode gerar restrições acadêmicas, como bloqueio de acesso a notas e boletos.\nPedimos a regularização o quanto antes para evitar maiores transtornos.${quickReply('Já paguei', 'Quero negociar')}${cta()}`,
+          `${nome}, um alerta importante. 📌\nJá são 10 dias de atraso no pagamento da sua parcela. Isso pode gerar restrições acadêmicas, como bloqueio de notas e boletos.\nRegularize o quanto antes pra evitar mais transtorno.${quickReply('Já paguei', 'Quero negociar')}${cta()}`,
         ]),
         opcoes,
       };
@@ -267,8 +267,8 @@ export class WhatsAppJobService {
     if (atraso === 12) {
       return {
         texto: escolher([
-          `${nome}, sua mensalidade está vencida há 12 dias.\nSolicitamos, por gentileza, que a regularização seja realizada com urgência, a fim de evitar o acréscimo de juros e possíveis restrições acadêmicas.\nCaso tenha alguma dificuldade, entre em contato para avaliarmos opções de negociação.${quickReply('Já paguei', 'Falar com o financeiro')}${cta()}`,
-          `Oi, ${nome}.\nJá são 12 dias de mensalidade vencida. Pedimos que regularize com urgência, pra evitar mais juros e possíveis restrições acadêmicas.\nSe estiver com dificuldade, fale com a gente — dá pra avaliar opções de negociação.${quickReply('Já paguei', 'Falar com o financeiro')}${cta()}`,
+          `${nome}, o pagamento da sua parcela está vencido há 12 dias.\nSolicitamos, por gentileza, que a regularização seja realizada com urgência, a fim de evitar o acréscimo de juros e possíveis restrições acadêmicas.\nCaso tenha alguma dificuldade, entre em contato para avaliarmos opções de negociação.${quickReply('Já paguei', 'Falar com o financeiro')}${cta()}`,
+          `Oi, ${nome}.\nJá são 12 dias com o pagamento da parcela vencido. Pedimos que regularize com urgência, pra evitar mais juros e possíveis restrições acadêmicas.\nSe estiver com dificuldade, fale com a gente — dá pra avaliar opções de negociação.${quickReply('Já paguei', 'Falar com o financeiro')}${cta()}`,
         ]),
         opcoes,
       };
@@ -276,8 +276,8 @@ export class WhatsAppJobService {
     if (atraso === 15) {
       return {
         texto: escolher([
-          `Olá, ${nome}.\nSua mensalidade está em aberto há 15 dias, já sujeita ao acréscimo de juros e encargos contratuais.\nPedimos que a quitação seja providenciada o quanto antes.\nSe desejar negociar valores ou condições, é só nos chamar por aqui.${quickReply('Já paguei', 'Falar com o financeiro')}${cta()}`,
-          `${nome}, tudo bem?\nJá se passaram 15 dias desde o vencimento, e a mensalidade já está sujeita a juros e encargos contratuais.\nPedimos que a quitação seja feita o quanto antes.\nQuer negociar valores ou condições? É só chamar!${quickReply('Já paguei', 'Falar com o financeiro')}${cta()}`,
+          `Olá, ${nome}.\nO pagamento da sua parcela está em aberto há 15 dias, já sujeito ao acréscimo de juros e encargos contratuais.\nPedimos que a quitação seja providenciada o quanto antes.\nSe desejar negociar valores ou condições, é só nos chamar por aqui.${quickReply('Já paguei', 'Falar com o financeiro')}${cta()}`,
+          `${nome}, tudo bem?\nJá se passaram 15 dias desde o vencimento, e o pagamento da parcela já está sujeito a juros e encargos contratuais.\nPedimos que a quitação seja feita o quanto antes.\nQuer negociar valores ou condições? É só chamar!${quickReply('Já paguei', 'Falar com o financeiro')}${cta()}`,
         ]),
         opcoes,
       };
@@ -285,8 +285,8 @@ export class WhatsAppJobService {
     if (atraso === 20) {
       return {
         texto: escolher([
-          `${nome}, atenção: sua mensalidade está em atraso há 20 dias. ⚠️\nA manutenção do débito pode acarretar restrições acadêmicas, incluindo bloqueio de acesso a notas, boletos e matrícula.\nPedimos a regularização imediata. Caso tenha dificuldades para o pagamento, entre em contato para negociarmos juntos a melhor solução.${quickReply('Já paguei', 'Quero negociar')}${cta()}`,
-          `Oi, ${nome}. ⚠️\nJá são 20 dias de atraso na sua mensalidade. Isso pode acarretar restrições acadêmicas, como bloqueio de notas, boletos e matrícula.\nPedimos regularização imediata. Com dificuldade pra pagar? Fale com a gente pra buscarmos a melhor solução juntos.${quickReply('Já paguei', 'Quero negociar')}${cta()}`,
+          `${nome}, atenção: o pagamento da sua parcela está em atraso há 20 dias. ⚠️\nA manutenção do débito pode acarretar restrições acadêmicas, incluindo bloqueio de acesso a notas, boletos e matrícula.\nPedimos a regularização imediata. Caso tenha dificuldades para o pagamento, entre em contato para negociarmos juntos a melhor solução.${quickReply('Já paguei', 'Quero negociar')}${cta()}`,
+          `Oi, ${nome}. ⚠️\nJá são 20 dias de atraso no pagamento da sua parcela. Isso pode acarretar restrições acadêmicas, como bloqueio de notas, boletos e matrícula.\nPedimos regularização imediata. Com dificuldade pra pagar? Fale com a gente pra buscarmos a melhor solução juntos.${quickReply('Já paguei', 'Quero negociar')}${cta()}`,
         ]),
         opcoes,
       };
@@ -296,16 +296,16 @@ export class WhatsAppJobService {
     if (diffDias > 0) {
       return {
         texto: escolher([
-          `📅 Olá, ${nome}!\nSua mensalidade vence em *${diffDias} dia(s)* (*${venc}*). Efetue o pagamento em dia para evitar juros e encargos.${quickReply('Já paguei', 'Preciso de ajuda')}${cta()}`,
-          `📅 Oi, ${nome}!\nFaltam *${diffDias} dia(s)* pro vencimento da sua mensalidade (*${venc}*). Pague em dia pra evitar juros e encargos.${quickReply('Já paguei', 'Preciso de ajuda')}${cta()}`,
+          `📅 Olá, ${nome}!\nO pagamento da sua parcela vence em *${diffDias} dia(s)* (*${venc}*). Efetue o pagamento em dia para evitar juros e encargos.${quickReply('Já paguei', 'Preciso de ajuda')}${cta()}`,
+          `📅 Oi, ${nome}!\nFaltam *${diffDias} dia(s)* pro vencimento do pagamento da sua parcela (*${venc}*). Pague em dia pra evitar juros e encargos.${quickReply('Já paguei', 'Preciso de ajuda')}${cta()}`,
         ]),
         opcoes,
       };
     }
     return {
       texto: escolher([
-        `⚠️ Olá, ${nome}!\nSua mensalidade está em aberto há *${atraso} dia(s)* (venceu em *${venc}*). Regularize o quanto antes para evitar maiores encargos.${quickReply('Já paguei', 'Falar com o financeiro')}${cta()}`,
-        `⚠️ Oi, ${nome}!\nJá são *${atraso} dia(s)* de mensalidade em aberto (venceu em *${venc}*). Quanto antes regularizar, menos encargos acumulam.${quickReply('Já paguei', 'Falar com o financeiro')}${cta()}`,
+        `⚠️ Olá, ${nome}!\nO pagamento da sua parcela está em aberto há *${atraso} dia(s)* (venceu em *${venc}*). Regularize o quanto antes para evitar maiores encargos.${quickReply('Já paguei', 'Falar com o financeiro')}${cta()}`,
+        `⚠️ Oi, ${nome}!\nJá são *${atraso} dia(s)* com o pagamento da parcela em aberto (venceu em *${venc}*). Quanto antes regularizar, menos encargos acumulam.${quickReply('Já paguei', 'Falar com o financeiro')}${cta()}`,
       ]),
       opcoes,
     };
@@ -913,12 +913,12 @@ export class WhatsAppJobService {
     ).toLocaleDateString('pt-BR');
 
     if (!lanc.codigoPix) {
-      const mensagem = `Segue o pagamento da sua mensalidade (vencimento *${venc}*).${portalLink ? ` No momento o PIX não está disponível por aqui -- você pode pagar pelo Portal do Aluno Sophia: ${portalLink}` : ' No momento o PIX não está disponível por aqui.'}`;
+      const mensagem = `Segue o pagamento da sua parcela (vencimento *${venc}*).${portalLink ? ` No momento o PIX não está disponível por aqui -- você pode pagar pelo Portal do Aluno Sophia: ${portalLink}` : ' No momento o PIX não está disponível por aqui.'}`;
       await this.whatsapp.enviarTexto(telefone, mensagem, canal);
       return mensagem;
     }
 
-    const mensagem = `Segue o pagamento da sua mensalidade (vencimento *${venc}*):\n\n*PIX Copia e Cola:*\n\`${lanc.codigoPix}\``;
+    const mensagem = `Segue o pagamento da sua parcela (vencimento *${venc}*):\n\n*PIX Copia e Cola:*\n\`${lanc.codigoPix}\``;
     await this.whatsapp.enviarTexto(telefone, mensagem, canal);
 
     try {
@@ -1095,7 +1095,7 @@ export class WhatsAppJobService {
       await this.whatsapp.enviarListaOpcoes(
         telefone,
         texto,
-        'O que deseja fazer?',
+        'Selecione uma das opções abaixo para ser atendido por um de nossos agentes',
         'Ver opções',
         opcoes,
         'financeiro',
@@ -1118,7 +1118,8 @@ export class WhatsAppJobService {
     telefone: string,
     opcoes: OpcaoLista[],
   ): Promise<void> {
-    const corpo = 'O que deseja fazer?';
+    const corpo =
+      'Selecione uma das opções abaixo para ser atendido por um de nossos agentes';
     try {
       await this.whatsapp.enviarListaOpcoes(
         telefone,
