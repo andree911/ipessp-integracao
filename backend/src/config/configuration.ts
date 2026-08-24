@@ -14,6 +14,10 @@ export default () => ({
   },
   webhook: {
     secret: process.env.WEBHOOK_SECRET ?? '',
+    // Secret do webhook do canal "financeiro" (2ª instância Z-API, ver
+    // zapi.financeiro acima) -- separado do WEBHOOK_SECRET de cima de
+    // propósito, cada instância Z-API tem sua própria URL cadastrada.
+    secretFinanceiro: process.env.WEBHOOK_SECRET_FINANCEIRO ?? '',
   },
   ia: {
     bearerToken: process.env.IA_BEARER_TOKEN ?? '',
@@ -127,6 +131,18 @@ export default () => ({
     imagemLembreteLegenda: process.env.WPP_IMAGEM_LEMBRETE_LEGENDA ?? '',
     imagemCobrancaUrl: process.env.WPP_IMAGEM_COBRANCA_URL ?? '',
     imagemCobrancaLegenda: process.env.WPP_IMAGEM_COBRANCA_LEGENDA ?? '',
+    // Segunda instância Z-API, número dedicado só pra cobrança -- separa o
+    // canal de cobrança do número de atendimento/chatbot acima. Todo envio do
+    // whatsapp-job (wpp_job) usa este canal; o resto (respostas do chatbot,
+    // boleto sob demanda em IaService) continua no canal "geral" por padrão,
+    // já que faz parte da mesma conversa que começou no número de atendimento.
+    // Vazio = canal "financeiro" ainda não configurado (WhatsAppService loga
+    // aviso/lança erro igual já faz hoje quando falta instanceId/token).
+    financeiro: {
+      instanceId: process.env.ZAPI_FINANCEIRO_INSTANCE_ID ?? '',
+      token: process.env.ZAPI_FINANCEIRO_TOKEN ?? '',
+      clientToken: process.env.ZAPI_FINANCEIRO_CLIENT_TOKEN ?? '',
+    },
   },
   jwt: {
     secret:

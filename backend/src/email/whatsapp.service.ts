@@ -21,6 +21,15 @@ function detalheErro(err: unknown): string {
 // retrato mais comum em apps de chat/social sem ficar desproporcional.
 const RAZAO_MAX_ALTURA_LARGURA = 1.25;
 
+/**
+ * "geral" = número de atendimento/chatbot (config zapi.*, o único que existia
+ * até agora). "financeiro" = número dedicado à régua de cobrança (config
+ * zapi.financeiro.*) -- separa os dois canais pra não misturar conversa de
+ * chatbot com cobrança. Default é sempre "geral": todo call site que já
+ * existia antes dessa mudança continua se comportando exatamente igual.
+ */
+export type CanalWhatsApp = 'geral' | 'financeiro';
+
 @Injectable()
 export class WhatsAppService {
   private readonly logger = new Logger(WhatsAppService.name);
@@ -30,13 +39,30 @@ export class WhatsAppService {
     private readonly config: ConfigService,
   ) {}
 
-  async enviarTexto(telefone: string, mensagem: string): Promise<void> {
-    const instanceId = this.config.get<string>('zapi.instanceId');
-    const token = this.config.get<string>('zapi.token');
-    const clientToken = this.config.get<string>('zapi.clientToken');
+  private credenciais(canal: CanalWhatsApp): {
+    instanceId: string;
+    token: string;
+    clientToken: string;
+  } {
+    const prefixo = canal === 'financeiro' ? 'zapi.financeiro' : 'zapi';
+    return {
+      instanceId: this.config.get<string>(`${prefixo}.instanceId`) ?? '',
+      token: this.config.get<string>(`${prefixo}.token`) ?? '',
+      clientToken: this.config.get<string>(`${prefixo}.clientToken`) ?? '',
+    };
+  }
+
+  async enviarTexto(
+    telefone: string,
+    mensagem: string,
+    canal: CanalWhatsApp = 'geral',
+  ): Promise<void> {
+    const { instanceId, token, clientToken } = this.credenciais(canal);
 
     if (!instanceId || !token) {
-      this.logger.warn('Z-API não configurada — mensagem não enviada');
+      this.logger.warn(
+        `Z-API (${canal}) não configurada — mensagem não enviada`,
+      );
       return;
     }
 
@@ -85,13 +111,14 @@ export class WhatsAppService {
     tituloLista: string,
     botaoLabel: string,
     opcoes: { id: string; title: string }[],
+    canal: CanalWhatsApp = 'geral',
   ): Promise<void> {
-    const instanceId = this.config.get<string>('zapi.instanceId');
-    const token = this.config.get<string>('zapi.token');
-    const clientToken = this.config.get<string>('zapi.clientToken');
+    const { instanceId, token, clientToken } = this.credenciais(canal);
 
     if (!instanceId || !token) {
-      throw new Error('Z-API não configurada — lista não pode ser enviada');
+      throw new Error(
+        `Z-API (${canal}) não configurada — lista não pode ser enviada`,
+      );
     }
 
     const url = `https://api.z-api.io/instances/${instanceId}/token/${token}/send-option-list`;
@@ -122,17 +149,15 @@ export class WhatsAppService {
   }
 
   /** Consulta se a sessão do WhatsApp está de fato pareada na Z-API (independe de qualquer envio). */
-  async verificarConexao(): Promise<{
+  async verificarConexao(canal: CanalWhatsApp = 'geral'): Promise<{
     connected: boolean;
     smartphoneConnected?: boolean;
     error?: string;
   }> {
-    const instanceId = this.config.get<string>('zapi.instanceId');
-    const token = this.config.get<string>('zapi.token');
-    const clientToken = this.config.get<string>('zapi.clientToken');
+    const { instanceId, token, clientToken } = this.credenciais(canal);
 
     if (!instanceId || !token) {
-      return { connected: false, error: 'Z-API não configurada' };
+      return { connected: false, error: `Z-API (${canal}) não configurada` };
     }
 
     const url = `https://api.z-api.io/instances/${instanceId}/token/${token}/status`;
@@ -156,13 +181,14 @@ export class WhatsAppService {
     base64: string,
     caption?: string,
     mimeType = 'image/png',
+    canal: CanalWhatsApp = 'geral',
   ): Promise<void> {
-    const instanceId = this.config.get<string>('zapi.instanceId');
-    const token = this.config.get<string>('zapi.token');
-    const clientToken = this.config.get<string>('zapi.clientToken');
+    const { instanceId, token, clientToken } = this.credenciais(canal);
 
     if (!instanceId || !token) {
-      throw new Error('Z-API não configurada — imagem não pode ser enviada');
+      throw new Error(
+        `Z-API (${canal}) não configurada — imagem não pode ser enviada`,
+      );
     }
 
     const url = `https://api.z-api.io/instances/${instanceId}/token/${token}/send-image`;
@@ -191,13 +217,14 @@ export class WhatsAppService {
     base64: string,
     fileName: string,
     extensao = 'pdf',
+    canal: CanalWhatsApp = 'geral',
   ): Promise<void> {
-    const instanceId = this.config.get<string>('zapi.instanceId');
-    const token = this.config.get<string>('zapi.token');
-    const clientToken = this.config.get<string>('zapi.clientToken');
+    const { instanceId, token, clientToken } = this.credenciais(canal);
 
     if (!instanceId || !token) {
-      throw new Error('Z-API não configurada — documento não pode ser enviado');
+      throw new Error(
+        `Z-API (${canal}) não configurada — documento não pode ser enviado`,
+      );
     }
 
     const url = `https://api.z-api.io/instances/${instanceId}/token/${token}/send-document/${extensao}`;
@@ -226,9 +253,10 @@ export class WhatsAppService {
     telefone: string,
     url: string,
     fileName: string,
+    canal: CanalWhatsApp = 'geral',
   ): Promise<void> {
     const base64 = await this.baixarComoBase64(url, 'PDF');
-    await this.enviarDocumento(telefone, base64, fileName, 'pdf');
+    await this.enviarDocumento(telefone, base64, fileName, 'pdf', canal);
   }
 
   /**

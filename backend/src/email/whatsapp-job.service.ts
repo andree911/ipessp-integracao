@@ -8,7 +8,7 @@ import { errMsg } from '../common/err.util';
 import { FinanceiroService } from '../financeiro/financeiro.service';
 import { SophiaService } from '../sophia/sophia.service';
 import { LancamentoAlunoApiModel } from '../sophia/types/sophia.types';
-import { WhatsAppService } from './whatsapp.service';
+import { WhatsAppService, CanalWhatsApp } from './whatsapp.service';
 import { EmailLog, EmailTipo } from './entities/email-log.entity';
 import { ClienteCache } from '../financeiro/entities/cliente-cache.entity';
 import { LancamentoCache } from '../financeiro/entities/lancamento-cache.entity';
@@ -709,12 +709,20 @@ export class WhatsAppJobService {
    * genérico só com o título do botão como contexto, sem saber que veio de
    * uma cobrança.
    */
+  /**
+   * `canal` é sempre o mesmo número em que a mensagem original de cobrança
+   * chegou (repassado pelo WhatsAppWebhookController, que sabe em qual rota
+   * -- geral ou financeiro -- o webhook bateu) -- responder por um canal
+   * diferente do que o cliente está vendo a conversa quebraria a
+   * continuidade (ou pior, falharia se aquele canal nem estiver configurado).
+   */
   async responderOpcaoCobranca(
     selectedRowId: string,
     telefone: string,
+    canal: CanalWhatsApp,
   ): Promise<{ mensagem: string }> {
     if (selectedRowId === 'portal') {
-      const mensagem = await this.enviarSoLinkPortal(telefone);
+      const mensagem = await this.enviarSoLinkPortal(telefone, canal);
       return { mensagem };
     }
 
@@ -728,6 +736,7 @@ export class WhatsAppJobService {
       const mensagem = await this.enviarPixPorWhatsapp(
         telefone,
         codigoLancamento,
+        canal,
       );
       return { mensagem };
     }
@@ -749,13 +758,13 @@ export class WhatsAppJobService {
         (emailFinanceiro
           ? `\n\nSe preferir, também pode mandar um e-mail: ${emailFinanceiro}`
           : '');
-      await this.whatsapp.enviarTexto(telefone, mensagem);
+      await this.whatsapp.enviarTexto(telefone, mensagem, canal);
       return { mensagem };
     }
 
     if (selectedRowId === 'ja_paguei') {
       const mensagem = await this.checarPagamentoAoVivo(telefone);
-      await this.whatsapp.enviarTexto(telefone, mensagem);
+      await this.whatsapp.enviarTexto(telefone, mensagem, canal);
       return { mensagem };
     }
 
@@ -764,7 +773,7 @@ export class WhatsAppJobService {
       const mensagem = siteUrl
         ? `Aqui está o link do nosso site: ${siteUrl}`
         : 'No momento não temos o link do site disponível.';
-      await this.whatsapp.enviarTexto(telefone, mensagem);
+      await this.whatsapp.enviarTexto(telefone, mensagem, canal);
       return { mensagem };
     }
 
@@ -809,14 +818,17 @@ export class WhatsAppJobService {
   }
 
   /** Só o link do Portal do Aluno -- resposta da opção "Pagar agora pelo portal", e fallback de enviarPixPorWhatsapp quando não dá pra identificar o aluno com segurança. */
-  private async enviarSoLinkPortal(telefone: string): Promise<string> {
+  private async enviarSoLinkPortal(
+    telefone: string,
+    canal: CanalWhatsApp,
+  ): Promise<string> {
     const portalLink =
       this.config.get<string>('email.linkPortalAluno') ||
       this.config.get<string>('email.siteUrl');
     const mensagem = portalLink
       ? `Aqui está o link do Portal do Aluno Sophia: ${portalLink}`
       : 'No momento não temos o link do Portal disponível — qualquer dúvida, fale com a secretaria.';
-    await this.whatsapp.enviarTexto(telefone, mensagem);
+    await this.whatsapp.enviarTexto(telefone, mensagem, canal);
     return mensagem;
   }
 
@@ -834,10 +846,11 @@ export class WhatsAppJobService {
    */
   private async enviarPixPorWhatsapp(
     telefone: string,
-    codigoLancamento?: number,
+    codigoLancamento: number | undefined,
+    canal: CanalWhatsApp,
   ): Promise<string> {
     const clientes = await this.buscarClientesPorTelefone(telefone);
-    if (clientes.length !== 1) return this.enviarSoLinkPortal(telefone);
+    if (clientes.length !== 1) return this.enviarSoLinkPortal(telefone, canal);
 
     const cliente = clientes[0];
     try {
@@ -846,7 +859,7 @@ export class WhatsAppJobService {
       );
       const abertos = lancamentos.filter((l) => !l.recebido || l.recebido <= 0);
       if (abertos.length === 0) {
-        return this.enviarSemPendencia(telefone);
+        return this.enviarSemPendencia(telefone, canal);
       }
 
       const lancEspecifico = codigoLancamento
@@ -854,7 +867,7 @@ export class WhatsAppJobService {
         : undefined;
 
       if (lancEspecifico) {
-        return this.enviarPixDoLancamento(telefone, lancEspecifico);
+        return this.enviarPixDoLancamento(telefone, lancEspecifico, canal);
       }
 
       // Sem código, ou o lançamento daquela mensagem não está mais em
@@ -865,21 +878,24 @@ export class WhatsAppJobService {
           parseDateBR(a.dataVencimento.substring(0, 10)).getTime() -
           parseDateBR(b.dataVencimento.substring(0, 10)).getTime(),
       );
-      return this.enviarPixDoLancamento(telefone, abertos[0]);
+      return this.enviarPixDoLancamento(telefone, abertos[0], canal);
     } catch (err: unknown) {
       this.logger.warn(
         `enviarPixPorWhatsapp: falha ao consultar Sophia pro aluno ${cliente.codigoSophia}: ${errMsg(err)}`,
       );
-      return this.enviarSoLinkPortal(telefone);
+      return this.enviarSoLinkPortal(telefone, canal);
     }
   }
 
-  private async enviarSemPendencia(telefone: string): Promise<string> {
+  private async enviarSemPendencia(
+    telefone: string,
+    canal: CanalWhatsApp,
+  ): Promise<string> {
     const portalLink =
       this.config.get<string>('email.linkPortalAluno') ||
       this.config.get<string>('email.siteUrl');
     const mensagem = `Não encontramos nenhuma pendência em aberto no seu nome.${portalLink ? ` Se precisar, o Portal do Aluno também está disponível: ${portalLink}` : ''}`;
-    await this.whatsapp.enviarTexto(telefone, mensagem);
+    await this.whatsapp.enviarTexto(telefone, mensagem, canal);
     return mensagem;
   }
 
@@ -887,6 +903,7 @@ export class WhatsAppJobService {
   private async enviarPixDoLancamento(
     telefone: string,
     lanc: LancamentoAlunoApiModel,
+    canal: CanalWhatsApp,
   ): Promise<string> {
     const portalLink =
       this.config.get<string>('email.linkPortalAluno') ||
@@ -897,12 +914,12 @@ export class WhatsAppJobService {
 
     if (!lanc.codigoPix) {
       const mensagem = `Segue o pagamento da sua mensalidade (vencimento *${venc}*).${portalLink ? ` No momento o PIX não está disponível por aqui -- você pode pagar pelo Portal do Aluno Sophia: ${portalLink}` : ' No momento o PIX não está disponível por aqui.'}`;
-      await this.whatsapp.enviarTexto(telefone, mensagem);
+      await this.whatsapp.enviarTexto(telefone, mensagem, canal);
       return mensagem;
     }
 
     const mensagem = `Segue o pagamento da sua mensalidade (vencimento *${venc}*):\n\n*PIX Copia e Cola:*\n\`${lanc.codigoPix}\``;
-    await this.whatsapp.enviarTexto(telefone, mensagem);
+    await this.whatsapp.enviarTexto(telefone, mensagem, canal);
 
     try {
       const qrBuffer = await QRCode.toBuffer(lanc.codigoPix, {
@@ -915,6 +932,7 @@ export class WhatsAppJobService {
         qrBuffer.toString('base64'),
         'QR Code PIX',
         'image/png',
+        canal,
       );
     } catch (err: unknown) {
       this.logger.warn(
@@ -1021,6 +1039,7 @@ export class WhatsAppJobService {
           imagem.base64,
           legenda,
           'image/jpeg',
+          'financeiro',
         );
         if (opcoes.length > 0) {
           await this.enviarOpcoesCurtas(telefone, opcoes);
@@ -1053,6 +1072,7 @@ export class WhatsAppJobService {
       await this.whatsapp.enviarTexto(
         telefone,
         `Quer conhecer mais sobre a IPESSP?\n${siteUrl}`,
+        'financeiro',
       );
     } catch (err: unknown) {
       this.logger.warn(
@@ -1068,7 +1088,7 @@ export class WhatsAppJobService {
     opcoes: OpcaoLista[],
   ): Promise<void> {
     if (opcoes.length === 0) {
-      await this.whatsapp.enviarTexto(telefone, texto);
+      await this.whatsapp.enviarTexto(telefone, texto, 'financeiro');
       return;
     }
     try {
@@ -1078,13 +1098,14 @@ export class WhatsAppJobService {
         'O que deseja fazer?',
         'Ver opções',
         opcoes,
+        'financeiro',
       );
     } catch (err: unknown) {
       this.logger.warn(
         `Lista falhou para ${telefone}, caindo pra texto puro — ${errMsg(err)}`,
       );
       const textoComOpcoes = `${texto}\n\n${opcoes.map((o) => `• ${o.title}`).join('\n')}`;
-      await this.whatsapp.enviarTexto(telefone, textoComOpcoes);
+      await this.whatsapp.enviarTexto(telefone, textoComOpcoes, 'financeiro');
     }
   }
 
@@ -1105,6 +1126,7 @@ export class WhatsAppJobService {
         'Escolha uma opção',
         'Ver opções',
         opcoes,
+        'financeiro',
       );
     } catch (err: unknown) {
       this.logger.warn(
@@ -1112,7 +1134,7 @@ export class WhatsAppJobService {
       );
       const textoComOpcoes = `${corpo}\n\n${opcoes.map((o) => `• ${o.title}`).join('\n')}`;
       try {
-        await this.whatsapp.enviarTexto(telefone, textoComOpcoes);
+        await this.whatsapp.enviarTexto(telefone, textoComOpcoes, 'financeiro');
       } catch (err2: unknown) {
         this.logger.warn(
           `Fallback de texto das opções (pós-banner) também falhou para ${telefone} — ${errMsg(err2)}`,

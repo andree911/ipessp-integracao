@@ -11,6 +11,7 @@ import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { WhatsAppJobService } from './whatsapp-job.service';
+import { CanalWhatsApp } from './whatsapp.service';
 import { errMsg } from '../common/err.util';
 
 const OPCOES_COBRANCA = ['ja_paguei', 'ajuda', 'portal', 'site'];
@@ -44,6 +45,13 @@ interface ZApiWebhookPayload {
  * alteração pro fluxo "Encaminhar Leads" do n8n, que continua cuidando de
  * leads normalmente -- só o dono do roteamento de ENTRADA mudou, a lógica de
  * lead em si continua 100% no n8n/Core, sem duplicar aqui.
+ *
+ * Dois canais, duas rotas: /whatsapp/webhook é o número de atendimento/chatbot
+ * de sempre (canal "geral"); /whatsapp/webhook/financeiro é o número dedicado
+ * da régua de cobrança (canal "financeiro", cadastrado como uma 2ª instância
+ * na Z-API). Cada rota tem seu próprio secret -- ver verificarOrigem -- e
+ * responderOpcaoCobranca sempre responde pelo MESMO canal em que a pergunta
+ * chegou, pra não trocar de conversa no meio do caminho.
  */
 @Controller('whatsapp')
 export class WhatsAppWebhookController {
@@ -57,11 +65,28 @@ export class WhatsAppWebhookController {
 
   @Post('webhook')
   @HttpCode(200)
-  async receberWebhook(
+  async receberWebhookGeral(
     @Body() payload: ZApiWebhookPayload,
     @Query('secret') secret?: string,
   ): Promise<{ ok: boolean }> {
-    this.verificarOrigem(secret);
+    return this.processarWebhook(payload, secret, 'geral');
+  }
+
+  @Post('webhook/financeiro')
+  @HttpCode(200)
+  async receberWebhookFinanceiro(
+    @Body() payload: ZApiWebhookPayload,
+    @Query('secret') secret?: string,
+  ): Promise<{ ok: boolean }> {
+    return this.processarWebhook(payload, secret, 'financeiro');
+  }
+
+  private async processarWebhook(
+    payload: ZApiWebhookPayload,
+    secret: string | undefined,
+    canal: CanalWhatsApp,
+  ): Promise<{ ok: boolean }> {
+    this.verificarOrigem(secret, canal);
 
     // Mesmo filtro que só existia no n8n ("Filtro Modo Teste") -- em modo
     // teste, só o telefone de teste é processado; qualquer outro é
@@ -80,6 +105,7 @@ export class WhatsAppWebhookController {
         await this.whatsappJobService.responderOpcaoCobranca(
           selectedRowId,
           payload.phone,
+          canal,
         );
       } catch (err: unknown) {
         this.logger.error(
@@ -96,13 +122,21 @@ export class WhatsAppWebhookController {
   /**
    * A Z-API não assina o payload do webhook, então a única verificação de
    * origem possível é um secret compartilhado embutido na própria URL
-   * cadastrada no painel da Z-API (ex: /whatsapp/webhook?secret=xxx).
-   * WEBHOOK_SECRET é opcional por retrocompatibilidade: enquanto não for
-   * configurada, o comportamento atual (sem verificação) é preservado --
-   * configure a env var e atualize a URL na Z-API para ativar a checagem.
+   * cadastrada no painel da Z-API (ex: /whatsapp/webhook?secret=xxx). Cada
+   * canal usa sua própria variável (WEBHOOK_SECRET / WEBHOOK_SECRET_FINANCEIRO)
+   * -- são instâncias/números diferentes, não faz sentido compartilhar
+   * segredo entre eles. Opcional por retrocompatibilidade: enquanto a
+   * variável daquele canal não for configurada, o comportamento atual (sem
+   * verificação) é preservado -- configure a env var e atualize a URL na
+   * Z-API para ativar a checagem.
    */
-  private verificarOrigem(secret: string | undefined): void {
-    const esperado = this.config.get<string>('webhook.secret');
+  private verificarOrigem(
+    secret: string | undefined,
+    canal: CanalWhatsApp,
+  ): void {
+    const chave =
+      canal === 'financeiro' ? 'webhook.secretFinanceiro' : 'webhook.secret';
+    const esperado = this.config.get<string>(chave);
     if (!esperado) return;
     if (secret !== esperado) {
       throw new UnauthorizedException('Origem do webhook não verificada');

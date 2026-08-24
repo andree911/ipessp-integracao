@@ -272,6 +272,18 @@ export class AdminController {
       zapiInstanceIdConfigurada: !!this.config.get<string>('zapi.instanceId'),
       zapiTokenConfigurada: !!this.config.get<string>('zapi.token'),
       zapiClientTokenConfigurada: !!this.config.get<string>('zapi.clientToken'),
+      // Canal dedicado da régua de cobrança (whatsapp-job) -- enquanto não
+      // configurado, o job de cobrança usa o canal "geral" acima mesmo (ver
+      // fallback em WhatsAppService.credenciais).
+      zapiFinanceiroInstanceIdConfigurada: !!this.config.get<string>(
+        'zapi.financeiro.instanceId',
+      ),
+      zapiFinanceiroTokenConfigurada: !!this.config.get<string>(
+        'zapi.financeiro.token',
+      ),
+      zapiFinanceiroClientTokenConfigurada: !!this.config.get<string>(
+        'zapi.financeiro.clientToken',
+      ),
       telefoneFinanceiroConfigurado: !!this.config.get<string>(
         'zapi.telefoneFinanceiro',
       ),
@@ -280,9 +292,11 @@ export class AdminController {
     };
   }
 
-  /** Chama a Z-API de verdade pra saber se a sessão do WhatsApp está pareada — independe de qualquer envio. */
+  /** Chama a Z-API de verdade pra saber se a sessão do WhatsApp está pareada — independe de qualquer envio. `?canal=financeiro` checa o número dedicado de cobrança em vez do de atendimento. */
   @Get('whatsapp/conexao')
-  diagnosticoWhatsappConexao() {
-    return this.whatsapp.verificarConexao();
+  diagnosticoWhatsappConexao(@Query('canal') canal?: string) {
+    return this.whatsapp.verificarConexao(
+      canal === 'financeiro' ? 'financeiro' : 'geral',
+    );
   }
 }

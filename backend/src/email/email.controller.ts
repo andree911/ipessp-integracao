@@ -18,6 +18,7 @@ import { ConfigService } from '@nestjs/config';
 import { EmailJobService } from './email-job.service';
 import { EmailService } from './email.service';
 import { WhatsAppJobService } from './whatsapp-job.service';
+import { CanalWhatsApp } from './whatsapp.service';
 import { EmailLog } from './entities/email-log.entity';
 import { templateLembrete } from './templates/email.templates';
 import { errMsg } from '../common/err.util';
@@ -205,11 +206,13 @@ export class EmailController {
     }
   }
 
+  /** Endpoint de teste/debug -- `canal` opcional, default "geral" (mesmo comportamento de antes do canal financeiro existir). */
   @Post('whatsapp/resposta-opcao')
   @HttpCode(200)
   async whatsappRespostaOpcao(
     @Body('selectedRowId') selectedRowId: string,
     @Body('telefone') telefone: string,
+    @Body('canal') canal?: CanalWhatsApp,
   ): Promise<{ ok: boolean; mensagem: string }> {
     if (!selectedRowId)
       throw new BadRequestException('Informe o campo "selectedRowId"');
@@ -217,6 +220,7 @@ export class EmailController {
     const { mensagem } = await this.whatsappJobService.responderOpcaoCobranca(
       selectedRowId,
       telefone,
+      canal === 'financeiro' ? 'financeiro' : 'geral',
     );
     return { ok: true, mensagem };
   }
