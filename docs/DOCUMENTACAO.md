@@ -121,7 +121,7 @@ Rotina automatizada de lembretes e avisos de vencimento, com cron configurável:
 ### O que é a Z-API
 O WhatsApp (Meta) não oferece uma API pública própria para números comuns automatizarem envio/recebimento de mensagens — só a API Business oficial, que exige processo de verificação como empresa. A Z-API é um serviço terceirizado que faz essa ponte: mantém uma sessão de WhatsApp Web pareada com o número comercial do IPESSP e expõe isso como uma API HTTP comum, nos dois sentidos:
 - **Envio:** o backend faz chamadas REST à Z-API (`send-text`, `send-option-list`, `send-image`, `send-document` etc.) para mandar mensagens — usado pelo chatbot e pelas réguas de cobrança.
-- **Recebimento:** a Z-API é configurada com uma URL de webhook própria; toda mensagem recebida no número comercial é repassada via `POST` para essa URL. Hoje essa URL cai no fluxo do n8n, que roteia para o backend conforme o tipo de mensagem (cobrança vs. chatbot geral) — ver `backend/CONTEXT.md`, seção "Pendência: webhook da Z-API", para o detalhe de roteamento e o ajuste pendente na VPS.
+- **Recebimento:** a Z-API é configurada com uma URL de webhook própria; toda mensagem recebida no número comercial é repassada via `POST` para essa URL. Essa URL cai primeiro numa exceção do Caddy que roteia pro backend, que trata a resposta de cobrança e repassa o resto pro n8n internamente — ver `backend/CONTEXT.md`, seção "Histórico: webhook da Z-API não chegava no backend", para o detalhe do roteamento.
 
 As credenciais da instância (instance ID, token, client token) e a URL exata do webhook ficam só no `.env` de produção e no painel da própria Z-API — não são reproduzidas aqui.
 
@@ -137,7 +137,7 @@ Cada ambiente mantém seu próprio arquivo `.env` (fora do repositório de códi
 | ERP SophiA                    | `SOPHIA_BASE_URL`, `SOPHIA_USUARIO`, `SOPHIA_SENHA`, `SOPHIA_TENANT` | Integração com o ERP |
 | Armazenamento                 | `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_PUBLIC_BASE_URL` | Storage de arquivos (currículos), substituiu o Supabase Storage |
 | Autenticação da API           | `IA_BEARER_TOKEN`, `ADMIN_API_KEY`, `JWT_SECRET`                    | Proteção dos endpoints `/ia/*`, `/v1/ti/*` e `/v1/admin/*` |
-| WhatsApp                      | `ZAPI_INSTANCE_ID`, `ZAPI_TOKEN`, `ZAPI_CLIENT_TOKEN`               | Envio/recebimento de mensagens |
+| WhatsApp                      | `ZAPI_INSTANCE_ID`, `ZAPI_TOKEN`, `ZAPI_CLIENT_TOKEN` (canal "geral"); `ZAPI_FINANCEIRO_INSTANCE_ID`, `ZAPI_FINANCEIRO_TOKEN`, `ZAPI_FINANCEIRO_CLIENT_TOKEN` (canal "financeiro", régua de cobrança) | Envio/recebimento de mensagens |
 | E-mail                        | `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`                  | Envio de e-mails transacionais e de cobrança |
 | Régua de cobrança             | `EMAIL_CRON_HABILITADO`, `EMAIL_DIAS_ANTES`, `EMAIL_DIAS_APOS`, `WPP_CRON_HABILITADO`, `WPP_DIAS_ANTES`, `WPP_DIAS_APOS` | Configuração dos jobs automáticos |
 | Dados institucionais          | `ESCOLA_NOME`, `ESCOLA_TELEFONE`, `ESCOLA_SITE`, `ESCOLA_CNPJ`, `ESCOLA_EMAIL_NOTIFICACOES` | Usados em e-mails e templates |

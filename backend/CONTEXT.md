@@ -299,7 +299,9 @@ Os fluxos acima usam `$env.NOME` (n8n auto-hospedado na mesma VPS via Docker Com
 | `WEBHOOK_SECRET` | (reservado para webhooks internos) |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` | Envio de e-mail transacional |
 | `EMAIL_CRON_HABILITADO`, `EMAIL_DIAS_ANTES`, `EMAIL_DIAS_APOS`, `EMAIL_LOGO_URL`, `EMAIL_PORTAL_ALUNO_URL` | Job de cobrança por e-mail |
-| `ZAPI_INSTANCE_ID`, `ZAPI_TOKEN`, `ZAPI_CLIENT_TOKEN`, `ZAPI_TELEFONE_FINANCEIRO` | Envio de WhatsApp (Z-API) |
+| `ZAPI_INSTANCE_ID`, `ZAPI_TOKEN`, `ZAPI_CLIENT_TOKEN` | Envio de WhatsApp (Z-API), canal "geral" (atendimento/chatbot) |
+| `ZAPI_FINANCEIRO_INSTANCE_ID`, `ZAPI_FINANCEIRO_TOKEN`, `ZAPI_FINANCEIRO_CLIENT_TOKEN`, `ZAPI_TELEFONE_FINANCEIRO` | 2ª instância Z-API, canal "financeiro" (régua de cobrança) — configurada e ativa em produção desde 2026-08-25 |
+| `WEBHOOK_SECRET_FINANCEIRO` | Secret da URL de webhook `/whatsapp/webhook/financeiro` (canal "financeiro", cadastrada separada no painel da instância) |
 | `WPP_CRON_HABILITADO`, `WPP_DIAS_ANTES`, `WPP_DIAS_APOS` | Job de cobrança por WhatsApp |
 | `ESCOLA_NOME`, `ESCOLA_TELEFONE`, `ESCOLA_SITE`, `ESCOLA_CNPJ`, `ESCOLA_ENDERECO`, `ESCOLA_EMAIL_NOTIFICACOES`, `ESCOLA_INSTAGRAM`, `ESCOLA_FACEBOOK`, `ESCOLA_YOUTUBE`, `ESCOLA_LINKEDIN` | Dados institucionais usados em e-mails/templates |
 | `BACKEND_URL`, `SITE_URL` | URLs usadas em callbacks/links gerados |
@@ -346,9 +348,12 @@ ssh -i ~/.ssh/id_ed25519_ipessp root@179.197.237.177 \
 
 ---
 
-## Pendência: webhook da Z-API não chega no backend (cobrança WhatsApp)
+## Histórico: webhook da Z-API não chegava no backend (cobrança WhatsApp) — resolvido
 
-**Status (2026-08-18): não aplicado — VPS fora do ar, aplicar assim que voltar.**
+**Status (2026-08-25): aplicado.** A exceção no Caddyfile abaixo já está em produção
+(`/opt/ipessp/Caddyfile`), roteando o webhook do fluxo n8n de leads pro backend
+antes do `handle_path /n8n/*` genérico. Seção mantida como histórico do
+problema/diagnóstico, não é mais uma pendência.
 
 Achado ao revisar a integração de cobrança por WhatsApp: o painel da Z-API está
 configurado com `https://srv1835634.hstgr.cloud/n8n/webhook/930c3dd4-8cd0-4d66-a615-e2a959fedaf8`
@@ -376,19 +381,18 @@ Z-API ──(externo, via Caddy)──► /n8n/webhook/930c3dd4-...
                           └─ resto (lead) ──(interno, sem Caddy)──► n8n:5678/webhook/930c3dd4-...
 ```
 
-**Aplicar quando a VPS voltar** (`/opt/ipessp/Caddyfile`, ANTES do bloco
-existente `handle /n8n/* { reverse_proxy n8n:5678 }`):
+Aplicado em `/opt/ipessp/Caddyfile` (ANTES do bloco `handle /n8n/* { reverse_proxy n8n:5678 }`):
 ```caddyfile
 handle /n8n/webhook/930c3dd4-8cd0-4d66-a615-e2a959fedaf8 {
-    rewrite * /whatsapp/webhook{query}
+    rewrite * /whatsapp/webhook?secret=<WEBHOOK_SECRET>
     reverse_proxy integracao-service:3000
 }
 ```
 
-E confirmar/setar em `/opt/ipessp/integracao.env`:
+E confirmado em `/opt/ipessp/integracao.env`:
 ```bash
 N8N_WHATSAPP_WEBHOOK_URL=http://n8n:5678/webhook/930c3dd4-8cd0-4d66-a615-e2a959fedaf8
-WEBHOOK_SECRET=<algum-valor>   # se ainda vazio, a checagem de origem do webhook fica desligada
+WEBHOOK_SECRET=<valor configurado>
 ```
 
 Depois de editar o Caddyfile: `docker compose exec caddy caddy reload
