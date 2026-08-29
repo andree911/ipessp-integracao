@@ -27,14 +27,15 @@ IPESSP = Instituto de Pesquisa e Educação em Saúde de São Paulo.
 Frontend Next.js deste projeto (não publicado)
   └── Formulários (contato, manifestação, evento, candidatura) → /v1/*
 
-WhatsApp (usuário) ──► Z-API ──► n8n Bot Flow (AI Agent + Tools)
-                                       │
-                                       ▼
-                               NestJS Backend (VPS, Docker Compose)
-                               ├── /ia/*          → Dados do aluno/professor (Sophia + Supabase)
-                               ├── /v1/ti/*       → Abertura e consulta de chamados (Supabase)
-                               ├── /v1/admin/*    → Endpoints administrativos / debug
-                               └── /health        → Health check
+WhatsApp (usuário) ──► Z-API ──► NestJS Backend (VPS, Docker Compose)
+                                 ├── /whatsapp/webhook → ChatbotService (bot de atendimento)
+                                 │                       ├── classificação + redação → API Anthropic
+                                 │                       ├── lead     → /crm/leads (ipessp-core) + consultoras
+                                 │                       └── financeiro → cache local (linha digitável, PIX, QR)
+                                 ├── /ia/*          → Dados do aluno/professor (Sophia + Supabase)
+                                 ├── /v1/ti/*       → Abertura e consulta de chamados (Supabase)
+                                 ├── /v1/admin/*    → Endpoints administrativos / debug
+                                 └── /health        → Health check
 
 SophiaService (cron horário) ──► Sync ──► cache local (clientes_cache / lancamentos_cache)
                                                 │
@@ -113,6 +114,55 @@ Avisos ativos da tabela `avisos` no Supabase.
 
 #### `GET /ia/calendario`
 Eventos futuros da tabela `calendario` no Supabase.
+
+---
+
+### `/whatsapp/webhook` — Chatbot de atendimento
+
+Desde 2026-08-29 o bot de atendimento roda **no backend**, não mais no n8n
+(ver "Fluxos n8n" abaixo). A Z-API entrega a mensagem em
+`POST /whatsapp/webhook` (`WhatsAppWebhookController`, sem Bearer — a origem é
+verificada pelo `secret` na query string); o que não for resposta de opção da
+régua de cobrança vai pro `ChatbotService`, que responde a conversa inteira.
+
+O fluxo, em `src/chatbot/`:
+
+1. **Validação de texto** — figurinha, reação, áudio, imagem, documento e
+   localização são ignorados em silêncio. Título de seleção de lista conta
+   como texto.
+2. **Saudação** — primeira mensagem do telefone (ou primeira depois do TTL de
+   6h) recebe só a saudação da Eliza, e o turno encerra sem classificar.
+3. **Classificação** — da segunda mensagem em diante, uma chamada ao modelo
+   devolve `lead`, `financeiro` ou `outro`. A trilha da sessão entra no prompt
+   como desempate, pra continuação genérica ("sim", um CPF solto, um nome) não
+   reiniciar o atendimento.
+4. **Lead** — abre com o texto fixo de boas-vindas (nome completo / e-mail /
+   curso), coleta ao longo dos turnos e, com os três dados, avisa as
+   consultoras (`IaService.encaminharHumano('comercial')`) e registra em
+   `POST {IPESSP_CORE_URL}/crm/leads` — o mesmo endpoint que a tool "Registrar
+   Lead CRM" do n8n chamava.
+5. **Financeiro** — resolve o CPF (sessão → `telefone_cpf_cache` → o que a
+   pessoa digitou), consulta `FinanceiroService.getByCpf` e manda a parcela
+   pedida (ou pergunta qual, se houver várias): cabeçalho, linha digitável,
+   PIX copia-e-cola e o QR code como imagem quando o lançamento tem código PIX
+   emitido.
+6. **Outro** — responde com o catálogo real de cursos (`IaService.getCursos`)
+   no contexto.
+
+O modelo **só classifica e redige**. Buscar dado e executar ação (registrar
+lead, avisar consultora, gerar QR code) é do serviço — diferente do AI Agent
+com tools do n8n, onde o modelo decidia quando chamar cada rota. Os textos que
+são promessa concreta ao usuário (saudação, boas-vindas da triagem,
+confirmação de lead registrado) são fixos, não gerados.
+
+O estado da conversa (`ChatbotSessaoStore`) é um `Map` em memória com TTL de
+6h — mesma durabilidade do `$getWorkflowStaticData` que o n8n usava. Vale a
+limitação herdada: **só funciona com instância única** do container; escalar
+horizontalmente exige trocar esse store por tabela ou Redis, e é o único ponto
+do chatbot que guarda estado.
+
+Cobertura em `src/chatbot/chatbot.service.spec.ts` (`npm test`): 20 casos com
+Z-API, Sophia e modelo mockados.
 
 ---
 
@@ -271,12 +321,27 @@ E-mail institucional padrão de aluno: `ra[RA]@fipessp.edu.br`
 
 ---
 
-## Fluxos n8n em `docs/`
+## Fluxos n8n em `n8n/`
+
+> **O bot de atendimento não roda mais no n8n (2026-08-29).** A lógica foi
+> portada pro `ChatbotService` (ver `/whatsapp/webhook` acima) e o repasse
+> `backend → n8n` foi removido junto com a env `N8N_WHATSAPP_WEBHOOK_URL`. Os
+> JSONs abaixo ficam no repositório como **referência histórica** — é deles
+> que saíram os prompts, as regras de classificação e os textos fixos do
+> chatbot, e é contra eles que a suíte `npm run test:bot` continua rodando.
+> Desative os workflows correspondentes no painel do n8n; se algum ainda
+> estiver ligado, ele não recebe mais nada (a Z-API entrega no backend).
 
 | Arquivo | Descrição |
 |---|---|
-| `Bot-IPESSP-WhatsApp.roteado.json` | Bot de atendimento (AI Agent) — financeiro, secretaria, TI, cursos, captura de lead e envio de boleto em PDF. Confirmado idêntico ao workflow inativo "Bot IPESSP WhatsApp (Roteado)" no n8n (2026-08-02) |
-| `Bot-IPESSP-WhatsApp.encaminhar-leads.json` | Variante do bot que roda ativa no n8n hoje ("Bot IPESSP WhatsApp (Encaminhar Leads)") |
+| `Bot-IPESSP-WhatsApp.roteado.json` | Bot de atendimento (AI Agent) — financeiro, secretaria, TI, cursos, captura de lead e envio de boleto em PDF. Origem dos prompts portados pro `src/chatbot/chatbot.prompts.ts` |
+| `Bot-IPESSP-WhatsApp.encaminhar-leads.json` | Variante enxuta que rodava ativa no n8n até a migração ("Bot IPESSP WhatsApp (Encaminhar Leads)") |
+
+**O que ficou de fora da migração:** secretaria, suporte de TI, avisos,
+calendário, atendimento a professor, envio de boleto em PDF e o menu de opções
+clicáveis. O escopo do chatbot no backend é lead + financeiro + dúvida geral
+de curso; as rotas `/ia/*` e `/v1/ti/*` que esses fluxos usavam continuam de
+pé e não foram tocadas.
 
 O CRM de leads (notificação de novo lead, nutrição automática, relatórios diário/semanal e reativação de leads pausados) roda como fluxo n8n próprio, versionado no repositório `ipessp-core` — não existe cópia dele aqui em `docs/`. As tools de CRM do bot acima (`Verificar Lead CRM`, `Registrar Lead CRM`, `Registrar Interação Bot`) chamam esse outro backend via `IPESSP_CORE_URL` (ver `n8n.env.example`).
 
@@ -296,7 +361,10 @@ Os fluxos acima usam `$env.NOME` (n8n auto-hospedado na mesma VPS via Docker Com
 | `IA_BEARER_TOKEN` | Token Bearer de `/ia/*` e `/v1/ti/*` |
 | `ADMIN_API_KEY` | Chave dos endpoints `/v1/admin/*` |
 | `JWT_SECRET` | Obrigatório — sem ele a aplicação não sobe |
-| `WEBHOOK_SECRET` | (reservado para webhooks internos) |
+| `WEBHOOK_SECRET` | Secret da URL de webhook `/whatsapp/webhook` (canal "geral", entrada do chatbot) |
+| `ANTHROPIC_API_KEY` | Chave da API usada pelo `ChatbotService` — sem ela o chatbot não responde |
+| `CHATBOT_MODELO` | Modelo do chatbot (default `claude-sonnet-5`, o mesmo que o fluxo n8n usava) |
+| `IPESSP_CORE_URL`, `CORE_API_KEY` | Backend `ipessp-core`, dono do CRM: o chatbot faz `POST /crm/leads` com header `x-admin-key` |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` | Envio de e-mail transacional |
 | `EMAIL_CRON_HABILITADO`, `EMAIL_DIAS_ANTES`, `EMAIL_DIAS_APOS`, `EMAIL_LOGO_URL`, `EMAIL_PORTAL_ALUNO_URL` | Job de cobrança por e-mail |
 | `ZAPI_INSTANCE_ID`, `ZAPI_TOKEN`, `ZAPI_CLIENT_TOKEN` | Envio de WhatsApp (Z-API), canal "geral" (atendimento/chatbot) |
@@ -349,6 +417,12 @@ ssh -i ~/.ssh/id_ed25519_ipessp root@179.197.237.177 \
 ---
 
 ## Histórico: webhook da Z-API não chegava no backend (cobrança WhatsApp) — resolvido
+
+> **Atualização (2026-08-29):** a exceção no Caddyfile abaixo continua sendo o
+> que faz a mensagem chegar no backend, e continua necessária. O que mudou é o
+> que acontece depois dela: não há mais repasse pro n8n — o backend responde
+> tudo (ver `/whatsapp/webhook` acima), e `N8N_WHATSAPP_WEBHOOK_URL` deixou de
+> ser lida. Pode ser removida de `/opt/ipessp/integracao.env`.
 
 **Status (2026-08-25): aplicado.** A exceção no Caddyfile abaixo já está em produção
 (`/opt/ipessp/Caddyfile`), roteando o webhook do fluxo n8n de leads pro backend

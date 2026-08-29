@@ -15,6 +15,7 @@ import { AdminModule } from './admin/admin.module';
 import { FinanceiroModule } from './financeiro/financeiro.module';
 import { TiModule } from './ti/ti.module';
 import { PortalAlunoModule } from './portal-aluno/portal-aluno.module';
+import { ChatbotModule } from './chatbot/chatbot.module';
 import { PortalAlunoRefreshToken } from './portal-aluno/entities/portal-aluno-refresh-token.entity';
 import { Chamado } from './ti/entities/chamado.entity';
 import { ClienteCache } from './financeiro/entities/cliente-cache.entity';
@@ -82,6 +83,7 @@ import { CursoConteudo } from './ia/entities/curso-conteudo.entity';
     AdminModule,
     TiModule,
     PortalAlunoModule,
+    ChatbotModule,
   ],
 })
 export class AppModule {}

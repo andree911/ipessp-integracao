@@ -27,6 +27,6 @@ import { CursoConteudo } from './entities/curso-conteudo.entity';
   ],
   controllers: [IaController],
   providers: [IaService, IaBearerGuard],
-  exports: [TypeOrmModule],
+  exports: [TypeOrmModule, IaService],
 })
 export class IaModule {}

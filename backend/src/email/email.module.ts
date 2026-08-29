@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { HttpModule } from '@nestjs/axios';
 import { EmailService } from './email.service';
@@ -13,13 +13,18 @@ import { ClienteCache } from '../financeiro/entities/cliente-cache.entity';
 import { SophiaModule } from '../sophia/sophia.module';
 import { FinanceiroModule } from '../financeiro/financeiro.module';
 import { AdminApiKeyGuard } from '../admin/guards/admin-api-key.guard';
+import { ChatbotModule } from '../chatbot/chatbot.module';
 
+// ChatbotModule com forwardRef: o WhatsAppWebhookController daqui despacha a
+// mensagem recebida pro ChatbotService, que por sua vez responde usando o
+// WhatsAppService deste módulo -- ver o comentário em ChatbotModule.
 @Module({
   imports: [
     TypeOrmModule.forFeature([EmailLog, LancamentoCache, ClienteCache]),
     HttpModule,
     SophiaModule,
     FinanceiroModule,
+    forwardRef(() => ChatbotModule),
   ],
   controllers: [EmailController, WhatsAppWebhookController],
   providers: [

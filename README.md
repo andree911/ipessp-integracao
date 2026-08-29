@@ -1,8 +1,8 @@
 # ipessp-integracao
 
-Integração entre o site institucional do IPESSP, o bot de atendimento via WhatsApp (n8n), o ERP SophiA, Mercado Pago e o banco Supabase.
+Integração entre o site institucional do IPESSP, o bot de atendimento via WhatsApp, o ERP SophiA, Mercado Pago e o banco Supabase.
 
-- [`backend/`](./backend) — NestJS, camada intermediária entre site, bot WhatsApp (n8n), ERP SophiA, Mercado Pago (checkout da 1ª parcela de matrícula) e Supabase Postgres (banco compartilhado com o projeto `ipessp-corporativo`). Documentação completa em [`backend/CONTEXT.md`](./backend/CONTEXT.md).
+- [`backend/`](./backend) — NestJS, camada intermediária entre site, WhatsApp (Z-API — incluindo o chatbot de atendimento, que roda aqui), ERP SophiA, Mercado Pago (checkout da 1ª parcela de matrícula) e Supabase Postgres (banco compartilhado com o projeto `ipessp-corporativo`). Documentação completa em [`backend/CONTEXT.md`](./backend/CONTEXT.md).
 - [`frontend/`](./frontend) — site institucional em Next.js.
 
 ## Rodando localmente

@@ -2,16 +2,17 @@ import {
   Body,
   Controller,
   HttpCode,
+  Inject,
   Logger,
   Post,
   Query,
   UnauthorizedException,
+  forwardRef,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { HttpService } from '@nestjs/axios';
-import { firstValueFrom } from 'rxjs';
 import { WhatsAppJobService } from './whatsapp-job.service';
 import { CanalWhatsApp } from './whatsapp.service';
+import { ChatbotService } from '../chatbot/chatbot.service';
 import { errMsg } from '../common/err.util';
 
 const OPCOES_COBRANCA = ['ja_paguei', 'ajuda', 'portal', 'site'];
@@ -41,10 +42,10 @@ interface ZApiWebhookPayload {
  * aqui é a Z-API, não um cliente autenticado nosso -- a origem é verificada
  * pelo secret na query string (ver verificarOrigem), não por Bearer token.
  *
- * Tudo que NÃO for uma das opções da lista de cobrança (OPCOES_COBRANCA) é repassado sem
- * alteração pro fluxo "Encaminhar Leads" do n8n, que continua cuidando de
- * leads normalmente -- só o dono do roteamento de ENTRADA mudou, a lógica de
- * lead em si continua 100% no n8n/Core, sem duplicar aqui.
+ * Tudo que NÃO for uma das opções da lista de cobrança (OPCOES_COBRANCA) vai
+ * pro ChatbotService, que atende a conversa inteira aqui dentro (triagem de
+ * lead e financeiro do aluno). O repasse pro fluxo "Encaminhar Leads" do n8n
+ * foi removido: o bot deixou de rodar no n8n, ver ChatbotService.
  *
  * Dois canais, duas rotas: /whatsapp/webhook é o número de atendimento/chatbot
  * de sempre (canal "geral"); /whatsapp/webhook/financeiro é o número dedicado
@@ -60,7 +61,8 @@ export class WhatsAppWebhookController {
   constructor(
     private readonly whatsappJobService: WhatsAppJobService,
     private readonly config: ConfigService,
-    private readonly http: HttpService,
+    @Inject(forwardRef(() => ChatbotService))
+    private readonly chatbot: ChatbotService,
   ) {}
 
   @Post('webhook')
@@ -115,7 +117,15 @@ export class WhatsAppWebhookController {
       return { ok: true };
     }
 
-    await this.repassarParaN8n(payload);
+    // O chatbot roda fora do ciclo da resposta: a Z-API espera um 200 rápido,
+    // e um turno pode envolver duas chamadas ao modelo mais uma consulta ao
+    // cache financeiro. Erro aqui já é tratado e logado lá dentro; o catch é
+    // só a rede de segurança pra não virar unhandled rejection.
+    void this.chatbot.processarMensagem(payload).catch((err: unknown) => {
+      this.logger.error(
+        `Falha não tratada no chatbot (telefone ${payload.phone}): ${errMsg(err)}`,
+      );
+    });
     return { ok: true };
   }
 
@@ -140,26 +150,6 @@ export class WhatsAppWebhookController {
     if (!esperado) return;
     if (secret !== esperado) {
       throw new UnauthorizedException('Origem do webhook não verificada');
-    }
-  }
-
-  /** Retry único após pequeno atraso -- mesmo padrão de WhatsAppService.enviarTexto, pra não perder um lead por instabilidade passageira do n8n. */
-  private async repassarParaN8n(payload: ZApiWebhookPayload): Promise<void> {
-    const url = this.config.get<string>('zapi.n8nWebhookUrl');
-    if (!url) return;
-
-    const enviar = () => firstValueFrom(this.http.post(url, payload));
-    try {
-      await enviar();
-    } catch {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      try {
-        await enviar();
-      } catch (err2: unknown) {
-        this.logger.warn(
-          `Falha ao repassar mensagem pro n8n (após retry) — telefone ${payload.phone}: ${errMsg(err2)}`,
-        );
-      }
     }
   }
 }

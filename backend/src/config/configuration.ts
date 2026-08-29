@@ -22,6 +22,22 @@ export default () => ({
   ia: {
     bearerToken: process.env.IA_BEARER_TOKEN ?? '',
   },
+  // Chatbot de WhatsApp (ChatbotService) -- classificação de intenção e
+  // redação das respostas. Sem ANTHROPIC_API_KEY o chatbot não responde:
+  // registra o erro e a mensagem fica sem resposta, em vez de responder algo
+  // inventado sem modelo.
+  chatbot: {
+    anthropicApiKey: process.env.ANTHROPIC_API_KEY ?? '',
+    modelo: process.env.CHATBOT_MODELO ?? 'claude-sonnet-5',
+  },
+  // Backend ipessp-core (repositório separado, mesma VPS) -- dono do CRM de
+  // leads. Em produção é o nome do serviço na rede interna do Docker Compose
+  // (http://ipessp-core:3000). Era o n8n quem chamava /crm/leads; passou pro
+  // backend junto com o resto do bot.
+  core: {
+    baseUrl: (process.env.IPESSP_CORE_URL ?? '').replace(/\/$/, ''),
+    apiKey: process.env.CORE_API_KEY ?? '',
+  },
   // Storage S3-compatível (MinIO na VPS), substitui o Supabase Storage.
   minio: {
     endpoint: process.env.MINIO_ENDPOINT ?? 'minio',
@@ -112,15 +128,11 @@ export default () => ({
     diasApos: (process.env.WPP_DIAS_APOS ?? '1,2,3,7,8,9,10,12,15,20')
       .split(',')
       .map((d) => parseInt(d.trim(), 10)),
-    // Mesmo par usado hoje só pelo "Filtro Modo Teste" do n8n -- precisa
-    // existir também aqui porque o webhook da Z-API passou a bater primeiro
-    // no backend (ver WhatsAppWebhookController), não mais direto no n8n.
+    // Herdado do "Filtro Modo Teste" do n8n: com modoTeste ligado, só
+    // telefoneTeste é atendido. Vale pro chatbot e pra resposta de cobrança
+    // -- ver WhatsAppWebhookController.
     modoTeste: process.env.ZAPI_MODO_TESTE ?? 'false',
     telefoneTeste: process.env.ZAPI_TELEFONE_TESTE ?? '',
-    // URL do fluxo "Encaminhar Leads" no n8n -- tudo que não for resposta de
-    // opção de cobrança é repassado pra cá sem alteração, pra não quebrar o
-    // encaminhamento de lead que já funciona hoje.
-    n8nWebhookUrl: process.env.N8N_WHATSAPP_WEBHOOK_URL ?? '',
     // Banners anexados nas mensagens do job de cobrança do WhatsApp (wpp_job)
     // -- URL pública no MinIO da VPS. "Lembrete" vai nas mensagens antes/no
     // dia do vencimento; "Cobrança" vai nas de atraso (pós-vencimento). Cada
