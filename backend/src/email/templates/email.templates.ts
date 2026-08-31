@@ -66,6 +66,34 @@ const COR = '#7C2529';
 // necessária porque Outlook não suporta rgba()
 const COR_DARK = '#661E22';
 
+// ─── Modo escuro ─────────────────────────────────────────────────────────────
+// Vários apps de email (Gmail, Outlook, Apple Mail) reescrevem as cores quando
+// o celular está no tema escuro: o card branco vira escuro e todo texto escuro
+// é clareado. É por isso que o nome do responsável e o vencimento apareciam num
+// vermelho claro no celular, enquanto cabeçalho e rodapé — que são `bgcolor` —
+// seguiam no vermelho institucional. As classes `dm-*` marcam cada elemento
+// para reafirmar a paleta clara e travar o vermelho da marca.
+const estilosModoEscuro = `
+    @media (prefers-color-scheme: dark) {
+      .dm-bg    { background-color: #f0f2f5 !important; }
+      .dm-card  { background-color: #ffffff !important; }
+      .dm-inset { background-color: #f5f5f5 !important; }
+      .dm-bdr   { border-color: #e8e8e8 !important; }
+      .dm-t1    { color: #222222 !important; }
+      .dm-t2    { color: #444444 !important; }
+      .dm-t3    { color: #777777 !important; }
+      .dm-brand, .dm-brand a { color: ${COR} !important; }
+    }
+    /* Outlook (app e web) ignora prefers-color-scheme: marca o body com data-ogsc/ogsb */
+    [data-ogsc] .dm-bg,    [data-ogsb] .dm-bg    { background-color: #f0f2f5 !important; }
+    [data-ogsc] .dm-card,  [data-ogsb] .dm-card  { background-color: #ffffff !important; }
+    [data-ogsc] .dm-inset, [data-ogsb] .dm-inset { background-color: #f5f5f5 !important; }
+    [data-ogsc] .dm-bdr,   [data-ogsb] .dm-bdr   { border-color: #e8e8e8 !important; }
+    [data-ogsc] .dm-t1 { color: #222222 !important; }
+    [data-ogsc] .dm-t2 { color: #444444 !important; }
+    [data-ogsc] .dm-t3 { color: #777777 !important; }
+    [data-ogsc] .dm-brand, [data-ogsc] .dm-brand a { color: ${COR} !important; }`;
+
 // ─── Ícones (PNG hospedados, círculo branco + glifo) ─────────────────────────
 // Imagem de verdade em vez de fonte de ícone ou SVG ao vivo — as duas opções
 // têm suporte muito inconsistente entre clientes de email (especialmente
@@ -302,7 +330,7 @@ function introsPagamento(): string {
   <p class="dm-t2" style="margin:0 0 4px;font-size:14px;color:#444;text-align:center;font-family:Arial,sans-serif;line-height:1.6;">
     &#201; simples efetuar o pagamento desta mensalidade.
   </p>
-  <p style="margin:0 0 22px;font-size:14px;color:${COR};font-weight:bold;text-align:center;font-family:Arial,sans-serif;">
+  <p class="dm-brand" style="margin:0 0 22px;font-size:14px;color:${COR};font-weight:bold;text-align:center;font-family:Arial,sans-serif;">
     Veja as op&#231;&#245;es que temos para voc&#234;:
   </p>`;
 }
@@ -419,7 +447,7 @@ function doisCtas(data: EmailData): string {
             </td>
           </tr>
           <tr>
-            <td bgcolor="#ffffff" class="dm-inset" style="background-color:#ffffff;padding:14px 16px 16px;">
+            <td bgcolor="#ffffff" class="dm-card" style="background-color:#ffffff;padding:14px 16px 16px;">
               <p class="dm-t2" style="margin:0 0 14px;font-size:13px;color:#444;line-height:1.5;font-family:Arial,sans-serif;">${texto}</p>
               ${miniBotao(url)}
             </td>
@@ -462,12 +490,12 @@ function avisoSeguranca(data: EmailData): string {
       <td bgcolor="#f5f5f5" class="dm-inset" style="background-color:#f5f5f5;border-radius:10px;padding:18px 20px;text-align:center;">
         <p class="dm-t2" style="margin:0 0 6px;font-size:13px;color:#555;line-height:1.7;font-family:Arial,sans-serif;">
           Fique atento: a fatura do ${data.nomeEscola} sempre chegar&#225; pelo remetente<br>
-          <a href="mailto:${emailDisplay}"
+          <a class="dm-brand" href="mailto:${emailDisplay}"
             style="color:${COR};font-weight:bold;text-decoration:none;">${emailDisplay}</a>
         </p>
         <p class="dm-t3" style="margin:0;font-size:12px;color:#777;line-height:1.6;font-family:Arial,sans-serif;">
           Nunca solicitamos dados banc&#225;rios ou senhas por e-mail.
-          ${data.siteUrl ? `Acesse <a href="${data.siteUrl}" style="color:${COR};text-decoration:none;font-weight:bold;">${data.siteUrl.replace(/^https?:\/\/(www\.)?/, '')}</a> para confirmar a veracidade.` : ''}
+          ${data.siteUrl ? `Acesse <a class="dm-brand" href="${data.siteUrl}" style="color:${COR};text-decoration:none;font-weight:bold;">${data.siteUrl.replace(/^https?:\/\/(www\.)?/, '')}</a> para confirmar a veracidade.` : ''}
         </p>
       </td>
     </tr>
@@ -711,6 +739,7 @@ function base(
       .hdr-logo { display: block !important; width: 100% !important; text-align: left !important; padding-bottom: 12px !important; }
       .hdr-info { display: block !important; width: 100% !important; text-align: right !important; }
     }
+  ${estilosModoEscuro}
   </style>
 </head>
 <body style="margin:0;padding:0;background-color:#f0f2f5;" bgcolor="#f0f2f5">
@@ -734,7 +763,7 @@ ${preheader ? `<div style="display:none;font-size:1px;color:#f0f2f5;line-height:
 
           <!-- 2. Saudação — headline maior quando vem logo depois da foto, pra ler como manchete -->
           <p class="dm-t1" style="margin:0 0 ${temHero ? '16px' : '8px'};font-size:${temHero ? '23px' : '16px'};font-weight:bold;color:#222222;line-height:1.3;font-family:Arial,sans-serif;">${introTitulo}</p>
-          <p style="margin:0 0 18px;font-size:17px;font-weight:bold;color:${COR};text-transform:uppercase;font-family:Arial,sans-serif;">${data.nomeResponsavel},</p>
+          <p class="dm-brand" style="margin:0 0 18px;font-size:17px;font-weight:bold;color:${COR};text-transform:uppercase;font-family:Arial,sans-serif;">${data.nomeResponsavel},</p>
           <p class="dm-t2" style="margin:0 0 4px;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">${descParagrafo}</p>
 
           <!-- 3. Card de resumo -->
@@ -824,6 +853,7 @@ export function baseConteudoLivre(
       .hdr-logo { display: block !important; width: 100% !important; text-align: left !important; padding-bottom: 12px !important; }
       .hdr-info { display: block !important; width: 100% !important; text-align: right !important; }
     }
+  ${estilosModoEscuro}
   </style>
 </head>
 <body style="margin:0;padding:0;background-color:#f0f2f5;" bgcolor="#f0f2f5">
@@ -877,12 +907,12 @@ export function emailConfirmacaoMatricula(d: ConfirmacaoMatriculaData): string {
   return `<!DOCTYPE html>
 <html lang="pt-BR">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<style>body{margin:0;padding:0;background:#f0f2f5;font-family:Arial,sans-serif;}</style>
+<style>body{margin:0;padding:0;background:#f0f2f5;font-family:Arial,sans-serif;}${estilosModoEscuro}</style>
 </head>
 <body style="margin:0;padding:0;background:#f0f2f5;">
-<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f0f2f5;padding:28px 8px;">
+<table width="100%" cellpadding="0" cellspacing="0" border="0" class="dm-bg" bgcolor="#f0f2f5" style="background:#f0f2f5;padding:28px 8px;">
   <tr><td align="center">
-    <table width="600" cellpadding="0" cellspacing="0" border="0"
+    <table width="600" cellpadding="0" cellspacing="0" border="0" class="dm-card" bgcolor="#ffffff"
       style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;">
 
       <!-- cabeçalho -->
@@ -967,7 +997,7 @@ export function emailConfirmacaoMatricula(d: ConfirmacaoMatriculaData): string {
                 ? `
             <tr>
               <td width="22" valign="middle" style="padding:3px 0;"><img src="${iconUrl(d, 'email')}" width="16" height="16" alt="" style="width:16px;height:16px;display:block;border:0;"></td>
-              <td valign="middle" style="padding:3px 0 3px 6px;font-size:13px;"><a href="mailto:${d.emailEscola}" style="color:${COR};text-decoration:none;">${d.emailEscola}</a></td>
+              <td valign="middle" style="padding:3px 0 3px 6px;font-size:13px;"><a class="dm-brand" href="mailto:${d.emailEscola}" style="color:${COR};text-decoration:none;">${d.emailEscola}</a></td>
             </tr>`
                 : ''
             }
@@ -1013,7 +1043,7 @@ export function templateLembrete(data: EmailData): {
 
   const desc = `Voc&#234; est&#225; recebendo o aviso de que o boleto do(a) aluno(a)
     <strong>${data.nomeAluno}</strong> vence em
-    <strong style="color:${COR};">${data.diasRestantes} dia${data.diasRestantes === 1 ? '' : 's'}</strong>,
+    <strong class="dm-brand" style="color:${COR};">${data.diasRestantes} dia${data.diasRestantes === 1 ? '' : 's'}</strong>,
     no dia <strong>${data.vencimento}</strong>.
     Efetue o pagamento em dia para evitar juros e multas.`;
 
@@ -1044,7 +1074,7 @@ export function templateVencimentoHoje(data: EmailData): {
 
   const desc = `Voc&#234; est&#225; recebendo o aviso de que o boleto do(a) aluno(a)
     <strong>${data.nomeAluno}</strong>
-    <strong style="color:${COR};">vence hoje, ${data.vencimento}</strong>.
+    <strong class="dm-brand" style="color:${COR};">vence hoje, ${data.vencimento}</strong>.
     Efetue o pagamento at&#233; o final do dia para evitar juros e multas.`;
 
   const nota = `<p style="margin:12px 0 0;font-size:12px;color:#999;line-height:1.7;font-family:Arial,sans-serif;">
@@ -1090,7 +1120,7 @@ export function templateCobranca(data: EmailData): {
 
   const desc = `Identificamos que o boleto do(a) aluno(a) <strong>${data.nomeAluno}</strong>
     est&#225; em aberto h&#225;
-    <strong style="color:${COR};">${data.diasAtraso} dia${data.diasAtraso === 1 ? '' : 's'}</strong>
+    <strong class="dm-brand" style="color:${COR};">${data.diasAtraso} dia${data.diasAtraso === 1 ? '' : 's'}</strong>
     ap&#243;s o vencimento em <strong>${data.vencimento}</strong>.
     Regularize sua situa&#231;&#227;o o quanto antes para evitar maiores encargos.`;
 
@@ -1140,7 +1170,7 @@ export function templateAviso(data: EmailData): {
   const preheader = `Vence em ${data.vencimento}. Regularize e evite restrições no acesso aos serviços.`;
 
   const desc = `Este &#233; um aviso importante: o boleto do(a) aluno(a) <strong>${data.nomeAluno}</strong>
-    vence em <strong style="color:${COR};">${data.diasRestantes} dia${data.diasRestantes === 1 ? '' : 's'}</strong>,
+    vence em <strong class="dm-brand" style="color:${COR};">${data.diasRestantes} dia${data.diasRestantes === 1 ? '' : 's'}</strong>,
     no dia <strong>${data.vencimento}</strong>.
     Regularize o pagamento at&#233; a data de vencimento para evitar a suspens&#227;o de servi&#231;os
     e o encaminhamento para medidas de cobran&#231;a.`;
@@ -1206,14 +1236,14 @@ export function templateRenegociacaoOferta(data: EmailData): {
     <tr>
       <td style="padding:0 0 12px;">
         <span style="font-size:14px;color:#444;font-family:Arial,sans-serif;line-height:1.6;">
-          <strong style="color:${COR};">Condi&#231;&#245;es especiais:</strong> desconto e parcelamento facilitado pensados pra caber no seu momento.
+          <strong class="dm-brand" style="color:${COR};">Condi&#231;&#245;es especiais:</strong> desconto e parcelamento facilitado pensados pra caber no seu momento.
         </span>
       </td>
     </tr>
     <tr>
       <td>
         <span style="font-size:14px;color:#444;font-family:Arial,sans-serif;line-height:1.6;">
-          <strong style="color:${COR};">Continue estudando:</strong> ao regularizar, seu acesso aos servi&#231;os acad&#234;micos segue normalmente.
+          <strong class="dm-brand" style="color:${COR};">Continue estudando:</strong> ao regularizar, seu acesso aos servi&#231;os acad&#234;micos segue normalmente.
         </span>
       </td>
     </tr>
@@ -1290,7 +1320,7 @@ export function templateRenegociacaoLembrete(data: EmailData): {
     : '';
   const nota = `<p style="margin:12px 0 0;font-size:12px;color:#999;line-height:1.7;font-family:Arial,sans-serif;">
     Se voc&#234; j&#225; regularizou sua situa&#231;&#227;o, desconsidere esta mensagem.
-    Precisa de ajuda? Fale com o setor financeiro${telWhatsapp ? ` pelo <a href="https://wa.me/55${telWhatsapp}" target="_blank" style="color:${COR};font-weight:bold;text-decoration:none;">WhatsApp</a>` : ''}${emailDisplay ? ` ou pelo e-mail <a href="mailto:${emailDisplay}" style="color:${COR};font-weight:bold;text-decoration:none;">${emailDisplay}</a>` : ''}.
+    Precisa de ajuda? Fale com o setor financeiro${telWhatsapp ? ` pelo <a class="dm-brand" href="https://wa.me/55${telWhatsapp}" target="_blank" style="color:${COR};font-weight:bold;text-decoration:none;">WhatsApp</a>` : ''}${emailDisplay ? ` ou pelo e-mail <a class="dm-brand" href="mailto:${emailDisplay}" style="color:${COR};font-weight:bold;text-decoration:none;">${emailDisplay}</a>` : ''}.
   </p>`;
 
   return {
@@ -1356,7 +1386,7 @@ export function templateCancelamentoAcademico(d: CancelamentoEmailData): {
   const primeiroNome = d.nomeAluno.split(' ')[0];
 
   const corpo = `
-    <p style="margin:0 0 18px;font-size:17px;font-weight:bold;color:${COR};text-transform:uppercase;font-family:Arial,sans-serif;">Prezado(a) ${primeiroNome},</p>
+    <p class="dm-brand" style="margin:0 0 18px;font-size:17px;font-weight:bold;color:${COR};text-transform:uppercase;font-family:Arial,sans-serif;">Prezado(a) ${primeiroNome},</p>
     <p style="margin:0 0 18px;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
       Em resposta &#224; sua solicita&#231;&#227;o, informamos que o cancelamento acad&#234;mico de sua matr&#237;cula foi realizado com sucesso em nossos sistemas.
     </p>
@@ -1397,7 +1427,7 @@ export function templateCancelamentoReembolso(d: CancelamentoEmailData): {
   const primeiroNome = d.nomeAluno.split(' ')[0];
 
   const corpo = `
-    <p style="margin:0 0 18px;font-size:17px;font-weight:bold;color:${COR};text-transform:uppercase;font-family:Arial,sans-serif;">Prezado(a) ${primeiroNome},</p>
+    <p class="dm-brand" style="margin:0 0 18px;font-size:17px;font-weight:bold;color:${COR};text-transform:uppercase;font-family:Arial,sans-serif;">Prezado(a) ${primeiroNome},</p>
     <p style="margin:0 0 18px;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
       Esperamos que esteja bem.
     </p>
@@ -1454,7 +1484,7 @@ export function templateCancelamentoFinanceiro(d: CancelamentoEmailData): {
   if (d.valorMulta <= 0) {
     const primeiroNomeSemPendencia = d.nomeAluno.split(' ')[0];
     const corpo = `
-      <p style="margin:0 0 18px;font-size:17px;font-weight:bold;color:${COR};text-transform:uppercase;font-family:Arial,sans-serif;">Prezado(a) ${primeiroNomeSemPendencia},</p>
+      <p class="dm-brand" style="margin:0 0 18px;font-size:17px;font-weight:bold;color:${COR};text-transform:uppercase;font-family:Arial,sans-serif;">Prezado(a) ${primeiroNomeSemPendencia},</p>
       <p style="margin:0 0 18px;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
         Informamos que o cancelamento do plano de pagamento financeiro foi realizado com sucesso, sem a necessidade
         de cobran&#231;a de multas ou parcelas em atraso.
@@ -1475,14 +1505,14 @@ export function templateCancelamentoFinanceiro(d: CancelamentoEmailData): {
   const primeiroNome = d.nomeAluno.split(' ')[0];
   const temInadimplencia = d.parcelasEmAtraso > 0;
 
-  const saudacao = `<p style="margin:0 0 18px;font-size:17px;font-weight:bold;color:${COR};text-transform:uppercase;font-family:Arial,sans-serif;">Prezado(a) ${primeiroNome},</p>`;
+  const saudacao = `<p class="dm-brand" style="margin:0 0 18px;font-size:17px;font-weight:bold;color:${COR};text-transform:uppercase;font-family:Arial,sans-serif;">Prezado(a) ${primeiroNome},</p>`;
 
   const paragrafoInadimplencia = temInadimplencia
     ? `
     <p style="margin:0 0 18px;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
       Al&#233;m disso, informamos que h&#225; um saldo devedor referente a
       <strong>${d.parcelasEmAtraso} parcela${d.parcelasEmAtraso === 1 ? '' : 's'} em atraso</strong>,
-      totalizando <strong style="color:${COR};">${fmtMoeda(d.saldoDevedor)}</strong>, que tamb&#233;m dever&#225; ser quitado.
+      totalizando <strong class="dm-brand" style="color:${COR};">${fmtMoeda(d.saldoDevedor)}</strong>, que tamb&#233;m dever&#225; ser quitado.
     </p>`
     : '';
 
@@ -1497,7 +1527,7 @@ export function templateCancelamentoFinanceiro(d: CancelamentoEmailData): {
     <p style="margin:0 0 18px;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
       No seu caso, restavam <strong>${d.numeroParcelasRestantes} parcela${d.numeroParcelasRestantes === 1 ? '' : 's'}</strong>
       no valor de <strong>${fmtMoeda(d.valorParcela)}</strong> cada, totalizando <strong>${fmtMoeda(d.somaValor)}</strong>.
-      Assim, a multa contratual corresponde a <strong style="color:${COR};">${fmtMoeda(d.valorMulta)}</strong>.
+      Assim, a multa contratual corresponde a <strong class="dm-brand" style="color:${COR};">${fmtMoeda(d.valorMulta)}</strong>.
     </p>
     ${paragrafoInadimplencia}
     <p style="margin:0 0 18px;font-size:14px;color:#444;line-height:1.7;font-family:Arial,sans-serif;">
@@ -1552,7 +1582,7 @@ export function emailRelatorioMatricula(d: RelatorioMatriculaData): string {
 
   const secao = (titulo: string, linhas: string) =>
     `<tr>
-      <td colspan="2" style="padding:14px 12px 4px;font-size:11px;font-weight:bold;text-transform:uppercase;
+      <td class="dm-brand" colspan="2" style="padding:14px 12px 4px;font-size:11px;font-weight:bold;text-transform:uppercase;
         letter-spacing:0.8px;color:${COR};font-family:Arial,sans-serif;border-top:1px solid #e0e0e0;">
         ${titulo}
       </td>
