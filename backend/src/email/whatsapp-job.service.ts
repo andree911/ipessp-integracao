@@ -322,6 +322,23 @@ export class WhatsAppJobService {
 
     this.logger.log('=== Iniciando job de WhatsApp ===');
 
+    // Checagem de conexão real (independe de envio) antes de gastar uma
+    // Sophia inteira -- incidente de 2026-09-01: o canal "financeiro" caiu e
+    // ninguém percebeu porque o job continuava chamando a Z-API normalmente
+    // (ela aceita e enfileira o envio do lado dela mesmo sem sessão pareada,
+    // então cada tentativa "tinha sucesso" no log) até 372 mensagens
+    // acumularem na fila sem nenhuma ter sido entregue. Abortar aqui evita
+    // empilhar mais mensagens fantasma; o alerta via canal "geral" avisa
+    // alguém em vez de depender de olhar o painel da Z-API por conta própria.
+    const conexaoFinanceiro = await this.whatsapp.verificarConexao('financeiro');
+    if (!conexaoFinanceiro.connected) {
+      this.logger.error(
+        `Job de WhatsApp abortado: canal "financeiro" desconectado da Z-API (${conexaoFinanceiro.error ?? 'sessão não pareada'}). Nenhuma mensagem de cobrança foi enviada nesta rodada.`,
+      );
+      await this.alertarDesconexaoFinanceiro(conexaoFinanceiro.error);
+      return;
+    }
+
     const diasAntes: number[] = this.config.get<number[]>('zapi.diasAntes') ?? [
       7, 5, 3, 1,
     ];
@@ -456,6 +473,33 @@ export class WhatsAppJobService {
     this.logger.log(
       `=== Job WhatsApp concluído: ${totalEnviados} enviados, ${totalErros} erros, ${totalSemBoleto} sem PIX (pulados), ${totalFalhaConsulta} aluno(s) c/ falha na consulta à Sophia (pulados) ===`,
     );
+  }
+
+  /**
+   * Avisa o setor financeiro (canal "geral", já que o "financeiro" é
+   * justamente o que caiu) que o job de cobrança não rodou por falta de
+   * conexão -- best-effort: se não houver telefoneFinanceiro configurado, ou
+   * se até o canal geral falhar, só o logger.error acima registra o
+   * problema, mas o job já foi abortado de qualquer forma.
+   */
+  private async alertarDesconexaoFinanceiro(motivo?: string): Promise<void> {
+    const telefoneFinanceiro = this.config.get<string>(
+      'zapi.telefoneFinanceiro',
+    );
+    if (!telefoneFinanceiro) return;
+
+    const mensagem =
+      `⚠️ *Job de cobrança WhatsApp não rodou hoje*\n\n` +
+      `O canal financeiro da Z-API está desconectado${motivo ? ` (${motivo})` : ''}. ` +
+      `Nenhuma mensagem de cobrança foi enviada nesta rodada -- repareie o QR code da instância financeira na Z-API assim que possível.`;
+
+    try {
+      await this.whatsapp.enviarTexto(telefoneFinanceiro, mensagem, 'geral');
+    } catch (err: unknown) {
+      this.logger.warn(
+        `Falha ao alertar desconexão do canal financeiro por WhatsApp — ${errMsg(err)}`,
+      );
+    }
   }
 
   /**
