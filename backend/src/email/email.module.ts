@@ -17,7 +17,11 @@ import { AdminApiKeyGuard } from '../admin/guards/admin-api-key.guard';
 @Module({
   imports: [
     TypeOrmModule.forFeature([EmailLog, LancamentoCache, ClienteCache]),
-    HttpModule,
+    // Sem timeout, uma chamada à Z-API que trava (sem erro, sem resposta) nunca
+    // rejeita -- o retry do WhatsAppService.enviarTexto/enviarImagem/etc. só
+    // dispara em catch, então a rodada inteira do cron de cobrança fica presa
+    // no aluno atual pra sempre. Mesmo padrão do SophiaModule (timeout: 15000).
+    HttpModule.register({ timeout: 20000 }),
     SophiaModule,
     FinanceiroModule,
   ],
